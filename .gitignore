@@ -1,0 +1,33 @@
+# generate and build 
+/**/build
+/**/dist
+/**/cmake-build-debug
+/**/out
+/**/bin
+/**/x64
+/**/*.sln
+
+# IDE
+/**/.vscode
+/**/.idea
+/**/.vs
+/**/*.iml
+/**/vsxmake2022
+/**/.VSCodeCounter
+
+# binary
+/**/*.dll
+/**/*.exe
+/**/*.a
+/**/*.so
+
+## packages
+/**/uni_modules
+/**/node_modules
+
+## text files
+/**/compile_commands.json
+
+# others
+/**/.xmake
+/**/.cache
