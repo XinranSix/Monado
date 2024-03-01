@@ -1,6 +1,7 @@
 #pragma once
 
 #include "monado/core/core.h"
+#include "monado/core/log.h"
 
 #include <cstdint>
 #include <string>
@@ -47,6 +48,7 @@ namespace Monado {
         case ShaderDataType::INT3: return 3;
         case ShaderDataType::INT4: return 4;
         case ShaderDataType::BOOL: return 1;
+        case ShaderDataType::NONE: MONADO_ASSERT(false, "Unknown Shader Data Type"); return -1;
         }
         MONADO_ASSERT(false, "Unknown Shader Data Type");
         return -1;

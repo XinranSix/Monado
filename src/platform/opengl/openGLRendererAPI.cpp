@@ -18,9 +18,6 @@ namespace Monado {
 
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
-
-        glEnable(GL_DEBUG_OUTPUT);
-      glDebugMessageCallback(MessageCallback, 0);
     }
 
     void OpenGLRendererAPI::Clear() const {
@@ -33,9 +30,10 @@ namespace Monado {
     }
 
     void OpenGLRendererAPI::DrawIndexed(const std::shared_ptr<VertexArray> &vertexArr, uint32_t count) const {
-        if (count == 0)
+        if (count == 0) {
             glDrawElements(GL_TRIANGLES, vertexArr->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
-        else
+        } else {
             glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
+        }
     }
 } // namespace Monado

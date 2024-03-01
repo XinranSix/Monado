@@ -7,6 +7,7 @@
 #include "monado/core/log.h"
 
 namespace Monado {
+
     std::shared_ptr<Texture2D> Texture2D::Create(const std::string &path) {
         switch (RendererAPI::GetAPIType()) {
         case RendererAPI::APIType::OpenGL: return std::make_shared<OpenGLTexture2D>(path);

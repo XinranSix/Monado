@@ -6,6 +6,8 @@
 // #include "Hazel/EditorCamera.h"
 #include "shader.h"
 
+#include "monado/orthographicCamera.h"
+
 namespace Monado {
     class Renderer {
     public:
@@ -13,7 +15,7 @@ namespace Monado {
         static inline RendererAPI::APIType GetAPI() { return RendererAPI::GetAPIType(); }
 
         static void Init();
-        // static void BeginScene(const EditorCamera &camera);
+        static void BeginScene(const OrthographicCamera &camera);
         static void EndScene();
         // 绑定对应的VertexArray, 然后调用DrawCall
         static void Submit(const std::shared_ptr<Shader> &shader, const std::shared_ptr<VertexArray> &vertexArray,
@@ -25,7 +27,7 @@ namespace Monado {
         struct SceneData {
             glm::mat4 ViewProjectionMatrix;
         };
-    
+
         static SceneData *s_SceneData;
     };
 } // namespace Monado

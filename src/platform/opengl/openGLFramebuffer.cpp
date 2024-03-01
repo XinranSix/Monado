@@ -132,8 +132,8 @@ namespace Monado {
     void *OpenGLFramebuffer::GetColorAttachmentTexture2DId() {
         if (m_EnableMSAA) {
             OpenGLShader *glShader = GetOpenGLShader();
-            if (glShader)
-                return (void *)(uint64_t)glShader->screenTexture;
+            if (glShader) {}
+                // return (void *)(uint64_t)glShader->screenTexture;
         }
 
 #if _WIN64
@@ -164,7 +164,7 @@ namespace Monado {
             OpenGLShader *glShader = GetOpenGLShader();
             MONADO_ASSERT(glShader, "OpenGLShader pointer null when read pixel!");
 
-            glBindFramebuffer(GL_FRAMEBUFFER, glShader->resolveFBO);
+            // glBindFramebuffer(GL_FRAMEBUFFER, glShader->resolveFBO);
             glViewport(0, 0, m_Width, m_Height);
             glBindTexture(GL_TEXTURE_2D, m_ColorAttachmentTexIndices[id]);
             glReadBuffer(GL_COLOR_ATTACHMENT1);
@@ -190,9 +190,9 @@ namespace Monado {
         m_EnableMSAA = true;
         OpenGLShader *glShader = GetOpenGLShader();
         if (glShader) {
-            glShader->CreateDownScaleFramebuffer();
-            SetColorAttachmentTexture2DId(0, glShader->screenTexture);
-            SetColorAttachmentTexture2DId(1, glShader->instanceIdTexture);
+            // glShader->CreateDownScaleFramebuffer();
+            // SetColorAttachmentTexture2DId(0, glShader->screenTexture);
+            // SetColorAttachmentTexture2DId(1, glShader->instanceIdTexture);
         }
     }
 
@@ -201,8 +201,8 @@ namespace Monado {
 
         if (m_EnableMSAA) {
             OpenGLShader *glShader = GetOpenGLShader();
-            if (glShader)
-                glShader->DrawDownScaleFramebuffer(GetFramebufferId(), glShader->resolveFBO, width, height);
+            if (glShader) {}
+                // glShader->DrawDownScaleFramebuffer(GetFramebufferId(), glShader->resolveFBO, width, height);
         }
     }
 

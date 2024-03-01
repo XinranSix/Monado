@@ -1,5 +1,6 @@
 #include "monado/renderer/shaderLibrary.h"
 #include "monado/core/core.h"
+#include "monado/core/log.h"
 
 namespace Monado {
     void ShaderLibrary::Load(const std::string &path) {

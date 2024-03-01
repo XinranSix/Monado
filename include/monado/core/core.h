@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #ifdef MND_PLATFORM_WINDOWS
 #ifdef MND_BUILD_DLL
 #define MONADO_API //_declspec (dllexport)
@@ -11,6 +13,7 @@
 #endif
 
 #ifdef MND_ENABLE_ASSERTS
+#include "log.h"
 #define MONADO_ASSERT(x, ...)                                                                                          \
     if (!x) {                                                                                                          \
         LOG_ERROR("Assertion Failed At: {0}", __VA_ARGS__);                                                            \
@@ -30,3 +33,21 @@
 
 // todo
 #define MONADO_PROFILING
+
+namespace Monado {
+    template <typename T>
+    using Scope = std::unique_ptr<T>;
+
+    template <typename T, typename... Args>
+    constexpr Scope<T> CreateScope(Args &&...args) {
+        return std::make_unique<T>(std::forward<Args>(args)...);
+    }
+
+    template <typename T>
+    using Ref = std::shared_ptr<T>;
+
+    template <typename T, typename... Args>
+    constexpr Ref<T> CreateRef(Args &&...args) {
+        return std::make_shared<T>(std::forward<Args>(args)...);
+    }
+}; // namespace Monado

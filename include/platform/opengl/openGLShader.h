@@ -21,30 +21,29 @@ namespace Monado {
         void UploadUniformF1(const std::string &uniformName, float number) override;
         void UploadUniformIntArr(const std::string &uniformName, int count, int *number) override;
 
-        void CreateDownScaleFramebuffer();
-        void DrawDownScaleFramebuffer(uint32_t MSAAbuffer, uint32_t buffer, uint32_t width, uint32_t height);
+        // void CreateDownScaleFramebuffer();
+        // void DrawDownScaleFramebuffer(uint32_t MSAAbuffer, uint32_t buffer, uint32_t width, uint32_t height);
 
-    private:
 
     private:
         // m_VulkanSPIRVCache相当于一个缓存的unordered_map, key是子着色器类型
         // value是一个uint32的数组, 代表着Spir-V对应的编译结果
-        std::unordered_map<ShaderType, std::vector<uint32_t>> m_VulkanSPIRVCache;
-        std::unordered_map<ShaderType, std::vector<uint32_t>> m_OpenGLSPIRVCache;
+        // std::unordered_map<ShaderType, std::vector<uint32_t>> m_VulkanSPIRVCache;
+        // std::unordered_map<ShaderType, std::vector<uint32_t>> m_OpenGLSPIRVCache;
 
-        std::unordered_map<ShaderType, std::string> m_OpenGLSourceCode;
+        // std::unordered_map<ShaderType, std::string> m_OpenGLSourceCode;
 
-        std::string m_FilePath;
+        // std::string m_FilePath;
 
-        int m_ProgramIdBeforeBind = -1;
+        // int m_ProgramIdBeforeBind = -1;
 
     public:
         // TODO: To be refactered
-        uint32_t resolveFBO;
-        uint32_t quadVAO, quadVBO;
-        uint32_t screenTexture;
-        uint32_t instanceIdTexture;
+        // uint32_t resolveFBO;
+        // uint32_t quadVAO, quadVBO;
+        // uint32_t screenTexture;
+        // uint32_t instanceIdTexture;
 
-        int m_TempProgramId;
+        // int m_TempProgramId;
     };
 } // namespace Monado

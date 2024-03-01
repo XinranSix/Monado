@@ -4,6 +4,8 @@
 #include "monado/core/layer.h"
 #include "platform/opengl/openGLBuffer.h"
 #include "platform/opengl/openGLVertexArray.h"
+#include "monado/renderer/renderCommand.h"
+#include "monado/renderer/renderer.h"
 
 // clang-format off
 #include "glad/glad.h"
@@ -14,97 +16,65 @@
 #include <iostream>
 #include <memory>
 
-const char *vertexShaderSource = "#version 450 core\n"
-                                 "layout (location = 0) in vec3 aPos;\n"
-                                 "void main()\n"
-                                 "{\n"
-                                 "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-                                 "}\0";
-const char *fragmentShaderSource = "#version 450 core\n"
-                                   "out vec4 FragColor;\n"
-                                   "void main()\n"
-                                   "{\n"
-                                   "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-                                   "}\n\0";
-
 namespace Monado {
-    Application *Application::s_Instance {};
 
-    uint32_t indices[3] = { 0, 1, 2 };
+    Monado::Application *Monado::Application::s_Instance = nullptr;
 
     Application::Application() {
-        MONADO_ASSERT(!s_Instance, "Already Exists an application instance");
-        s_Instance = this;
-        m_Window = std::unique_ptr<Window>(Window::Create());
-        m_Window->SetEventCallback(std::bind(&Application::OnEvent, this, std::placeholders::_1));
-        // m_ImGuiLayer = std::make_shared<ImGuiLayer>();
-        // m_LayerStack.PushOverlay(m_ImGuiLayer);
-
-        float vertices[] = {
-            0.5f,  0.5f,  0.0f, // 右上角
-            0.5f,  -0.5f, 0.0f, // 右下角
-            -0.5f, -0.5f, 0.0f, // 左下角
-            -0.5f, 0.5f,  0.0f  // 左上角
-        };
-
-        unsigned int indices[] = {
-            // 注意索引从0开始!
-            // 此例的索引(0,1,2,3)就是顶点数组vertices的下标，
-            // 这样可以由下标代表顶点组合成矩形
-
-            0, 1, 3, // 第一个三角形
-            1, 2, 3  // 第二个三角形
-        };
-
-        m_Shader = Shader::Create(vertexShaderSource, fragmentShaderSource);
-
-        m_VertexBuffer.reset(VertexBuffer::Create(vertices, sizeof(vertices)));
-        m_VertexArray.reset(VertexArray::Create());
-        m_IndexBuffer.reset(IndexBuffer::Create(indices, sizeof(indices)));
-        m_VertexBuffer->SetBufferLayout({ { ShaderDataType::FLOAT3, "aPos" } });
-        m_VertexArray->AddVertexBuffer(m_VertexBuffer);
-        m_VertexArray->SetIndexBuffer(m_IndexBuffer);
+        //  s_Instance = this;
     }
 
     Application::~Application() {}
 
-    // 游戏的核心循环
     void Application::Run() {
-
-        std::cout << "Run Application" << std::endl;
         while (m_Running) {
-            // 每帧开始Clear
-            glClearColor(0.7137f, 0.7333f, 0.7686f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT);
+            {
 
-            m_VertexBuffer->Bind();
-            // m_IndexBuffer->Bind();
-            m_Shader->Bind();
-            glDrawElements(GL_TRIANGLES, m_VertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
+                // MONADO_PROFILE_TIMER("Layer Stack Update")
 
-            // Application并不应该知道调用的是哪个平台的window，Window的init操作放在Window::Create里面
-            // 所以创建完window后，可以直接调用其loop开始渲染
-            // for (auto layer : m_LayerStack) {
-            //     layer->OnUpdate({});
-            // }
+                Monado::RenderCommand::Clear();
+                // 1. 算deltatime, deltatime是引擎内部算的东西, 会在layer里提供deltatime为参数\
+                 // TODO: 这里不应该用glfw的东西
+                float time = (float)glfwGetTime(); // todo: 这里不应该用glfw的东西
+                Timestep timestep;
+                if (m_FirstFrame) {
+                    m_FirstFrame = 0.0f;
+                } else {
+                    timestep = time - m_LastTimestep;
+                }
 
+                m_LastTimestep = time;
+
+                if (!m_Minimized) {
+                    // 2. 再执行使用引擎的用户代码的循环
+                    // Application并不应该知道调用的是哪个平台的window，Window的init操作放在Window::Create里面
+                    // 所以创建完window后，可以直接调用其loop开始渲染
+                    for (auto layer : m_LayerStack) {
+                        layer->OnUpdate(timestep);
+                    }
+                }
+            }
+
+            // 3. 最后调用ImGUI的循环
             // m_ImGuiLayer->Begin();
             // for (auto layer : m_LayerStack) {
-            //     // 每一个Layer都在调用ImGuiRender函数
-            //     // 目前有两个Layer, Sandbox定义的ExampleLayer和构造函数添加的ImGuiLayer
-            //     layer->OnImGuiRender();
+            // 每一个Layer都在调用ImGuiRender函数
+            // 目前有两个Layer, Sandbox定义的ExampleLayer和构造函数添加的ImGuiLayer
+            // layer->OnImGuiRender();
             // }
             // m_ImGuiLayer->End();
 
-            // m_FirstFrame = false;
-
-            m_Window->OnUpdate();
+            {
+                // HAZEL_PROFILE_TIMER("Window Update")
+                // 4. 每帧结束调用glSwapBuffer函数, 把画面显示到屏幕上
+                m_Window->OnUpdate();
+            }
         }
     }
 
-    void Application::PushLayer(std::shared_ptr<Layer> layer) { m_LayerStack.PushLayer(layer); }
+    void Application::PushLayer(Layer *layer) { m_LayerStack.PushLayer(std::shared_ptr<Layer>(layer)); }
 
-    std::shared_ptr<Monado::Layer> Application::PopLayer() { return m_LayerStack.PopLayer(); }
+    Layer *Application::PopLayer() { return m_LayerStack.PopLayer().get(); }
 
     // 当窗口触发事件时, 会调用此函数
     void Application::OnEvent(Event &e) {
@@ -119,13 +89,9 @@ namespace Monado {
             std::bind(&Application::OnWindowClose, this, std::placeholders::_1));
         dispatcher.Dispatch<WindowResizedEvent>(std::bind(&Application::OnWindowResized, this, std::placeholders::_1));
 
-        // 2. 否则才传递到layer来执行事件, 逆序遍历是为了让ImGuiLayer最先收到Event
-        uint32_t layerCnt = m_LayerStack.GetLayerCnt();
-        for (int i = layerCnt - 1; i >= 0; i--) {
-            if (e.IsHandled())
-                break;
-
-            m_LayerStack.GetLayer((uint32_t)i)->OnEvent(e);
+        // 2. 否则才传递到layer来执行事件
+        for (auto layer : m_LayerStack) {
+            layer->OnEvent(e);
         }
     }
 
