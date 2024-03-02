@@ -10,7 +10,7 @@ namespace Monado {
     std::shared_ptr<UniformBuffer> UniformBuffer::Create(uint32_t size, uint32_t binding) {
         switch (Renderer::GetAPI()) {
         case RendererAPI::APIType::None: {
-            CORE_LOG_ERROR("No RendererAPI selected");
+            MONADO_CORE_ERROR("No RendererAPI selected");
             MONADO_ASSERT(false, "Error, please choose a Renderer API");
             break;
         }

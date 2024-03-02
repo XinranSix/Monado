@@ -1,11 +1,14 @@
 #pragma once
 
+#include "glm/fwd.hpp"
 #include "monado/core/layer.h"
 #include "monado/OrthographicCameraController.h"
 #include "monado/renderer/renderer.h"
 #include "monado/renderer/texture.h"
+#include "monado/debug/instrumentor.h"
 
 #include <memory>
+#include <vector>
 
 class ExampleLayer : public Monado::Layer {
 public:
@@ -30,4 +33,8 @@ private:
     std::shared_ptr<Monado::VertexArray> m_QuadVertexArray;
 
     std::shared_ptr<Monado::Texture2D> m_Texture1;
+
+    // std::vector<Monado::ProfileResult> m_ProfileResults;
+    Monado::ProfileResult m_ProfileResult;
+    glm::vec4 m_FlatColor;
 };

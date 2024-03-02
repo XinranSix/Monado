@@ -25,6 +25,12 @@ namespace Monado {
     private:
         void SetDarkThemeColors();
 
+        bool OnMouseCursorMoved(MouseMovedEvent &e);
+
+        bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
+
+        bool OnMouseButtonReleased(MouseButtonReleasedEvent &e);
+
     private:
         float m_Time = 0.0f;
         bool m_ViewportFocused;

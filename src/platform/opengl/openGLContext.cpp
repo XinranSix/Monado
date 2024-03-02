@@ -8,10 +8,10 @@ namespace Monado {
 
         MONADO_ASSERT(status, "Failed to init glad");
 
-        CORE_LOG("OpenGL Info:");
-        CORE_LOG("    Vendor: {0}", (const char *)glGetString(GL_VENDOR));          // 打印厂商
-        CORE_LOG("    Renderer: {0}", (const char *)glGetString(GL_RENDERER));      // 打印GPU
-        CORE_LOG("    OPENGL Version: {0}", (const char *)glGetString(GL_VERSION)); // 打印OPENGL版本
+        MONADO_CORE_INFO("OpenGL Info:");
+        MONADO_CORE_INFO("    Vendor: {0}", (const char *)glGetString(GL_VENDOR));          // 打印厂商
+        MONADO_CORE_INFO("    Renderer: {0}", (const char *)glGetString(GL_RENDERER));      // 打印GPU
+        MONADO_CORE_INFO("    OPENGL Version: {0}", (const char *)glGetString(GL_VERSION)); // 打印OPENGL版本
 
         // 检查OpenGL版本
 #ifdef HZ_ENABLE_ASSERTS

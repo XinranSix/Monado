@@ -26,6 +26,7 @@ namespace Monado {
 
         int channels {};
         // unsigned char* data = TextureLoader::Load(path.c_str(), true, m_Width, m_Height, channels);
+        stbi_set_flip_vertically_on_load(true);
         unsigned char *data = stbi_load(path.c_str(), &m_Width, &m_Height, &channels, 0);
         MONADO_ASSERT(data, "Failed to load texture!")
 

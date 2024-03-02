@@ -21,12 +21,27 @@ namespace Monado {
     };
 } // namespace Monado
 
-// 这个用于 Client 的 Log
-#define LOG(...) ::Monado::Log::GetClientLogger()->info(__VA_ARGS__)
-#define LOG_WARNING(...) ::Monado::Log::GetClientLogger()->warn(__VA_ARGS__)
-#define LOG_ERROR(...) ::Monado::Log::GetClientLogger()->error(__VA_ARGS__)
+// // 这个用于 Client 的 Log
+// #define LOG(...) ::Monado::Log::GetClientLogger()->info(__VA_ARGS__)
+// #define LOG_WARNING(...) ::Monado::Log::GetClientLogger()->warn(__VA_ARGS__)
+// #define LOG_ERROR(...) ::Monado::Log::GetClientLogger()->error(__VA_ARGS__)
+
+// // 这个用于实际整个工程的 CommandLine 的 Log
+// #define CORE_LOG(...) ::Monado::Log::GetCoreLogger()->info(__VA_ARGS__)
+// #define CORE_LOG_WARNING(...) ::Monado::Log::GetCoreLogger()->warn(__VA_ARGS__)
+// #define CORE_LOG_ERROR(...) ::Monado::Log::GetCoreLogger()->error(__VA_ARGS__)
+
 
 // 这个用于实际整个工程的 CommandLine 的 Log
-#define CORE_LOG(...) ::Monado::Log::GetCoreLogger()->info(__VA_ARGS__)
-#define CORE_LOG_WARNING(...) ::Monado::Log::GetCoreLogger()->warn(__VA_ARGS__)
-#define CORE_LOG_ERROR(...) ::Monado::Log::GetCoreLogger()->error(__VA_ARGS__)
+#define MONADO_CORE_TRACE(...)    ::Monado::Log::GetCoreLogger()->trace(__VA_ARGS__)
+#define MONADO_CORE_INFO(...)     ::Monado::Log::GetCoreLogger()->info(__VA_ARGS__)
+#define MONADO_CORE_WARN(...)     ::Monado::Log::GetCoreLogger()->warn(__VA_ARGS__)
+#define MONADO_CORE_ERROR(...)    ::Monado::Log::GetCoreLogger()->error(__VA_ARGS__)
+#define MONADO_CORE_CRITICAL(...) ::Monado::Log::GetCoreLogger()->critical(__VA_ARGS__)
+
+// 这个用于 Client 的 Log
+#define MONADO_TRACE(...)         ::Monado::Log::GetClientLogger()->trace(__VA_ARGS__)
+#define MONADO_INFO(...)          ::Monado::Log::GetClientLogger()->info(__VA_ARGS__)
+#define MONADO_WARN(...)          ::Monado::Log::GetClientLogger()->warn(__VA_ARGS__)
+#define MONADO_ERROR(...)         ::Monado::Log::GetClientLogger()->error(__VA_ARGS__)
+#define MONADO_CRITICAL(...)      ::Monado::Log::GetClientLogger()->critical(__VA_ARGS__)

@@ -12,7 +12,7 @@ namespace Monado {
         switch (RendererAPI::GetAPIType()) {
         case RendererAPI::APIType::OpenGL: return std::make_shared<OpenGLTexture2D>(path);
         case RendererAPI::APIType::None: {
-            CORE_LOG_ERROR("No RendererAPI selected");
+            MONADO_CORE_ERROR("No RendererAPI selected");
             MONADO_ASSERT(false, "Error, please choose a Renderer API");
             return nullptr;
         }
@@ -26,7 +26,7 @@ namespace Monado {
         switch (RendererAPI::GetAPIType()) {
         case RendererAPI::APIType::OpenGL: return std::make_shared<OpenGLTexture2D>(width, height);
         case RendererAPI::APIType::None: {
-            CORE_LOG_ERROR("No RendererAPI selected");
+            MONADO_CORE_ERROR("No RendererAPI selected");
             MONADO_ASSERT(false, "Error, please choose a Renderer API");
             return nullptr;
         }
@@ -40,7 +40,7 @@ namespace Monado {
         switch (RendererAPI::GetAPIType()) {
         case RendererAPI::APIType::OpenGL: return std::make_shared<OpenGLTextureCube>(facesPath);
         case RendererAPI::APIType::None: {
-            CORE_LOG_ERROR("No RendererAPI selected");
+            MONADO_CORE_ERROR("No RendererAPI selected");
             MONADO_ASSERT(false, "Error, please choose a Renderer API");
             return nullptr;
         }

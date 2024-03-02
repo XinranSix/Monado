@@ -12,7 +12,7 @@ if is_plat("windows") then
 end
 
 if is_mode("debug") then
-    add_defines("MND_ENABLE_ASSERTS")
+    add_defines("MND_ENABLE_ASSERTS", "MONADO_PROFILING")
 end
 
 add_includedirs("include")

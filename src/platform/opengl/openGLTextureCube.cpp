@@ -22,7 +22,7 @@ namespace Monado {
                              data);
                 TextureLoader::Free(data);
             } else {
-                LOG_ERROR("Cubemap texture failed to load at path: {0}", facesPath[i]);
+                MONADO_INFO("Cubemap texture failed to load at path: {0}", facesPath[i]);
                 return;
             }
         }

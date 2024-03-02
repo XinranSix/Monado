@@ -13,7 +13,7 @@ namespace Monado {
         VertexBuffer *buffer {};
         switch (Renderer::GetAPI()) {
         case RendererAPI::APIType::None: {
-            CORE_LOG_ERROR("No RendererAPI selected");
+            MONADO_CORE_ERROR("No RendererAPI selected");
             MONADO_ASSERT(false, "Error, please choose a Renderer API");
             break;
         }
@@ -31,7 +31,7 @@ namespace Monado {
         VertexBuffer *buffer = nullptr;
         switch (Renderer::GetAPI()) {
         case RendererAPI::APIType::None: {
-            CORE_LOG_ERROR("No RendererAPI selected");
+            MONADO_CORE_ERROR("No RendererAPI selected");
             MONADO_ASSERT(false, "Error, please choose a Renderer API");
             break;
         }
@@ -49,7 +49,7 @@ namespace Monado {
         IndexBuffer *buffer = nullptr;
         switch (Renderer::GetAPI()) {
         case RendererAPI::APIType::None: {
-            CORE_LOG_ERROR("No RendererAPI selected");
+            MONADO_CORE_ERROR("No RendererAPI selected");
             MONADO_ASSERT(false, "Error, please choose a Renderer API");
             break;
         }

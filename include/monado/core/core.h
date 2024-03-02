@@ -16,12 +16,12 @@
 #include "log.h"
 #define MONADO_ASSERT(x, ...)                                                                                          \
     if (!x) {                                                                                                          \
-        LOG_ERROR("Assertion Failed At: {0}", __VA_ARGS__);                                                            \
+        MONADO_ERROR("Assertion Failed At: {0}", __VA_ARGS__);                                                            \
         __debugbreak();                                                                                                \
     }
 #define MONADO_CORE_ASSERT(x, ...)                                                                                     \
     if (!x) {                                                                                                          \
-        CORE_LOG_ERROR("Assertion Failed At: {0}", __VA_ARGS__);                                                       \
+        MONADO_ERROR("Assertion Failed At: {0}", __VA_ARGS__);                                                       \
         __debugbreak();                                                                                                \
     }
 #else
@@ -32,7 +32,7 @@
 #define BIT(x) 1 << x
 
 // todo
-#define MONADO_PROFILING
+// #define MONADO_PROFILING
 
 namespace Monado {
     template <typename T>

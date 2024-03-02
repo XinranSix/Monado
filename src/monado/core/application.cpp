@@ -56,13 +56,13 @@ namespace Monado {
             }
 
             // 3. 最后调用ImGUI的循环
-            // m_ImGuiLayer->Begin();
-            // for (auto layer : m_LayerStack) {
-            // 每一个Layer都在调用ImGuiRender函数
-            // 目前有两个Layer, Sandbox定义的ExampleLayer和构造函数添加的ImGuiLayer
-            // layer->OnImGuiRender();
-            // }
-            // m_ImGuiLayer->End();
+            m_ImGuiLayer->Begin();
+            for (auto layer : m_LayerStack) {
+                // 每一个Layer都在调用ImGuiRender函数
+                // 目前有两个Layer, Sandbox定义的ExampleLayer和构造函数添加的ImGuiLayer
+                layer->OnImGuiRender();
+            }
+            m_ImGuiLayer->End();
 
             {
                 // HAZEL_PROFILE_TIMER("Window Update")

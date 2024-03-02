@@ -96,7 +96,7 @@ namespace Monado {
                 glDeleteShader(shader);
 
                 // Use the infoLog as you see fit.
-                CORE_LOG_ERROR("Compile {0} Shader Failed!:{1}", type, &infoLog[0]);
+                MONADO_CORE_ERROR("Compile {0} Shader Failed!:{1}", type, &infoLog[0]);
                 MONADO_ASSERT(false, "Compile {0} Shader Error Stopped Debugging!", type);
             }
 
@@ -133,7 +133,7 @@ namespace Monado {
             }
 
             // Use the infoLog as you see fit.
-            CORE_LOG_ERROR("Link Shaders Failed!:{0}", infoLog[0]); // TODO这里应该是错的
+            MONADO_CORE_ERROR("Link Shaders Failed!:{0}", infoLog[0]); // TODO这里应该是错的
             MONADO_ASSERT(false, "Link  Shaders Error Stopped Debugging!");
 
             // In this simple program, we'll just leave
@@ -172,7 +172,7 @@ namespace Monado {
             glDeleteShader(vertexShader);
 
             // Use the infoLog as you see fit.
-            CORE_LOG_ERROR("Compile Vertex Shader Failed!:{0}", &infoLog[0]);
+            MONADO_CORE_ERROR("Compile Vertex Shader Failed!:{0}", &infoLog[0]);
             MONADO_ASSERT(false, "Compile Vertex Shader Error Stopped Debugging!");
 
             // In this simple program, we'll just leave
@@ -205,7 +205,7 @@ namespace Monado {
             glDeleteShader(vertexShader);
 
             // Use the infoLog as you see fit.
-            CORE_LOG_ERROR("Compile Fragment Shader Failed!:{0}", &infoLog[0]);
+            MONADO_CORE_ERROR("Compile Fragment Shader Failed!:{0}", &infoLog[0]);
             MONADO_ASSERT(false, "Compile Fragment Shader Error Stopped Debugging!");
 
             // In this simple program, we'll just leave
@@ -242,7 +242,7 @@ namespace Monado {
             glDeleteShader(fragmentShader);
 
             // Use the infoLog as you see fit.
-            CORE_LOG_ERROR("Link Shaders Failed!:{0}", infoLog[0]); // TODO这里应该是错的
+            MONADO_CORE_ERROR("Link Shaders Failed!:{0}", infoLog[0]); // TODO这里应该是错的
             MONADO_ASSERT(false, "Link  Shaders Error Stopped Debugging!");
 
             // In this simple program, we'll just leave
