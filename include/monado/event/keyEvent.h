@@ -1,61 +1,56 @@
 #pragma once
 
 #include "event.h"
-#include <sstream>
+#include "monado/core/keyCodes.h"
 
 namespace Monado {
-
     class KeyEvent : public Event {
     public:
-        inline int GetKeycode() const { return m_Keycode; }
-
-        EVENT_CLASS_GET_CATEGORY(EventCategoryInput | EventCategoryKeyboard)
+        inline KeyCode GetKeyCode() const { return m_KeyCode; }
+        EVENT_CLASS_CATEGORY(EventCategoryKeyboard | EventCategoryInput)
     protected:
-        KeyEvent(int keycode) : m_Keycode { keycode } {}
-        int m_Keycode;
+        KeyEvent(KeyCode keycode) : m_KeyCode { keycode } {}
+
+        KeyCode m_KeyCode;
     };
 
     class KeyPressedEvent : public KeyEvent {
     public:
-        KeyPressedEvent(int keycode, int keyRepeated) : KeyEvent { keycode }, m_KeyRepeated { keyRepeated } {}
-        inline int GetRepeated() const { return m_KeyRepeated; }
+        KeyPressedEvent(const KeyCode keycode, bool isRepeat = false) : KeyEvent { keycode }, m_IsRepeat { isRepeat } {}
+
+        bool IsRepeat() const { return m_IsRepeat; }
 
         std::string ToString() const override {
             std::stringstream ss;
-            ss << "KeyPressedEvent:\n KeyCode : " << m_Keycode << " KeyRepeated: " << m_KeyRepeated;
+            ss << "KeyPressedEvent: " << m_KeyCode << " (repeat = " << m_IsRepeat << ")";
             return ss.str();
         }
 
         EVENT_CLASS_TYPE(KeyPressed)
-    protected:
-        int m_KeyRepeated;
+    private:
+        bool m_IsRepeat;
     };
 
-    class KeyReleasedEvent : public KeyEvent {
+    class KeyReleaseEvent : public KeyEvent {
     public:
-        KeyReleasedEvent(int keycode) : KeyEvent { keycode } {}
-        EVENT_CLASS_TYPE(KeyReleased)
-
+        KeyReleaseEvent(KeyCode keycode) : KeyEvent { keycode } {}
         std::string ToString() const override {
             std::stringstream ss;
-            ss << "KeyPressedEvent:\n KeyCode : " << m_Keycode;
+            ss << "KeyReleaseEvent:" << m_KeyCode;
             return ss.str();
         }
-
-    protected:
+        EVENT_CLASS_TYPE(KeyReleased);
     };
 
     class KeyTypedEvent : public KeyEvent {
     public:
-        KeyTypedEvent(int keycode) : KeyEvent { keycode } {}
-        EVENT_CLASS_TYPE(KeyTyped)
+        KeyTypedEvent(KeyCode keycode) : KeyEvent { keycode } {}
 
         std::string ToString() const override {
             std::stringstream ss;
-            ss << "KeyTypedEvent:\n KeyCode : " << m_Keycode;
+            ss << "KeyTypedEvent:" << m_KeyCode;
             return ss.str();
         }
-
-    protected:
+        EVENT_CLASS_TYPE(KeyTyped)
     };
 } // namespace Monado

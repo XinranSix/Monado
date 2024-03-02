@@ -6,13 +6,12 @@ add_rules("mode.debug", "mode.release")
 set_languages("c++20")
 
 if is_plat("windows") then
-    -- 由于 msvc 默认不认识 utf-8 编码
-    -- 使用 msvc 是使用添加 /utf-8 标识符
     add_cxflags("/utf-8")
+    add_defines("MND_PLATFORM_WINDOWS")
 end
 
 if is_mode("debug") then
-    add_defines("MND_ENABLE_ASSERTS", "MONADO_PROFILING")
+    add_defines("MND_DEBUG", "MND_PROFILE")
 end
 
 add_includedirs("include")
@@ -37,11 +36,9 @@ target("Monado")
     add_deps("imgui")
     add_packages("opengl", "glfw", "glad", "stb", "glm", "stb", "spdlog")
 
-
 target("sandbox")
     set_kind("binary")
     add_files("test/**.cpp")
-    add_deps("Monado", "imgui")
+    add_deps("Monado")
     add_packages("opengl", "glfw", "glad", "stb", "glm", "stb", "spdlog")
     set_rundir("$(projectdir)")
-

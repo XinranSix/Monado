@@ -1,7 +1,5 @@
 #include "monado/core/log.h"
 
-// #include "hzpch.h"
-
 namespace Monado {
     Log::Log() {}
 
