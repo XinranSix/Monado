@@ -14,6 +14,8 @@ if is_mode("debug") then
     add_defines("MND_DEBUG", "MND_PROFILE")
 end
 
+add_defines("STB_IMAGE_IMPLEMENTATION")
+
 add_includedirs("include")
 
 add_requires("opengl") 
