@@ -52,11 +52,3 @@ target("sandbox")
     add_deps("monado", "editor")
     add_packages("opengl", "glfw", "glad", "stb", "glm", "stb", "spdlog", "entt")
     set_rundir("$(projectdir)")
-
-target("flappyRocket")
-    set_kind("binary")
-    add_files("flappyRocket/**.cpp")
-    add_deps("monado")
-    add_packages("opengl", "glfw", "glad", "stb", "glm", "stb", "spdlog")
-    set_rundir("$(projectdir)")
-
