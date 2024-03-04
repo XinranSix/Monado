@@ -22,6 +22,7 @@ struct VertexOutput
 	//float TexIndex;
 	float TilingFactor;
 };
+
 layout(location = 0) out VertexOutput Output;
 layout(location = 3) out flat float v_TexIndex;
 layout(location = 4) out flat int v_EntityID;
@@ -101,6 +102,6 @@ void main()
 	if (texColor.a == 0.0)
 		discard;
 	o_Color = texColor;
-	//color = texture(u_Textures[int(v_TexIndex)], Input.TexCoord * Input.TilingFactor) * Input.Color;	// ÐÂ
+	//color = texture(u_Textures[int(v_TexIndex)], Input.TexCoord * Input.TilingFactor) * Input.Color;	// ï¿½ï¿½
 	o_EntityID = v_EntityID;
 }

@@ -30,7 +30,6 @@ namespace Monado {
     void Application::Run() {
         while (m_Running) {
 
-            Monado::RenderCommand::Clear();
             // TODO: 这里不应该用glfw的东西
             float time = (float)glfwGetTime();
             Timestep timestep;

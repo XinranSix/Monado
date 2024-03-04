@@ -20,6 +20,7 @@
     #define MND_ENABLE_ASSERTS
 #endif
 
+
 #ifdef MND_ENABLE_ASSERTS
     #include "log.h"
     #define MND_ASSERT(x, ...)                                                                                         \
@@ -27,6 +28,7 @@
             MND_ERROR("Assertion Failed At: {0}", __VA_ARGS__);                                                        \
             __debugbreak();                                                                                            \
         }
+
     #define MND_CORE_ASSERT(x, ...)                                                                                    \
         if (!x) {                                                                                                      \
             MND_ERROR("Assertion Failed At: {0}", __VA_ARGS__);                                                        \

@@ -17,7 +17,7 @@ layout(std140, binding = 0) uniform Camera
 
 struct VertexOutput
 {
-	vec3 LocalPosition; // Êä³öÕâ¸öÎªÁË²»¹Ü´¦ÓÚÈÎºÎÊÀ½ç×ø±ê£¬Ïà¶ÔÓÚÔ²ÐÄµÄ³¤¶È²»±ä
+	vec3 LocalPosition; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½Ë²ï¿½ï¿½Ü´ï¿½ï¿½ï¿½ï¿½Îºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê£¬ï¿½ï¿½ï¿½ï¿½ï¿½Ô²ï¿½ÄµÄ³ï¿½ï¿½È²ï¿½ï¿½ï¿½
 	vec4 Color;
 	float Thickness;
 	float Fade;
@@ -45,7 +45,7 @@ layout(location = 1) out int o_EntityID;
 
 struct VertexOutput
 {
-	vec3 LocalPosition; // Êä³öÕâ¸öÎªÁË¼ÇÂ¼Ô²ÐÄ
+	vec3 LocalPosition; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½Ë¼ï¿½Â¼Ô²ï¿½ï¿½
 	vec4 Color;
 	float Thickness;
 	float Fade;
@@ -57,30 +57,30 @@ layout(location = 4) in flat int v_EntityID;
 void main()
 {
 	/*
-		º¯Êý½âÊÍ£º
-		step(edge0, x); µ±x > edge0£¬·µ»Ø1£¬µ±x < edge0 ·µ»Ø0¡£½×ÌÝº¯Êý
-		smoothstep(edge0, edge1, x);µ±x > edg1Ê±£¬·µ»Ø1£¬µ±x < edg0Ê±£¬·µ»Ø0£¬µ±xÔÚedg0ºÍedg1Ö®¼äÊ±£¬·µ»Øx¡£Æ½»¬µÄ½×ÌÝº¯Êý
-		length(a); ·µ»ØÏòÁ¿aµÄ³¤¶È¡£sqrt(x*x, y*y);
+		ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í£ï¿½
+		step(edge0, x); ï¿½ï¿½x > edge0ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½ï¿½x < edge0 ï¿½ï¿½ï¿½ï¿½0ï¿½ï¿½ï¿½ï¿½ï¿½Ýºï¿½ï¿½ï¿½
+		smoothstep(edge0, edge1, x);ï¿½ï¿½x > edg1Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½ï¿½x < edg0Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½0ï¿½ï¿½ï¿½ï¿½xï¿½ï¿½edg0ï¿½ï¿½edg1Ö®ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½xï¿½ï¿½Æ½ï¿½ï¿½ï¿½Ä½ï¿½ï¿½Ýºï¿½ï¿½ï¿½
+		length(a); ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½aï¿½Ä³ï¿½ï¿½È¡ï¿½sqrt(x*x, y*y);
 
-		LocalPositionÄÃÔ²ÐÄ(0, 0)¡¢ÖÐÐÄµã(0, 0.5)¡¢±ßÔµµã£¨0,1£©ËµÃ÷
+		LocalPositionï¿½ï¿½Ô²ï¿½ï¿½(0, 0)ï¿½ï¿½ï¿½ï¿½ï¿½Äµï¿½(0, 0.5)ï¿½ï¿½ï¿½ï¿½Ôµï¿½ã£¨0,1ï¿½ï¿½Ëµï¿½ï¿½
 		Input.Thickness=1; Input.Fade=0
 		LocalPosition(0, 0);
 			distance = 1 - 0 = 1;
 			circle = smoothstep(0, 0, 1) = 1;
 			cirle = cirle * smoothstep(1 + 0, 1, 1) = 1;
-			ËùÒÔÔ²ÐÄÏñËØÏÔÊ¾
+			ï¿½ï¿½ï¿½ï¿½Ô²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾
 		LocalPosition(0, 0.5);
 			distance = 1 - 0.5 = 0.5;
 			circle = smoothstep(0, 0, 0.5) = 1;
 			cirle = cirle * smoothstep(1 + 0, 1, 1) = 1;
-			ËùÒÔÖÐ¼äµãÏñËØÏÔÊ¾
+			ï¿½ï¿½ï¿½ï¿½ï¿½Ð¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾
 		LocalPosition(0, 1);
 			distance = 1 - 1 = 0;
 			circle = smoothstep(0, 0, 0) = 0;
 			cirle = cirle * smoothstep(1 + 0, 1, 0) = 0;
-			ËùÒÔ±ßÔµµÄÏñËØÍ¸Ã÷²»ÏÔÊ¾
+			ï¿½ï¿½ï¿½Ô±ï¿½Ôµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾
 	*/
-	float distance = 1.0 - length(Input.LocalPosition);// distance = 1-Ô²ÐÄµÄ¾àÀë
+	float distance = 1.0 - length(Input.LocalPosition);// distance = 1-Ô²ï¿½ÄµÄ¾ï¿½ï¿½ï¿½
 	float circle = smoothstep(0.0, Input.Fade, distance);
 	circle *= smoothstep(Input.Thickness + Input.Fade, Input.Thickness, distance);
 	if (circle == 0.0) {

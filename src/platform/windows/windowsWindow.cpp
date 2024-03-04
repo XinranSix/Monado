@@ -15,6 +15,7 @@ namespace Monado {
 
     // 在WindowsWindow子类定义在Window父类声明的函数
     // FIXME: 感觉有问题
+    // 分からない
     Scope<Window> Window::Create(const WindowProps &props) { return CreateScope<WindowsWindow>(props); }
 
     WindowsWindow::WindowsWindow(const WindowProps &props) { Init(props); }
@@ -41,7 +42,7 @@ namespace Monado {
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
 #endif
 
-        m_Window = glfwCreateWindow(m_Data.Width, m_Data.Height, m_Data.Title.c_str(), NULL, NULL);
+        m_Window = glfwCreateWindow(m_Data.Width, m_Data.Height, m_Data.Title.c_str(), nullptr, nullptr);
         MND_ASSERT(m_Window, "Failed to create Windows Window!");
 
         m_Context = new OpenGLContext(m_Window);

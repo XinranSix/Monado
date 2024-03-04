@@ -206,6 +206,7 @@ namespace Monado {
 
         // shader ////////////////////////////////////////////////
         s_Data.QuadShader = Shader::Create("asset/shaders/Renderer2D_Quad.glsl");
+        // s_Data.QuadShader = Shader::Create("asset/shaders/flappyRocket/Shader2D.glsl");
         s_Data.CircleShader = Shader::Create("asset/shaders/Renderer2D_Circle.glsl");
         s_Data.LineShader = Shader::Create("asset/shaders/Renderer2D_Line.glsl");
 
@@ -257,15 +258,14 @@ namespace Monado {
         // s_Data.QuadShader->Bind();		// ��shader
         // s_Data.QuadShader->SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
         // FIXME: 略略略
-         s_Data.CameraBuffer.ViewProjection = camera.GetViewProjectionMatrix();
-         s_Data.CameraUniformBuffer->SetData(&s_Data.CameraBuffer, sizeof(Renderer2DData::CameraData)); 
+        s_Data.CameraBuffer.ViewProjection = camera.GetViewProjectionMatrix();
+        s_Data.CameraUniformBuffer->SetData(&s_Data.CameraBuffer, sizeof(Renderer2DData::CameraData));
 
         StartBatch();
     }
 
     void Renderer2D::EndScene() {
         MND_PROFILE_FUNCTION();
-
         Flush();
     }
 

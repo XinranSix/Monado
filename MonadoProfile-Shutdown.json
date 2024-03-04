@@ -1,0 +1,1 @@
+{"otherData": {},"traceEvents":[{},{"cat":"function","dur":9,"name":"Monado::OpenGLTexture2D::~OpenGLTexture2D(void)","ph":"X","pid":0,"tid":11600,"ts":623977020229.900},{"cat":"function","dur":47428,"name":"void Monado::ImGuiLayer::OnDetach(void)","ph":"X","pid":0,"tid":11600,"ts":623977020296.900}]}
