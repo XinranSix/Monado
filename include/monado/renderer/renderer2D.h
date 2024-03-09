@@ -52,7 +52,7 @@ namespace Monado {
                                     const Ref<SubTexture2D> &subtexture, float tilingFactor = 1.0f,
                                     const glm::vec4 &tintColor = glm::vec4(1.0f));
 
-        // Transform包含position、size，SpriteRendererComponent包含olor、texture
+        // Transform包含position、size，SpriteRendererComponent包含color、texture
         static void DrawSprite(const glm::mat4 &transform, SpriteRendererComponent &src, int entityID);
 
         // 真正绘制的方法- 上面8个 都得调用这两个

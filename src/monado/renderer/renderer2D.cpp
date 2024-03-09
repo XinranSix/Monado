@@ -687,7 +687,7 @@ namespace Monado {
             s_Data.QuadVertexBufferPtr++;
         }
 
-        s_Data.QuadIndexCount += 6; // ÿһ��quad��6������
+        s_Data.QuadIndexCount += 6;
 
         s_Data.Stats.QuadCount++;
     }
@@ -698,7 +698,9 @@ namespace Monado {
             DrawQuad(transform, src.Color, entityID);
         }
     }
+
     void Renderer2D::ResetStats() { memset(&s_Data.Stats, 0, sizeof(Statistics)); }
+
     Renderer2D::Statistics Renderer2D::GetStats() { return s_Data.Stats; }
 
 } // namespace Monado

@@ -158,7 +158,7 @@ namespace Monado {
         auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
         for (auto entity : group) {
             auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-            Renderer2D::DrawQuad(transform.GetTransform(), sprite.Color);
+            Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
         }
         Renderer2D::EndScene();
     }
@@ -174,44 +174,7 @@ namespace Monado {
         return {};
     }
 
-    void Scene::OnUpdate(Timestep ts) {
-        // 获取到主摄像机，并且获取到摄像机的位置，用来计算投影矩阵projection
-        /*       Camera *mainCamera = nullptr;
-              glm::mat4 cameraTransform;
-              {
-                  auto group = m_Registry.view<TransformComponent, CameraComponent>();
-                  for (auto entity : group) {
-                      auto [transform, camera] = group.get<TransformComponent, CameraComponent>(entity);
-
-                      if (camera.primary) {
-                          mainCamera = &camera.camera;
-                          cameraTransform = transform.GetTransform();
-                      }
-                  }
-              }
-              ///
-              // 注意这，BeginScene中传入主摄像机的投影矩阵与主摄像机的transform矩阵
-              if (mainCamera) {
-                  Renderer2D::BeginScene(mainCamera->GetProjection(), cameraTransform);
-                  auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
-                  for (auto entity : group) {
-                      auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-                      Renderer2D::DrawQuad(transform.GetTransform(), sprite.Color);
-                  }
-                  Renderer2D::EndScene();
-              } */
-        /*
-                m_Registry.view<NativeScriptComponent>().each([=, this](auto entity, auto &nsc) {
-                    if (!nsc.Instance) {
-                        nsc.Instance = nsc.InstantiateScript();
-                        nsc.Instance->m_Entity = Entity { entity, this };
-                        // 执行CameraController脚本的OnCreate函数，由虚函数指定
-                        nsc.Instance->OnCreate();
-                    }
-                    // 执行CameraController脚本的OnUpdate函数
-                    nsc.Instance->OnUpdate(ts);
-                }); */
-    }
+    void Scene::OnUpdate(Timestep ts) {}
 
     void Scene::OnViewportResize(uint32_t width, uint32_t height) {
         m_ViewportWidth = width;

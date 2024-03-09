@@ -65,7 +65,7 @@ namespace Monado {
             return false;
         }
 
-        static GLenum HazelFBTextureFormatToGL(FramebufferTextureFormat format) {
+        static GLenum MonadoFBTextureFormatToGL(FramebufferTextureFormat format) {
             switch (format) {
             case FramebufferTextureFormat::RGBA8: return GL_RGBA8;
             case FramebufferTextureFormat::RED_INTEGER: return GL_RED_INTEGER;
@@ -158,8 +158,10 @@ namespace Monado {
 
     void OpenGLFramebuffer::Bind() {
         glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
-        // FIXME: 存疑
         glViewport(0, 0, m_Specification.Width, m_Specification.Height);
+
+        int value { -1 };
+        glClearTexImage(m_ColorAttachments[1], 0, GL_RED_INTEGER, GL_INT, &value);
     }
 
     void OpenGLFramebuffer::Unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
@@ -188,7 +190,7 @@ namespace Monado {
         MND_CORE_ASSERT((attachmentIndex < m_ColorAttachments.size()), "asdas");
 
         auto &spec = m_ColorAttachmentSpecifications[attachmentIndex];
-        glClearTexImage(m_ColorAttachments[attachmentIndex], 0, Utils::HazelFBTextureFormatToGL(spec.TextureFormat),
+        glClearTexImage(m_ColorAttachments[attachmentIndex], 0, Utils::MonadoFBTextureFormatToGL(spec.TextureFormat),
                         GL_INT, &value);
     }
 
