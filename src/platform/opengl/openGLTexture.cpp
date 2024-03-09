@@ -39,7 +39,7 @@ namespace Monado {
             /*
             ·���������귵�ش�С��ͨ��rgb��rbga�����ص��ַ���ָ��ָ��ľ��Ƕ�ȡ������ͼƬ���ݣ�
     */
-            // MND_PROFILE_SCOPE("stbi_load - OpenGLTexture2D::OpenGLTexture2D(const std::string&)");
+             MND_PROFILE_SCOPE("stbi_load - OpenGLTexture2D::OpenGLTexture2D(const std::string&)");
             data = stbi_load(path.c_str(), &width, &height, &channels, 0);
         }
         // �Է�����png��ͼƬ�ļ���������

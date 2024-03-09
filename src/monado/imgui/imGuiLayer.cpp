@@ -12,14 +12,16 @@
 #include "GLFW/glfw3.h"
 // clang-format on
 
+#include "ImGuizmo.h"
+
 namespace Monado {
-    ImGuiLayer::ImGuiLayer() : Layer { "ImGuiLayer" } {}
+    ImGuiLayer::ImGuiLayer() : Layer("ImGuiLayer") {}
 
     ImGuiLayer::~ImGuiLayer() {}
 
     void ImGuiLayer::OnAttach() {
         MND_PROFILE_FUNCTION();
-
+        // std::cout << "����ImGuiLayer��OnAttach����" << std::endl;
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
 
@@ -29,6 +31,7 @@ namespace Monado {
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
         io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
+        // ����UI�����ý�����������
         io.Fonts->AddFontFromFileTTF("asset/font/OpenSans/OpenSans-Bold.ttf", 18.0f);
         io.FontDefault = io.Fonts->AddFontFromFileTTF("asset/font/OpenSans/OpenSans-Regular.ttf", 18.0f);
 
@@ -57,56 +60,28 @@ namespace Monado {
     }
 
     void ImGuiLayer::OnEvent(Event &e) {
-#if 0
-// FIXME: 临时的
-        /*
-        m_BlockEvents��false-> ���ڲ������¼���viewport����ܽ��չ����¼�
-        m_BlockEvents��true->  ����  �����¼���viewport��岻�ܽ��չ����¼�
-        */
         if (m_BlockEvents) {
-            /*
-                    imgui���ڻ������������¼�����ImGuiLayer���ڴ������������¼������ᴫ�����һ����OnEvent��
-                    ��ΪApplication��onevent�����˴��ڹ������ͻ�����
-                    for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();) {
-                            if (e.Handled)
-                                    break;
-                            (*--it)->OnEvent(e);
-                    }
-            */
             ImGuiIO &io = ImGui::GetIO();
-            e.Handled |= e.IsInCategory(EventCategoryMouse) &
-                         io.WantCaptureMouse; // e.Handled = e.handled | true & true; ���Ϊtrue������������application ��
-                                              // event������
+            e.Handled |= e.IsInCategory(EventCategoryMouse) & io.WantCaptureMouse;
             e.Handled |= e.IsInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
-
-    }
-#endif
-
-        // 只有鼠标在Viewport窗口上、且窗口被Focus时, Viewport窗口才可以接收到Event
-        if (!(m_ViewportFocused /* && m_ViewportHovered*/)) { // Viewport区域以外的Event会被ImGui接受
-            e.Handled = true;
         }
-        EventDispatcher dispatcher(e);
-        dispatcher.Dispatch<MouseButtonPressedEvent>(
-            std::bind(&ImGuiLayer::OnMouseButtonPressed, this, std::placeholders::_1));
-        dispatcher.Dispatch<MouseButtonReleasedEvent>(
-            std::bind(&ImGuiLayer::OnMouseButtonReleased, this, std::placeholders::_1));
-        dispatcher.Dispatch<MouseMovedEvent>(std::bind(&ImGuiLayer::OnMouseCursorMoved, this, std::placeholders::_1));
     }
-
     void ImGuiLayer::Begin() {
         MND_PROFILE_FUNCTION();
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        ImGuizmo::BeginFrame();
     }
 
     void ImGuiLayer::End() {
         MND_PROFILE_FUNCTION();
-        ImGuiIO &io = ImGui::GetIO();
-        // Application &app = Application::Get();
-        // io.DisplaySize = ImVec2((float)app.GetWindow().GetWidth(), (float)app.GetWindow().GetHeight());
 
+        ImGuiIO &io = ImGui::GetIO();
+        Application &app = Application::Get();
+        io.DisplaySize = ImVec2((float)app.GetWindow().GetWidth(), (float)app.GetWindow().GetHeight());
+
+        // Rendering
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -148,28 +123,9 @@ namespace Monado {
         colors[ImGuiCol_TitleBgActive] = ImVec4 { 0.15f, 0.1505f, 0.151f, 1.0f };
         colors[ImGuiCol_TitleBgCollapsed] = ImVec4 { 0.15f, 0.1505f, 0.151f, 1.0f };
     }
-
     void ImGuiLayer::OnImGuiRender() {
-        static bool show = true;
-        ImGui::ShowDemoWindow(&show);
-    }
-
-    bool ImGuiLayer::OnMouseCursorMoved(MouseMovedEvent &e) {
-        ImGuiIO &io = ImGui::GetIO();
-        io.MousePos = ImVec2((float)e.GetX(), (float)e.GetY());
-        return true;
-    }
-
-    bool ImGuiLayer::OnMouseButtonPressed(MouseButtonPressedEvent &e) {
-        ImGuiIO &io = ImGui::GetIO();
-        io.MouseDown[e.GetMouseButton()] = 1;
-        return true;
-    }
-
-    bool ImGuiLayer::OnMouseButtonReleased(MouseButtonReleasedEvent &e) {
-        ImGuiIO &io = ImGui::GetIO();
-        io.MouseDown[e.GetMouseButton()] = 0;
-        return true;
+        // static bool show = true;
+        // ImGui::ShowDemoWindow(&show);
     }
 
 } // namespace Monado

@@ -31,3 +31,9 @@
 # others
 /**/.xmake
 /**/.cache
+
+/**/MonadoProfile-Runtime.json 
+/**/MonadoProfile-Shutdown.json 
+/**/MonadoProfile-Startup.json
+/**/imgui.ini
+

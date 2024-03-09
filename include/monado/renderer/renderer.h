@@ -8,6 +8,7 @@ namespace Monado {
 
     class Renderer {
     public:
+        // ´ÓÉãÏñ»ú¿ªÊ¼
         static void Init();
         static void Shutdown();
         static void OnWindowResize(uint32_t width, uint32_t height);

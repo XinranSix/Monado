@@ -19,26 +19,21 @@ namespace Monado {
         void Begin();
         void End();
 
-        void SetViewportFocusedStatus(bool b) { m_ViewportFocused = b; }
-        void SetViewportHoveredStatus(bool b) { m_ViewportHovered = b; }
-
         void BlockEvents(bool block) { m_BlockEvents = block; }
 
         void SetDarkThemeColors();
 
     private:
-        // FIXME: 临时的
+      /*   // FIXME: 临时的
         bool OnMouseCursorMoved(MouseMovedEvent &e);
 
         bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
 
         bool OnMouseButtonReleased(MouseButtonReleasedEvent &e);
-
+ */
     private:
         bool m_BlockEvents = true;
         float m_Time = 0.0f;
-        bool m_ViewportFocused;
-        bool m_ViewportHovered;
     };
 
 } // namespace Monado

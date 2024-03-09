@@ -150,7 +150,7 @@ namespace Monado {
             glDrawBuffer(GL_NONE);
         }
 
-        MND_CORE_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+        MND_CORE_ASSERT((glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE),
                         "Framebuffer is incomplete!");
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -158,6 +158,7 @@ namespace Monado {
 
     void OpenGLFramebuffer::Bind() {
         glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
+        // FIXME: 存疑
         glViewport(0, 0, m_Specification.Width, m_Specification.Height);
     }
 
@@ -184,7 +185,7 @@ namespace Monado {
     }
 
     void OpenGLFramebuffer::ClearAttachment(uint32_t attachmentIndex, int value) {
-        MND_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "asdas");
+        MND_CORE_ASSERT((attachmentIndex < m_ColorAttachments.size()), "asdas");
 
         auto &spec = m_ColorAttachmentSpecifications[attachmentIndex];
         glClearTexImage(m_ColorAttachments[attachmentIndex], 0, Utils::HazelFBTextureFormatToGL(spec.TextureFormat),

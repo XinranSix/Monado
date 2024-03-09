@@ -29,19 +29,17 @@ namespace Monado {
         // Editor-only;
         int EntityID;
     };
-
     struct LineVertex {
         glm::vec3 Position;
         glm::vec4 Color;
         // Editor-only;
         int EntityID;
     };
-
     struct Renderer2DData {
         static const uint32_t MaxQuads = 20000;
         static const uint32_t MaxVertices = MaxQuads * 4;
         static const uint32_t MaxIndices = MaxQuads * 6;
-        static const uint32_t MaxTextureSlots = 32;
+        static const uint32_t MaxTextureSlots = 32; // ������������
 
         // quad
         Ref<VertexArray> QuadVertexArray;
@@ -60,39 +58,36 @@ namespace Monado {
         Ref<Shader> LineShader;
 
         // quad
-        uint32_t QuadIndexCount {};
-        QuadVertex *QuadVertexBufferBase {};
-        QuadVertex *QuadVertexBufferPtr {};
+        uint32_t QuadIndexCount = 0;
+        QuadVertex *QuadVertexBufferBase = nullptr;
+        QuadVertex *QuadVertexBufferPtr = nullptr;
 
         // circle
-        uint32_t CircleIndexCount {};
-        CircleVertex *CircleVertexBufferBase {};
-        CircleVertex *CircleVertexBufferPtr {};
+        uint32_t CircleIndexCount = 0;
+        CircleVertex *CircleVertexBufferBase = nullptr;
+        CircleVertex *CircleVertexBufferPtr = nullptr;
 
         // Line
-        uint32_t LineVertexCount {};
-        LineVertex *LineVertexBufferBase {};
-        LineVertex *LineVertexBufferPtr {};
+        uint32_t LineVertexCount = 0; // ֻ��Ҫ�ṩ��������
+        LineVertex *LineVertexBufferBase = nullptr;
+        LineVertex *LineVertexBufferPtr = nullptr;
 
-        float LineWidth { 2.0f };
+        float LineWidth = 2.0f;
 
         std::array<Ref<Texture2D>, MaxTextureSlots> TextureSlots;
-        uint32_t TextureSlotIndex { 1 }; // 0 �Ÿ���ɫ����
+        uint32_t TextureSlotIndex = 1; // 0 �Ÿ���ɫ����
 
-        glm::vec4 QuadVertexPosition[4] {};
+        glm::vec4 QuadVertexPosition[4];
 
         Renderer2D::Statistics Stats;
 
         struct CameraData {
             glm::mat4 ViewProjection;
         };
-
         CameraData CameraBuffer;
         Ref<UniformBuffer> CameraUniformBuffer;
     };
-
     static Renderer2DData s_Data;
-
     void Renderer2D::Init() {
         MND_PROFILE_FUNCTION();
 
@@ -206,7 +201,6 @@ namespace Monado {
 
         // shader ////////////////////////////////////////////////
         s_Data.QuadShader = Shader::Create("asset/shaders/Renderer2D_Quad.glsl");
-        // s_Data.QuadShader = Shader::Create("asset/shaders/flappyRocket/Shader2D.glsl");
         s_Data.CircleShader = Shader::Create("asset/shaders/Renderer2D_Circle.glsl");
         s_Data.LineShader = Shader::Create("asset/shaders/Renderer2D_Line.glsl");
 
@@ -257,7 +251,6 @@ namespace Monado {
         // �Ѿ�����vulkan��glsl����������Ǵ���
         // s_Data.QuadShader->Bind();		// ��shader
         // s_Data.QuadShader->SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
-        // FIXME: 略略略
         s_Data.CameraBuffer.ViewProjection = camera.GetViewProjectionMatrix();
         s_Data.CameraUniformBuffer->SetData(&s_Data.CameraBuffer, sizeof(Renderer2DData::CameraData));
 
@@ -266,6 +259,7 @@ namespace Monado {
 
     void Renderer2D::EndScene() {
         MND_PROFILE_FUNCTION();
+
         Flush();
     }
 
@@ -588,6 +582,7 @@ namespace Monado {
     void Renderer2D::DrawRotatedQuad(const glm::vec3 &position, const glm::vec2 &size, float rotation,
                                      const Ref<Texture2D> &texture, float tilingFactor, const glm::vec4 &tintColor) {
         MND_PROFILE_FUNCTION();
+
         constexpr size_t quadVertexCount = 4;
         constexpr glm::vec2 textureCoords[] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
 
@@ -654,7 +649,7 @@ namespace Monado {
     void Renderer2D::DrawRotatedQuad(const glm::vec3 &position, const glm::vec2 &size, float rotation,
                                      const Ref<SubTexture2D> &subtexture, float tilingFactor,
                                      const glm::vec4 &tintColor) {
-        // MND_PROFILE_FUNCTION();
+        MND_PROFILE_FUNCTION();
 
         constexpr size_t quadVertexCount = 4;
         const glm::vec2 *textureCoords = subtexture->GetTexCoords();
@@ -696,13 +691,13 @@ namespace Monado {
 
         s_Data.Stats.QuadCount++;
     }
-    // void Renderer2D::DrawSprite(const glm::mat4 &transform, SpriteRendererComponent &src, int entityID) {
-    //     if (src.Texture) {
-    //         DrawQuad(transform, src.Texture, src.TilingFactor, src.Color, entityID);
-    //     } else {
-    //         DrawQuad(transform, src.Color, entityID);
-    //     }
-    // }
+    void Renderer2D::DrawSprite(const glm::mat4 &transform, SpriteRendererComponent &src, int entityID) {
+        if (src.Texture) {
+            DrawQuad(transform, src.Texture, src.TilingFactor, src.Color, entityID);
+        } else {
+            DrawQuad(transform, src.Color, entityID);
+        }
+    }
     void Renderer2D::ResetStats() { memset(&s_Data.Stats, 0, sizeof(Statistics)); }
     Renderer2D::Statistics Renderer2D::GetStats() { return s_Data.Stats; }
 

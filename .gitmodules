@@ -10,3 +10,9 @@
 [submodule "extern/nlohmann"]
 	path = extern/nlohmann
 	url = https://github.com/nlohmann/json.git
+[submodule "extern/yaml-cpp"]
+	path = extern/yaml-cpp
+	url = https://github.com/TheCherno/yaml-cpp
+[submodule "extern/rttr"]
+	path = extern/rttr
+	url = https://github.com/rttrorg/rttr.git

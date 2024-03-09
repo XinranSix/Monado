@@ -1,14 +1,26 @@
 #pragma once
 
+#include "glm/fwd.hpp"
 #include "particleSystem.h"
 #include "monado/core/layer.h"
 #include "monado/event/event.h"
 #include "monado/event/keyEvent.h"
 #include "monado/event/mouseEvent.h"
-
-// #include "Panels/SceneHierarchyPanel.h"
-// #include "Panels/ContentBrowserPanel.h"
-// #include "Hazel/Renderer/EditorCamera.h"
+#include "monado/core/core.h"
+#include "monado/renderer/orthographicCameraController.h"
+#include "monado/renderer/framebuffer.h"
+#include "monado/renderer/subTexture2D.h"
+#include "monado/renderer/renderCommand.h"
+#include "monado/renderer/renderer2D.h"
+#include "monado/renderer/texture.h"
+#include "monado/debug/instrumentor.h"
+#include "monado/renderer/shader.h"
+#include "glm/gtc/type_ptr.hpp"
+#include "monado/scene/scene.h"
+#include "monado/scene/entity.h"
+#include "monado/scene/components.h"
+#include "editor/panels/sceneHierarchyPanel.h"
+#include "monado/scene/sceneSerializer.h"
 
 namespace Monado {
     class EditorLayer : public Layer {
@@ -32,60 +44,48 @@ namespace Monado {
         void OpenScene();
         void OpenScene(const std::filesystem::path &path);
         void SaveSceneAs();
-        void SaveCurScene(); // ���浱ǰ����
+        void SaveCurScene();
 
-        // void SerializeScene(Ref<Scene> scene, const std::filesystem::path &path);
+        void SerializeScene(Ref<Scene> scene, const std::filesystem::path &path);
 
         void OnScenePlay();
         void OnSceneSimulate();
         void OnSceneStop();
-        // ����ʵ��
         void OnDuplicateEntity();
 
         // UI Panels
         void UI_Toolbar();
 
     private:
-        /*    OrthographicCameraController m_CameraController;
-           Ref<Shader> m_FlatShader; // shader�� ָ��
-           Ref<VertexArray> m_FlatVertexArray;
-           Ref<Texture2D> m_SquareTexture; // ��������
-           Ref<Framebuffer> m_Framebuffer; // ֡����
-           // ��ǰ�����
-           Ref<Scene> m_ActiveScene;
-           // ��ǰ�༭����
-           Ref<Scene> m_EditorScene;
-           Entity m_SquareEntity; // ʵ�壬��scene������
-           Entity m_CameraEntity; // �����ʵ��
-           Entity m_SecondCamera; // �����ʵ��
+        OrthographicCameraController m_CameraController;
+        Ref<Shader> m_FlatShader;
+        Ref<VertexArray> m_FlatVertexArray;
+        Ref<Texture2D> m_CheckerboardTexture;
+        Ref<Framebuffer> m_Framebuffer;
 
-           Entity m_HoveredEntity; // ��굱ǰλ�õ�ʵ��
+        Ref<Scene> m_ActiveScene;
 
-           bool m_PrimaryCamera = true;
+        Ref<Scene> m_EditorScene;
+        Entity m_SquareEntity;
+        Entity m_CameraEntity;
+        Entity m_SecondCamera;
 
-           EditorCamera m_EditorCamera;
+        Entity m_HoveredEntity;
 
-           glm::vec2 m_ViewportSize = { 0.0f, 0.0f };
+        bool m_PrimaryCamera { true };
 
-           bool m_ViewportFocused = false, m_ViewportHovered = false;
+        EditorCamera m_EditorCamera;
 
-           //
-           SceneHierarchyPanel m_SceneHierarchyPanel;
-           ContentBrowserPanel m_ContentBrowserPanel;
+        glm::vec2 m_ViewportSize { 0.0f, 0.0f };
 
-           // imguizmo�滭������
-           int m_GizmoType = 0;
+        bool m_ViewportFocused {}, m_ViewportHovered {};
 
-           // Ϊ�˻�ȡ���λ��-�õ����ڵı߽�
-           glm::vec2 m_ViewportBounds[2]; // [0]�����Ͻǵ����꣬[1]�����½ǵ�����
+        SceneHierarchyPanel m_SceneHierarchyPanel;
 
-           glm::vec4 m_FlatColor = { 0.2f, 0.3f, 0.8f, 1.0f };
+        glm::vec4 m_FlatColor { 0.2f, 0.3f, 0.8f, 1.0f };
+        glm::vec4 m_SquareColor { 0.2f, 0.3f, 0.8f, 1.0f };
 
-           // ������ͣ��ť
-           enum class SceneState { Edit = 0, Play = 1, Simulate = 2 };
-           SceneState m_SceneState = SceneState::Edit;
-           Ref<Texture2D> m_IconPlay, m_IconSimulate, m_IconStop;
-
-           bool m_ShowPhysicsColliders = false; */
+        int m_GizmoType { -1 };
+        glm::vec2 m_ViewportBounds[2];
     };
 } // namespace Monado
