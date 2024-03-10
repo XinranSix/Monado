@@ -38,7 +38,7 @@ namespace Monado {
         if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight |
                                                   ImGuiPopupFlags_NoOpenOverExistingPopup)) {
             if (ImGui::MenuItem("Create Empty Entity"))
-                m_Context->CreateEnitty("Empty Entity");
+                m_Context->CreateEntity("Empty Entity");
 
             ImGui::EndPopup();
         }
@@ -217,11 +217,11 @@ namespace Monado {
             DisplayAddComponentEntry<CameraComponent>("Camera");
             // DisplayAddComponentEntry<ScriptComponent>("Script");
             DisplayAddComponentEntry<SpriteRendererComponent>("Sprite Renderer");
-            //            DisplayAddComponentEntry<CircleRendererComponent>("Circle Renderer");
-            /*       DisplayAddComponentEntry<Rigidbody2DComponent>("Rigidbody 2D");
-                  DisplayAddComponentEntry<BoxCollider2DComponent>("Box Collider 2D");
-                  DisplayAddComponentEntry<CircleCollider2DComponent>("Circle Collider 2D");
-                  DisplayAddComponentEntry<TextComponent>("Text Component"); */
+            //        DisplayAddComponentEntry<CircleRendererComponent>("Circle Renderer");
+            DisplayAddComponentEntry<Rigidbody2DComponent>("Rigidbody 2D");
+            DisplayAddComponentEntry<BoxCollider2DComponent>("Box Collider 2D");
+            /*    DisplayAddComponentEntry<CircleCollider2DComponent>("Circle Collider 2D");
+               DisplayAddComponentEntry<TextComponent>("Text Component"); */
             ImGui::EndPopup();
         }
 
@@ -236,9 +236,9 @@ namespace Monado {
         });
 
         DrawComponent<CameraComponent>("Camera", entity, [](auto &component) {
-            auto &camera = component.camera;
+            auto &camera = component.Camera;
 
-            ImGui::Checkbox("Primary", &component.primary);
+            ImGui::Checkbox("Primary", &component.Primary);
 
             const char *projectionTypeStrings[] = { "Perspective", "Orthographic" };
             const char *currentProjectionTypeString = projectionTypeStrings[(int)camera.GetProjectionType()];
@@ -284,7 +284,7 @@ namespace Monado {
                 if (ImGui::DragFloat("Far", &orthoFar))
                     camera.SetOrthographicFarClip(orthoFar);
 
-                ImGui::Checkbox("Fixed Aspect Ratio", &component.fixedAspectRatio);
+                ImGui::Checkbox("Fixed Aspect Ratio", &component.FixedAspectRatio);
             }
         });
 
@@ -371,35 +371,36 @@ namespace Monado {
              ImGui::DragFloat("Fade", &component.Fade, 0.00025f, 0.0f, 1.0f);
          });*/
 
-        /*  DrawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, [](auto &component) {
-             const char *bodyTypeStrings[] = { "Static", "Dynamic", "Kinematic" };
-             const char *currentBodyTypeString = bodyTypeStrings[(int)component.Type];
-             if (ImGui::BeginCombo("Body Type", currentBodyTypeString)) {
-                 for (int i = 0; i < 2; i++) {
-                     bool isSelected = currentBodyTypeString == bodyTypeStrings[i];
-                     if (ImGui::Selectable(bodyTypeStrings[i], isSelected)) {
-                         currentBodyTypeString = bodyTypeStrings[i];
-                         component.Type = (Rigidbody2DComponent::BodyType)i;
-                     }
+        DrawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, [](auto &component) {
+            const char *bodyTypeStrings[] = { "Static", "Dynamic", "Kinematic" };
+            const char *currentBodyTypeString = bodyTypeStrings[(int)component.Type];
+            if (ImGui::BeginCombo("Body Type", currentBodyTypeString)) {
+                for (int i = 0; i < 2; i++) {
+                    bool isSelected = currentBodyTypeString == bodyTypeStrings[i];
+                    if (ImGui::Selectable(bodyTypeStrings[i], isSelected)) {
+                        currentBodyTypeString = bodyTypeStrings[i];
+                        component.Type = (Rigidbody2DComponent::BodyType)i;
+                    }
 
-                     if (isSelected)
-                         ImGui::SetItemDefaultFocus();
-                 }
+                    if (isSelected)
+                        ImGui::SetItemDefaultFocus();
+                }
 
-                 ImGui::EndCombo();
-             }
+                ImGui::EndCombo();
+            }
 
-             ImGui::Checkbox("Fixed Rotation", &component.FixedRotation);
-         }); */
+            ImGui::Checkbox("Fixed Rotation", &component.FixedRotation);
+        });
 
-        /*    DrawComponent<BoxCollider2DComponent>("Box Collider 2D", entity, [](auto &component) {
-               ImGui::DragFloat2("Offset", glm::value_ptr(component.Offset));
-               ImGui::DragFloat2("Size", glm::value_ptr(component.Size));
-               ImGui::DragFloat("Density", &component.Density, 0.01f, 0.0f, 1.0f);
-               ImGui::DragFloat("Friction", &component.Friction, 0.01f, 0.0f, 1.0f);
-               ImGui::DragFloat("Restitution", &component.Restitution, 0.01f, 0.0f, 1.0f);
-               ImGui::DragFloat("Restitution Threshold", &component.RestitutionThreshold, 0.01f, 0.0f);
-           }); */
+        DrawComponent<BoxCollider2DComponent>("Box Collider 2D", entity, [](auto &component) {
+            ImGui::DragFloat2("Offset", glm::value_ptr(component.Offset));
+            ImGui::DragFloat2("Size", glm::value_ptr(component.Size));
+            ImGui::DragFloat("Density", &component.Density, 0.01f, 0.0f, 1.0f);
+            ImGui::DragFloat("Friction", &component.Friction, 0.01f, 0.0f, 1.0f);
+            ImGui::DragFloat("Restitution", &component.Restitution, 0.01f, 0.0f, 1.0f);
+            ImGui::DragFloat("Restitution Threshold", &component.RestitutionThreshold, 0.01f, 0.0f);
+        });
+
         /*
                 DrawComponent<CircleCollider2DComponent>("Circle Collider 2D", entity, [](auto &component) {
                     ImGui::DragFloat2("Offset", glm::value_ptr(component.Offset));

@@ -68,9 +68,9 @@ namespace Monado {
     // };
 
     struct CameraComponent {
-        SceneCamera camera;
-        bool primary { true };
-        bool fixedAspectRatio { false };
+        SceneCamera Camera;
+        bool Primary { true };
+        bool FixedAspectRatio { false };
 
         CameraComponent() = default;
         // CameraComponent(const glm::mat4 &projection) : camera { projection } {}
@@ -96,36 +96,31 @@ namespace Monado {
         }
     };
 
-    // ����
-    // TODO: 待完善
-    /*  struct Rigidbody2DComponent {
-         enum class BodyType { Static = 0, Dynamic, Kinematic };
-         BodyType Type = BodyType::Static;
-         bool FixedRotation = false;
+    struct Rigidbody2DComponent {
+        enum class BodyType { Static = 0, Dynamic, Kinematic };
+        BodyType Type = BodyType::Static;
+        bool FixedRotation = false;
 
-         // ����ʱ���������������
-         void *RuntimeBody = nullptr;
-         Rigidbody2DComponent() = default;
-         Rigidbody2DComponent(const Rigidbody2DComponent &) = default;
-     }; */
-    // Box��Χ��
-    // TODO: 待完善
-    /*  struct BoxCollider2DComponent {
-         glm::vec2 Offset = { 0.0f, 0.0f };
-         glm::vec2 Size = { 0.5f, 0.5f };
+        void *RuntimeBody = nullptr;
+        Rigidbody2DComponent() = default;
+        Rigidbody2DComponent(const Rigidbody2DComponent &) = default;
+    };
 
-         // TODO:�Ƶ���������
-         float Density = 1.0f;              // �ܶ�,0�Ǿ�̬������
-         float Friction = 0.5f;             // Ħ����
-         float Restitution = 0.0f;          // ������0���ᵯ����1���޵���
-         float RestitutionThreshold = 0.5f; // ��ԭ�ٶ���ֵ����������ٶȵ���ײ�ͻᱻ�ָ�ԭ״���ᷴ������
+    struct BoxCollider2DComponent {
+        glm::vec2 Offset = { 0.0f, 0.0f };
+        glm::vec2 Size = { 0.5f, 0.5f };
 
-         // ����ʱ������������ÿһ֡�������������ܻ�䣬���Ա���Ϊ����,��δʹ��
-         void *RuntimeFixture = nullptr;
+        float Density = 1.0f;
+        float Friction = 0.5f;
+        float Restitution = 0.0f;
+        float RestitutionThreshold = 0.5f;
 
-         BoxCollider2DComponent() = default;
-         BoxCollider2DComponent(const BoxCollider2DComponent &) = default;
-     }; */
+        void *RuntimeFixture = nullptr;
+
+        BoxCollider2DComponent() = default;
+        BoxCollider2DComponent(const BoxCollider2DComponent &) = default;
+    };
+
     // TODO: 待完善
     // Circle��Χ��
     /* struct CircleCollider2DComponent {
@@ -159,5 +154,5 @@ namespace Monado {
                                              CameraComponent, ScriptComponent, NativeScriptComponent,
        Rigidbody2DComponent, BoxCollider2DComponent, CircleCollider2DComponent>; */
     using AllComponents = ComponentGroup<TransformComponent, SpriteRendererComponent, CameraComponent, ScriptableEntity,
-                                         NativeScriptComponent>;
+                                         NativeScriptComponent, Rigidbody2DComponent, BoxCollider2DComponent>;
 } // namespace Monado

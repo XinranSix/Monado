@@ -5,14 +5,13 @@
 #include "entt/entt.hpp"
 #include <cstdint>
 
+class b2World;
+
 namespace Monado {
     class Entity;
     class SceneHierarchyPanel;
     class SerializeEntity;
     class Scene {
-        friend class Entity;
-        friend class SceneHierarchyPanel;
-        friend class SceneSerializer;
 
     public:
         Scene();
@@ -22,12 +21,11 @@ namespace Monado {
 
         void DuplicateEntity(Entity entity);
 
-        Entity CreateEnitty(std::string name);
+        Entity CreateEntity(std::string name);
 
         void DestroyEntity(Entity entity);
 
         void OnRuntimeStart();
-
         void OnRuntimeStop();
 
         void OnSimulationStart();
@@ -62,5 +60,11 @@ namespace Monado {
         std::string filepath;
         entt::registry m_Registry; // entt提供的注册表
         uint32_t m_ViewportWidth, m_ViewportHeight;
+
+        b2World *m_PhysicsWorld {};
+
+        friend class Entity;
+        friend class SceneHierarchyPanel;
+        friend class SceneSerializer;
     };
 } // namespace Monado
