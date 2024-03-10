@@ -61,7 +61,7 @@ namespace Monado {
         OrthographicCameraController m_CameraController;
         Ref<Shader> m_FlatShader;
         Ref<VertexArray> m_FlatVertexArray;
-        Ref<Texture2D> m_CheckerboardTexture;
+        Ref<Texture2D> m_CheckerboardTexture, m_IconPlay, m_IconStop;
         Ref<Framebuffer> m_Framebuffer;
 
         Ref<Scene> m_ActiveScene;
@@ -89,5 +89,9 @@ namespace Monado {
 
         int m_GizmoType { -1 };
         glm::vec2 m_ViewportBounds[2];
+
+        enum class SceneState { Edit = 0, Play = 1 };
+
+        SceneState m_SceneState = SceneState::Edit;
     };
 } // namespace Monado

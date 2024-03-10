@@ -34,6 +34,8 @@ namespace Monado {
         MND_PROFILE_FUNCTION();
 
         m_CheckerboardTexture = Monado::Texture2D::Create("asset/textures/Checkerboard.png");
+        m_IconPlay = Monado::Texture2D::Create("asset/icons/PlayButton.png");
+        m_IconStop = Monado::Texture2D::Create("asset/icons/StopButton.png");
 
         Monado::FramebufferSpecification fbSpec;
         fbSpec.Width = 1600.0f;
@@ -80,7 +82,10 @@ namespace Monado {
         // Clear out entity ID attachment to -1
         m_Framebuffer->ClearAttachment(1, -1);
 
-        m_ActiveScene->OnUpdateEditor(ts, m_EditorCamera);
+        switch (m_SceneState) {
+        case SceneState::Edit: m_ActiveScene->OnUpdateEditor(ts, m_EditorCamera); break;
+        case SceneState::Play: m_ActiveScene->OnUpdateRuntime(ts); break;
+        }
 
         auto [mx, my] = ImGui::GetMousePos();
         mx -= m_ViewportBounds[0].x;
@@ -269,12 +274,39 @@ namespace Monado {
         }
 
         ImGui::End();
-
         ImGui::PopStyleVar();
+
+        UI_Toolbar();
         ImGui::End();
     }
 
-    void EditorLayer::UI_Toolbar() {}
+    void EditorLayer::UI_Toolbar() {
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 2 });
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, { 0, 0 });
+        ImGui::PushStyleColor(ImGuiCol_Button, { 0, 0, 0, 0 });
+        auto &colors = ImGui::GetStyle().Colors;
+        const auto &buttonHovered = colors[ImGuiCol_ButtonHovered];
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f });
+        const auto &buttonActive = colors[ImGuiCol_ButtonActive];
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, { buttonActive.x, buttonActive.y, buttonActive.z, 0.5f });
+
+        ImGui::Begin("##toolbar", nullptr,
+                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+        float size = ImGui::GetWindowHeight() - 4.0f;
+        Ref<Texture2D> icon = m_SceneState == SceneState::Edit ? m_IconPlay : m_IconStop;
+        ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
+        if (ImGui::ImageButton((ImTextureID)icon->GetRendererID(), { size, size }, { 0, 0 }, { 1, 1 })) {
+            if (m_SceneState == SceneState::Edit) {
+                OnScenePlay();
+            } else if (m_SceneState == SceneState::Play) {
+                OnSceneStop();
+            }
+        }
+        ImGui::PopStyleVar(2);
+        ImGui::PopStyleColor(3);
+        ImGui::End();
+    }
 
     void EditorLayer::OnEvent(Monado::Event &e) {
         MND_TRACE("{0}", e);
@@ -384,8 +416,11 @@ namespace Monado {
         SceneSerializer serializer(scene);
         serializer.Serialize(path.string());
     }
-    void EditorLayer::OnScenePlay() {}
+    void EditorLayer::OnScenePlay() { m_SceneState = SceneState::Play; }
+
     void EditorLayer::OnSceneSimulate() {}
-    void EditorLayer::OnSceneStop() {}
+
+    void EditorLayer::OnSceneStop() { m_SceneState = SceneState::Edit; }
+
     void EditorLayer::OnDuplicateEntity() {}
 } // namespace Monado
