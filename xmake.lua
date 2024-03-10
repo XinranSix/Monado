@@ -19,19 +19,19 @@ add_defines("STB_IMAGE_IMPLEMENTATION")
 
 add_includedirs("include")
 
-package("yaml-cpp")
-    add_deps("cmake")
-    set_sourcedir(path.join(os.scriptdir(), "extern/yaml-cpp"))
-    on_install(function (package)
-        local configs = {}
-        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
-        -- table.insert(configs, "-DBUILD_SHARED_LIBS=OFF" .. (package:config("shared") and "ON" or "OFF"))
-        table.insert(configs, "-DBUILD_SHARED_LIBS=ON")
-        -- table.insert(configs, "-DYAML_CPP_MAIN_PROJECT=OFF")
-        -- table.insert(configs, "-DYAML_BUILD_SHARED_LIBS=OFF")
-        import("package.tools.cmake").install(package, configs)
-    end)
-package_end()
+-- package("yaml-cpp")
+--     add_deps("cmake")
+--     set_sourcedir(path.join(os.scriptdir(), "extern/yaml-cpp"))
+--     on_install(function (package)
+--         local configs = {}
+--         table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
+--         -- table.insert(configs, "-DBUILD_SHARED_LIBS=OFF" .. (package:config("shared") and "ON" or "OFF"))
+--         table.insert(configs, "-DBUILD_SHARED_LIBS=ON")
+--         -- table.insert(configs, "-DYAML_CPP_MAIN_PROJECT=OFF")
+--         -- table.insert(configs, "-DYAML_BUILD_SHARED_LIBS=OFF")
+--         import("package.tools.cmake").install(package, configs)
+--     end)
+-- package_end()
 
 -- rttr 
 package("rttr")
@@ -60,7 +60,7 @@ add_requires("spdlog")
 add_requires("entt") 
 add_requires("box2d") 
 add_requires("yaml-cpp") 
-add_requires("rttr") 
+add_requires("rttr")    
 
 
 target("imgui")

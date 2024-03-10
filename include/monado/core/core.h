@@ -4,7 +4,7 @@
 
 #ifdef MND_PLATFORM_WINDOWS
     #ifdef MND_BUILD_DLL
-        #ifdef MND_DLL_EXPORT
+        #ifdef MND_DLL_EXPORT  
             #define MND_API _declspec(dllexport)
         #else
             #define MND_API _declspec(dllimport)
@@ -19,7 +19,6 @@
 #ifdef MND_DEBUG
     #define MND_ENABLE_ASSERTS
 #endif
-
 
 #ifdef MND_ENABLE_ASSERTS
     #include "log.h"
