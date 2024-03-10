@@ -20,6 +20,7 @@
 #include "monado/scene/entity.h"
 #include "monado/scene/components.h"
 #include "editor/panels/sceneHierarchyPanel.h"
+#include "editor/panels/contentBrowserPanel.h"
 #include "monado/scene/sceneSerializer.h"
 
 namespace Monado {
@@ -81,6 +82,7 @@ namespace Monado {
         bool m_ViewportFocused {}, m_ViewportHovered {};
 
         SceneHierarchyPanel m_SceneHierarchyPanel;
+        ContentBrowserPanel m_ContentBrowserPanel;
 
         glm::vec4 m_FlatColor { 0.2f, 0.3f, 0.8f, 1.0f };
         glm::vec4 m_SquareColor { 0.2f, 0.3f, 0.8f, 1.0f };
