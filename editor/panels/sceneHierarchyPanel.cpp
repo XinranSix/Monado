@@ -12,6 +12,8 @@
 
 namespace Monado {
 
+    extern const std::filesystem::path g_AssetPath;
+
     SceneHierarchyPanel::SceneHierarchyPanel(const Ref<Scene> &context) { SetContext(context); }
 
     void SceneHierarchyPanel::SetContext(const Ref<Scene> &context) {
@@ -33,8 +35,8 @@ namespace Monado {
 
         // Right-click on blank space
 
-        if (ImGui::BeginPopupContextWindow(0,
-                                           ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverExistingPopup)) {
+        if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight |
+                                                  ImGuiPopupFlags_NoOpenOverExistingPopup)) {
             if (ImGui::MenuItem("Create Empty Entity"))
                 m_Context->CreateEnitty("Empty Entity");
 
@@ -174,7 +176,7 @@ namespace Monado {
             if (ImGui::Button("+", ImVec2 { lineHeight, lineHeight })) {
                 ImGui::OpenPopup("ComponentSettings");
             }
-           
+
             bool removeComponent = false;
             if (ImGui::BeginPopup("ComponentSettings")) {
                 if (ImGui::MenuItem("Remove component"))
@@ -354,12 +356,8 @@ namespace Monado {
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
                     const wchar_t *path = (const wchar_t *)payload->Data;
-                    std::filesystem::path texturePath(path);
-                    Ref<Texture2D> texture = Texture2D::Create(texturePath.string());
-                    if (texture->IsLoaded())
-                        component.Texture = texture;
-                    else
-                        MND_WARN("Could not load texture {0}", texturePath.filename().string());
+                    std::filesystem::path texturePath = std::filesystem::path(g_AssetPath) / path;
+                    component.Texture = Texture2D::Create(texturePath.string());
                 }
                 ImGui::EndDragDropTarget();
             }
