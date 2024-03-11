@@ -232,6 +232,7 @@ namespace Monado {
                 auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
 
                 Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
+                // Renderer2D::DrawRect(transform.GetTransform() ,{ 1.0f, 1.0f, 1.0f, 1.0f });
             }
         }
 
