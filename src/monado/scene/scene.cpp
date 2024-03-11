@@ -17,36 +17,6 @@
 
 namespace Monado {
 
-    template <typename... Component>
-    static void CopyComponent(entt::registry &dst, entt::registry &src,
-                              const std::unordered_map<UUID, entt::entity> &enttMap) {
-        (
-            [&]() {
-                auto view = src.view<Component>();
-                // 2.1�����ɳ�������uuid����ľ�ʵ��
-                for (auto srcEntity : view) {
-                    // 2.2��** ��ʵ���uuid - map - ��Ӧ��ʵ�� * *
-                    //                    entt::entity dstEntity = enttMap.at(src.get<IDComponent>(srcEntity).ID);
-                    // 3.1��ȡ��ʵ������
-                    //      auto &srcComponent = src.get<Component>(srcEntity);
-                    // 3.2Ȼ����API��** ���ƾ�ʵ����������ʵ��**
-                    // dst.emplace_or_replace<Component>(dstEntity, srcComponent);
-                }
-            }(),
-            ...);
-    }
-
-    template <typename... Component>
-    static void CopyComponent(ComponentGroup<Component...>, entt::registry &dst, entt::registry &src,
-                              const std::unordered_map<UUID, entt::entity> &enttMap) {
-        CopyComponent<Component...>(dst, src, enttMap);
-    }
-
-    template <typename... Component>
-    static void CopyComponentIfExists(ComponentGroup<Component...>, Entity dst, Entity src) {
-        CopyComponentIfExists<Component...>(dst, src);
-    }
-
     static b2BodyType Rigidbody2DTypeToBox2DBody(Rigidbody2DComponent::BodyType bodyType) {
         switch (bodyType) {
         case Rigidbody2DComponent::BodyType::Static: return b2_staticBody;
@@ -58,47 +28,58 @@ namespace Monado {
         return b2_staticBody;
     }
 
-    // TODO: 待完善
-    Ref<Scene> Scene::Copy(Ref<Scene> other) {
-        /*   // 1.1�����³���
-          Ref<Scene> newScene = CreateRef<Scene>();
-
-          newScene->m_ViewportWidth = other->m_ViewportWidth;
-          newScene->m_ViewportHeight = other->m_ViewportHeight;
-
-          auto &srcSceneRegistry = other->m_Registry;
-          auto &dstSceneRegistry = newScene->m_Registry;
-          std::unordered_map<UUID, entt::entity> enttMap;
-
-          auto idView = srcSceneRegistry.view<IDComponent>();
-          for (auto e : idView) {
-              UUID uuid = srcSceneRegistry.get<IDComponent>(e).ID;
-              const auto &name = srcSceneRegistry.get<TagComponent>(e).Tag;
-              // 1.2Ϊ�³��������;ɳ���ͬ����uuid��ʵ��
-              Entity newEntity = newScene->CreateEntityWithUUID(uuid, name);
-              // 1.3����**map���루��ʵ���uuid��Ӧ��ʵ�壩�Ĺ�ϵ**
-              enttMap[uuid] = (entt::entity)newEntity; // UUID����Ҫ��ϣ
-          }
-
-          // �������������IDcomponent��tagcomponent����CreateEntityWithUUID������
-          CopyComponent(AllComponents {}, dstSceneRegistry, srcSceneRegistry, enttMap);
-
-          return newScene; */
-        return {};
-    }
-
     Scene::Scene() {}
 
     Scene::~Scene() {}
 
-    // TODO: 待完善
-    void Scene::DuplicateEntity(Entity entity) {
-        /*   // 1.������ʵ��ͬ������ʵ��
-          std::string name = entity.GetName();
-          Entity newEntity = CreateEntity(name);
-          // 2.�������
-          // Copy components (except IDComponent and TagComponent)
-          CopyComponentIfExists(AllComponents {}, newEntity, entity); */
+    template <typename Component>
+    static void CopyComponent(entt::registry &dst, entt::registry &src,
+                              const std::unordered_map<UUID, entt::entity> &enttMap) {
+        auto view = src.view<Component>();
+        for (auto e : view) {
+            UUID uuid = src.get<IDComponent>(e).ID;
+            MND_CORE_ASSERT((enttMap.find(uuid) != enttMap.end()), "");
+            entt::entity dstEnttID = enttMap.at(uuid);
+
+            auto &component = src.get<Component>(e);
+            dst.emplace_or_replace<Component>(dstEnttID, component);
+        }
+    }
+
+    template <typename Component>
+    static void CopyComponentIfExists(Entity dst, Entity src) {
+        if (src.HasComponent<Component>())
+            dst.AddOrReplaceComponent<Component>(src.GetComponent<Component>());
+    }
+
+    Ref<Scene> Scene::Copy(Ref<Scene> other) {
+        Ref<Scene> newScene = CreateRef<Scene>();
+
+        newScene->m_ViewportWidth = other->m_ViewportWidth;
+        newScene->m_ViewportHeight = other->m_ViewportHeight;
+
+        auto &srcSceneRegistry = other->m_Registry;
+        auto &dstSceneRegistry = newScene->m_Registry;
+        std::unordered_map<UUID, entt::entity> enttMap;
+
+        // Create entities in new scene
+        auto idView = srcSceneRegistry.view<IDComponent>();
+        for (auto e : idView) {
+            UUID uuid = srcSceneRegistry.get<IDComponent>(e).ID;
+            const auto &name = srcSceneRegistry.get<TagComponent>(e).Tag;
+            Entity newEntity = newScene->CreateEntityWithUUID(uuid, name);
+            enttMap[uuid] = (entt::entity)newEntity;
+        }
+
+        // Copy components (except IDComponent and TagComponent)
+        CopyComponent<TransformComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+        CopyComponent<SpriteRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+        CopyComponent<CameraComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+        CopyComponent<NativeScriptComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+        CopyComponent<Rigidbody2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+        CopyComponent<BoxCollider2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+
+        return newScene;
     }
 
     Entity Scene::CreateEntity(const std::string &name) { return CreateEntityWithUUID(UUID(), name); }
@@ -228,6 +209,18 @@ namespace Monado {
             Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
         }
         Renderer2D::EndScene();
+    }
+
+    void Scene::DuplicateEntity(Entity entity) {
+        std::string name = entity.GetName();
+        Entity newEntity = CreateEntity(name);
+
+        CopyComponentIfExists<TransformComponent>(newEntity, entity);
+        CopyComponentIfExists<SpriteRendererComponent>(newEntity, entity);
+        CopyComponentIfExists<CameraComponent>(newEntity, entity);
+        CopyComponentIfExists<NativeScriptComponent>(newEntity, entity);
+        CopyComponentIfExists<Rigidbody2DComponent>(newEntity, entity);
+        CopyComponentIfExists<BoxCollider2DComponent>(newEntity, entity);
     }
 
     Entity Scene::GetPrimaryCameraEntity() {

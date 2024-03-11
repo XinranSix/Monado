@@ -3,7 +3,7 @@
 #include "entt/entity/entity.hpp"
 #include "entt/entity/fwd.hpp"
 #include "monado/core/uuid.h"
-// #include "components.h"
+#include "components.h"
 #include "scene.h"
 #include "entt/entt.hpp"
 #include <utility>
@@ -23,6 +23,14 @@ namespace Monado {
             m_Scene->OnComponentAdded<T>(*this, component);
             return component;
         }
+
+        template <typename T, typename... Args>
+        T &AddOrReplaceComponent(Args &&...args) {
+            T &component = m_Scene->m_Registry.emplace_or_replace<T>(m_EntityHandle, std::forward<Args>(args)...);
+            m_Scene->OnComponentAdded<T>(*this, component);
+            return component;
+        }
+
         template <typename T>
         T &GetComponent() {
             MND_CORE_ASSERT(HasComponent<T>(), "实体不存在这个组件");
@@ -42,10 +50,8 @@ namespace Monado {
 
         operator entt::entity() const { return m_EntityHandle; }
 
-        UUID GetUUID() {
-            // return GetComponent<IDComponent>().ID;
-            return {};
-        }
+        UUID GetUUID() { return GetComponent<IDComponent>().ID; }
+        const std::string &GetName() { return GetComponent<TagComponent>().Tag; }
 
         operator uint32_t() const { return (uint32_t)m_EntityHandle; }
 

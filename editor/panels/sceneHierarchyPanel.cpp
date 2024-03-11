@@ -10,6 +10,13 @@
 
 #include <filesystem>
 
+/* The Microsoft C++ compiler is non-compliant with the C++ standard and needs
+ * the following definition to disable a security warning on std::strncpy().
+ */
+#ifdef _MSVC_LANG
+    #define _CRT_SECURE_NO_WARNINGS
+#endif
+
 namespace Monado {
 
     extern const std::filesystem::path g_AssetPath;
@@ -24,25 +31,24 @@ namespace Monado {
     void SceneHierarchyPanel::OnImGuiRender() {
         ImGui::Begin("Scene Hierarchy");
 
-        // if (m_Context) {
-        m_Context->m_Registry.each([&](auto entityID) {
-            Entity entity { entityID, m_Context.get() };
-            DrawEntityNode(entity);
-        });
+        if (m_Context) {
+            m_Context->m_Registry.each([&](auto entityID) {
+                Entity entity { entityID, m_Context.get() };
+                DrawEntityNode(entity);
+            });
 
-        if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
-            m_SelectionContext = {};
+            if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
+                m_SelectionContext = {};
 
-        // Right-click on blank space
+            // Right-click on blank space
+            if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight |
+                                                      ImGuiPopupFlags_NoOpenOverExistingPopup)) {
+                if (ImGui::MenuItem("Create Empty Entity"))
+                    m_Context->CreateEntity("Empty Entity");
 
-        if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight |
-                                                  ImGuiPopupFlags_NoOpenOverExistingPopup)) {
-            if (ImGui::MenuItem("Create Empty Entity"))
-                m_Context->CreateEntity("Empty Entity");
-
-            ImGui::EndPopup();
+                ImGui::EndPopup();
+            }
         }
-        // }
         ImGui::End();
 
         ImGui::Begin("Properties");
@@ -67,9 +73,10 @@ namespace Monado {
         }
 
         bool entityDeleted = false;
-        if (ImGui::BeginPopupContextItem(0, ImGuiPopupFlags_MouseButtonRight)) {
+        if (ImGui::BeginPopupContextItem()) {
             if (ImGui::MenuItem("Delete Entity"))
                 entityDeleted = true;
+
             ImGui::EndPopup();
         }
 
@@ -90,60 +97,57 @@ namespace Monado {
 
     static void DrawVec3Control(const std::string &label, glm::vec3 &values, float resetValue = 0.0f,
                                 float columnWidth = 100.0f) {
-        // ImGUi push多少 要pop多少，不然会报错
-        ImGui::PushID(label.c_str()); // 每一行用label做ID，3行ID不同互不干扰
+        ImGuiIO &io = ImGui::GetIO();
+        auto boldFont = io.Fonts->Fonts[0];
 
-        // 设置一行两列
+        ImGui::PushID(label.c_str());
+
         ImGui::Columns(2);
-        // 第一列
-        ImGui::SetColumnWidth(0, columnWidth); // 设置第1列宽100
+        ImGui::SetColumnWidth(0, columnWidth);
         ImGui::Text(label.c_str());
         ImGui::NextColumn();
 
-        // 第二列
-        // 放入3个item的宽
         ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2 { 0, 0 });
 
-        float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f; // 设置行高
-        ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };                           // 按钮大小
+        float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+        ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
 
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4 { 0.8f, 0.1f, 0.15f, 1.0f });
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4 { 0.9f, 0.2f, 0.2f, 1.0f });
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4 { 0.8f, 0.1f, 0.15f, 1.0f });
-        if (ImGui::Button("X", buttonSize)) {
+        ImGui::PushFont(boldFont);
+        if (ImGui::Button("X", buttonSize))
             values.x = resetValue;
-        }
+        ImGui::PopFont();
         ImGui::PopStyleColor(3);
 
-        // 因为DragFloat button会换行，所以设置SameLine将不换行
         ImGui::SameLine();
-        // ##X将分配一个id，且##x不会在UI界面显示出来。
-        // #X 将显示在文本框的右边
-        // X  将与上面的BUtton同名 同id，操作的话会报错
         ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f");
         ImGui::PopItemWidth();
-
         ImGui::SameLine();
+
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4 { 0.2f, 0.7f, 0.2f, 1.0f });
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4 { 0.3f, 0.8f, 0.3f, 1.0f });
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4 { 0.2f, 0.7f, 0.2f, 1.0f });
-        if (ImGui::Button("Y", buttonSize)) {
+        ImGui::PushFont(boldFont);
+        if (ImGui::Button("Y", buttonSize))
             values.y = resetValue;
-        }
+        ImGui::PopFont();
         ImGui::PopStyleColor(3);
 
         ImGui::SameLine();
-        ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f"); // 0.1速度，0 - 0 最小最大无限制
+        ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f");
         ImGui::PopItemWidth();
-
         ImGui::SameLine();
+
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4 { 0.1f, 0.25f, 0.8f, 1.0f });
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4 { 0.2f, 0.35f, 0.9f, 1.0f });
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4 { 0.1f, 0.25f, 0.8f, 1.0f });
-        if (ImGui::Button("Z", buttonSize)) {
+        ImGui::PushFont(boldFont);
+        if (ImGui::Button("Z", buttonSize))
             values.z = resetValue;
-        }
+        ImGui::PopFont();
         ImGui::PopStyleColor(3);
 
         ImGui::SameLine();
@@ -152,7 +156,6 @@ namespace Monado {
 
         ImGui::PopStyleVar();
 
-        // 恢复成一行一列
         ImGui::Columns(1);
 
         ImGui::PopID();
@@ -201,7 +204,7 @@ namespace Monado {
 
             char buffer[256];
             memset(buffer, 0, sizeof(buffer));
-            strncpy_s(buffer, sizeof(buffer), tag.c_str(), sizeof(buffer));
+            std::strncpy(buffer, tag.c_str(), sizeof(buffer));
             if (ImGui::InputText("##Tag", buffer, sizeof(buffer))) {
                 tag = std::string(buffer);
             }
@@ -214,14 +217,34 @@ namespace Monado {
             ImGui::OpenPopup("AddComponent");
 
         if (ImGui::BeginPopup("AddComponent")) {
-            DisplayAddComponentEntry<CameraComponent>("Camera");
-            // DisplayAddComponentEntry<ScriptComponent>("Script");
-            DisplayAddComponentEntry<SpriteRendererComponent>("Sprite Renderer");
-            //        DisplayAddComponentEntry<CircleRendererComponent>("Circle Renderer");
-            DisplayAddComponentEntry<Rigidbody2DComponent>("Rigidbody 2D");
-            DisplayAddComponentEntry<BoxCollider2DComponent>("Box Collider 2D");
-            /*    DisplayAddComponentEntry<CircleCollider2DComponent>("Circle Collider 2D");
-               DisplayAddComponentEntry<TextComponent>("Text Component"); */
+            if (!m_SelectionContext.HasComponent<CameraComponent>()) {
+                if (ImGui::MenuItem("Camera")) {
+                    m_SelectionContext.AddComponent<CameraComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+
+            if (!m_SelectionContext.HasComponent<SpriteRendererComponent>()) {
+                if (ImGui::MenuItem("Sprite Renderer")) {
+                    m_SelectionContext.AddComponent<SpriteRendererComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+
+            if (!m_SelectionContext.HasComponent<Rigidbody2DComponent>()) {
+                if (ImGui::MenuItem("Rigidbody 2D")) {
+                    m_SelectionContext.AddComponent<Rigidbody2DComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+
+            if (!m_SelectionContext.HasComponent<BoxCollider2DComponent>()) {
+                if (ImGui::MenuItem("Box Collider 2D")) {
+                    m_SelectionContext.AddComponent<BoxCollider2DComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+
             ImGui::EndPopup();
         }
 
@@ -288,67 +311,6 @@ namespace Monado {
             }
         });
 
-        /*     DrawComponent<ScriptComponent>("Script", entity, [entity, scene = m_Context](auto &component) mutable {
-                bool scriptClassExists = ScriptEngine::EntityClassExists(component.ClassName);
-
-                static char buffer[64];
-                strcpy_s(buffer, sizeof(buffer), component.ClassName.c_str());
-
-                UI::ScopedStyleColor textColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.3f, 1.0f), !scriptClassExists);
-
-                if (ImGui::InputText("Class", buffer, sizeof(buffer))) {
-                    component.ClassName = buffer;
-                    return;
-                }
-
-                // Fields
-                bool sceneRunning = scene->IsRunning();
-                if (sceneRunning) {
-                    Ref<ScriptInstance> scriptInstance = ScriptEngine::GetEntityScriptInstance(entity.GetUUID());
-                    if (scriptInstance) {
-                        const auto &fields = scriptInstance->GetScriptClass()->GetFields();
-                        for (const auto &[name, field] : fields) {
-                            if (field.Type == ScriptFieldType::Float) {
-                                float data = scriptInstance->GetFieldValue<float>(name);
-                                if (ImGui::DragFloat(name.c_str(), &data)) {
-                                    scriptInstance->SetFieldValue(name, data);
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    if (scriptClassExists) {
-                        Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(component.ClassName);
-                        const auto &fields = entityClass->GetFields();
-
-                        auto &entityFields = ScriptEngine::GetScriptFieldMap(entity);
-                        for (const auto &[name, field] : fields) {
-                            // Field has been set in editor
-                            if (entityFields.find(name) != entityFields.end()) {
-                                ScriptFieldInstance &scriptField = entityFields.at(name);
-
-                                // Display control to set it maybe
-                                if (field.Type == ScriptFieldType::Float) {
-                                    float data = scriptField.GetValue<float>();
-                                    if (ImGui::DragFloat(name.c_str(), &data))
-                                        scriptField.SetValue(data);
-                                }
-                            } else {
-                                // Display control to set it maybe
-                                if (field.Type == ScriptFieldType::Float) {
-                                    float data = 0.0f;
-                                    if (ImGui::DragFloat(name.c_str(), &data)) {
-                                        ScriptFieldInstance &fieldInstance = entityFields[name];
-                                        fieldInstance.Field = field;
-                                        fieldInstance.SetValue(data);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-     */
         DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](auto &component) {
             ImGui::ColorEdit4("Color", glm::value_ptr(component.Color));
 
@@ -357,19 +319,17 @@ namespace Monado {
                 if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
                     const wchar_t *path = (const wchar_t *)payload->Data;
                     std::filesystem::path texturePath = std::filesystem::path(g_AssetPath) / path;
-                    component.Texture = Texture2D::Create(texturePath.string());
+                    Ref<Texture2D> texture = Texture2D::Create(texturePath.string());
+                    if (texture->IsLoaded())
+                        component.Texture = texture;
+                    else
+                        MND_WARN("Could not load texture {0}", texturePath.filename().string());
                 }
                 ImGui::EndDragDropTarget();
             }
 
             ImGui::DragFloat("Tiling Factor", &component.TilingFactor, 0.1f, 0.0f, 100.0f);
         });
-
-        /* DrawComponent<CircleRendererComponent>("Circle Renderer", entity, [](auto &component) {
-             ImGui::ColorEdit4("Color", glm::value_ptr(component.Color));
-             ImGui::DragFloat("Thickness", &component.Thickness, 0.025f, 0.0f, 1.0f);
-             ImGui::DragFloat("Fade", &component.Fade, 0.00025f, 0.0f, 1.0f);
-         });*/
 
         DrawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, [](auto &component) {
             const char *bodyTypeStrings[] = { "Static", "Dynamic", "Kinematic" };
@@ -400,32 +360,6 @@ namespace Monado {
             ImGui::DragFloat("Restitution", &component.Restitution, 0.01f, 0.0f, 1.0f);
             ImGui::DragFloat("Restitution Threshold", &component.RestitutionThreshold, 0.01f, 0.0f);
         });
-
-        /*
-                DrawComponent<CircleCollider2DComponent>("Circle Collider 2D", entity, [](auto &component) {
-                    ImGui::DragFloat2("Offset", glm::value_ptr(component.Offset));
-                    ImGui::DragFloat("Radius", &component.Radius);
-                    ImGui::DragFloat("Density", &component.Density, 0.01f, 0.0f, 1.0f);
-                    ImGui::DragFloat("Friction", &component.Friction, 0.01f, 0.0f, 1.0f);
-                    ImGui::DragFloat("Restitution", &component.Restitution, 0.01f, 0.0f, 1.0f);
-                    ImGui::DragFloat("Restitution Threshold", &component.RestitutionThreshold, 0.01f, 0.0f);
-                }); */
-
-        /*    DrawComponent<TextComponent>("Text Renderer", entity, [](auto &component) {
-               ImGui::InputTextMultiline("Text String", &component.TextString);
-               ImGui::ColorEdit4("Color", glm::value_ptr(component.Color));
-               ImGui::DragFloat("Kerning", &component.Kerning, 0.025f);
-               ImGui::DragFloat("Line Spacing", &component.LineSpacing, 0.025f);
-           }); */
     }
 
-    template <typename T>
-    void SceneHierarchyPanel::DisplayAddComponentEntry(const std::string &entryName) {
-        if (!m_SelectionContext.HasComponent<T>()) {
-            if (ImGui::MenuItem(entryName.c_str())) {
-                m_SelectionContext.AddComponent<T>();
-                ImGui::CloseCurrentPopup();
-            }
-        }
-    }
 } // namespace Monado

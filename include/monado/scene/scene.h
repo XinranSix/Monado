@@ -18,9 +18,9 @@ namespace Monado {
         Scene();
         ~Scene();
 
-        static Ref<Scene> Copy(Ref<Scene> other);
+    	static Ref<Scene> Copy(Ref<Scene> other);
 
-        void DuplicateEntity(Entity entity);
+      	void DuplicateEntity(Entity entity);
 
         Entity CreateEntity(const std::string &name);
         Entity CreateEntityWithUUID(UUID uuid, const std::string &name = std::string());
