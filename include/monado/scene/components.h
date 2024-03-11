@@ -1,26 +1,23 @@
 #pragma once
 
-#include "glm/fwd.hpp"
 #include "sceneCamera.h"
-#include "monado/renderer/camera.h"
 #include "monado/core/uuid.h"
 #include "monado/renderer/texture.h"
-#include "monado/scene/scriptableEntity.h"
-// #include "monado/scene/entity.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/quaternion.hpp"
 
-#include <string>
-
 namespace Monado {
-    // struct IDComponent {
-    //     UUID ID;
-    //     IDComponent() = default;
-    //     IDComponent(const IDComponent &) = default;
-    // };
+    struct IDComponent {
+        UUID ID;
+
+        IDComponent() = default;
+        IDComponent(UUID id): ID(id) {}
+        IDComponent(const IDComponent &) = default;
+    };
 
     struct TagComponent {
         std::string Tag;

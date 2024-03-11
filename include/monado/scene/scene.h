@@ -1,6 +1,7 @@
 #pragma once
 
 #include "monado/core/timestep.h"
+#include "monado/core/uuid.h"
 #include "monado/renderer/editorCamera.h"
 #include "entt/entt.hpp"
 #include <cstdint>
@@ -21,7 +22,8 @@ namespace Monado {
 
         void DuplicateEntity(Entity entity);
 
-        Entity CreateEntity(std::string name);
+        Entity CreateEntity(const std::string &name);
+        Entity CreateEntityWithUUID(UUID uuid, const std::string &name = std::string());
 
         void DestroyEntity(Entity entity);
 

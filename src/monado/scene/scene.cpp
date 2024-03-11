@@ -101,10 +101,11 @@ namespace Monado {
           CopyComponentIfExists(AllComponents {}, newEntity, entity); */
     }
 
-    Entity Scene::CreateEntity(std::string name) {
-        // 添加默认组件
+    Entity Scene::CreateEntity(const std::string &name) { return CreateEntityWithUUID(UUID(), name); }
+
+    Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string &name) {
         Entity entity = { m_Registry.create(), this };
-        // 一般来说一个实体必然有一个 TransformComponent
+        entity.AddComponent<IDComponent>(uuid);
         entity.AddComponent<TransformComponent>();
         auto &tag = entity.AddComponent<TagComponent>();
         tag.Tag = name.empty() ? "Entity" : name;
@@ -262,6 +263,9 @@ namespace Monado {
         // FIXME: 为什么会执行到这里？？？
         // static_assert(false);
     }
+
+    template <>
+    void Scene::OnComponentAdded<IDComponent>(Entity entity, IDComponent &component) {}
 
     template <>
     void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent &component) {}

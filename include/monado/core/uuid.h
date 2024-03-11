@@ -1,7 +1,6 @@
 #pragma once
 
-#include <cstddef>
-#include <cstdint>
+#include <xhash>
 
 namespace Monado {
     class UUID {
@@ -15,17 +14,12 @@ namespace Monado {
     private:
         uint64_t m_UUID;
     };
+
 } // namespace Monado
 
 namespace std {
-    template <typename T>
-    struct hash; // �������������õ�
-
     template <>
     struct hash<Monado::UUID> {
-        std::size_t operator()(const Monado::UUID &uuid) const {
-            // return hash<uint64_t>()((uint64_t)uuid);
-            return (uint64_t)uuid;
-        }
+        std::size_t operator()(const Monado::UUID &uuid) const { return hash<uint64_t>()((uint64_t)uuid); }
     };
 } // namespace std
