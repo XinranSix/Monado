@@ -74,6 +74,7 @@ namespace Monado {
         // Copy components (except IDComponent and TagComponent)
         CopyComponent<TransformComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
         CopyComponent<SpriteRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+        CopyComponent<CircleRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
         CopyComponent<CameraComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
         CopyComponent<NativeScriptComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
         CopyComponent<Rigidbody2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
@@ -140,14 +141,16 @@ namespace Monado {
     void Scene::OnSimulationStop() {}
 
     void Scene::OnUpdateRuntime(Timestep ts) {
+        // Update scripts
         {
             m_Registry.view<NativeScriptComponent>().each([=](auto entity, auto &nsc) {
+                // TODO: Move to Scene::OnScenePlay
                 if (!nsc.Instance) {
                     nsc.Instance = nsc.InstantiateScript();
                     nsc.Instance->m_Entity = Entity { entity, this };
-                    // 执行CameraController脚本的OnCreate函数，由虚函数指定
                     nsc.Instance->OnCreate();
                 }
+
                 nsc.Instance->OnUpdate(ts);
             });
         }
@@ -173,12 +176,14 @@ namespace Monado {
             }
         }
 
-        Camera *mainCamera {};
-        glm::mat4 cameraTransform {};
+        // Render 2D
+        Camera *mainCamera = nullptr;
+        glm::mat4 cameraTransform;
         {
             auto view = m_Registry.view<TransformComponent, CameraComponent>();
             for (auto entity : view) {
                 auto [transform, camera] = view.get<TransformComponent, CameraComponent>(entity);
+
                 if (camera.Primary) {
                     mainCamera = &camera.Camera;
                     cameraTransform = transform.GetTransform();
@@ -188,13 +193,29 @@ namespace Monado {
         }
 
         if (mainCamera) {
+            Renderer2D::BeginScene(*mainCamera, cameraTransform);
 
-            Renderer2D::BeginScene(mainCamera->GetProjection(), cameraTransform);
-            auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
-            for (auto entity : group) {
-                auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-                Renderer2D::DrawQuad(transform.GetTransform(), sprite.Color);
+            // Draw sprites
+            {
+                auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+                for (auto entity : group) {
+                    auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
+
+                    Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
+                }
             }
+
+            // Draw circles
+            {
+                auto view = m_Registry.view<TransformComponent, CircleRendererComponent>();
+                for (auto entity : view) {
+                    auto [transform, circle] = view.get<TransformComponent, CircleRendererComponent>(entity);
+
+                    Renderer2D::DrawCircle(transform.GetTransform(), circle.Color, circle.Thickness, circle.Fade,
+                                           (int)entity);
+                }
+            }
+
             Renderer2D::EndScene();
         }
     }
@@ -203,11 +224,28 @@ namespace Monado {
 
     void Scene::OnUpdateEditor(Timestep ts, EditorCamera &camera) {
         Renderer2D::BeginScene(camera);
-        auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
-        for (auto entity : group) {
-            auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-            Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
+
+        // Draw sprites
+        {
+            auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+            for (auto entity : group) {
+                auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
+
+                Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
+            }
         }
+
+        // Draw circles
+        {
+            auto view = m_Registry.view<TransformComponent, CircleRendererComponent>();
+            for (auto entity : view) {
+                auto [transform, circle] = view.get<TransformComponent, CircleRendererComponent>(entity);
+
+                Renderer2D::DrawCircle(transform.GetTransform(), circle.Color, circle.Thickness, circle.Fade,
+                                       (int)entity);
+            }
+        }
+
         Renderer2D::EndScene();
     }
 
@@ -217,6 +255,7 @@ namespace Monado {
 
         CopyComponentIfExists<TransformComponent>(newEntity, entity);
         CopyComponentIfExists<SpriteRendererComponent>(newEntity, entity);
+        CopyComponentIfExists<CircleRendererComponent>(newEntity, entity);
         CopyComponentIfExists<CameraComponent>(newEntity, entity);
         CopyComponentIfExists<NativeScriptComponent>(newEntity, entity);
         CopyComponentIfExists<Rigidbody2DComponent>(newEntity, entity);
@@ -251,9 +290,6 @@ namespace Monado {
 
     template <typename T>
     void Scene::OnComponentAdded(Entity entity, T &component) {
-        // 静态断言：false，代表在编译前就会执行， 但是编译器这里不会报错，说明这段代码不会编译吧。。
-        // 而且打了断点，也不行，证明这段代码只是声明作用吧。
-        // FIXME: 为什么会执行到这里？？？
         // static_assert(false);
     }
 
@@ -265,11 +301,15 @@ namespace Monado {
 
     template <>
     void Scene::OnComponentAdded<CameraComponent>(Entity entity, CameraComponent &component) {
-        component.Camera.SetViewportSize(m_ViewportWidth, m_ViewportHeight);
+        if (m_ViewportWidth > 0 && m_ViewportHeight > 0)
+            component.Camera.SetViewportSize(m_ViewportWidth, m_ViewportHeight);
     }
 
     template <>
     void Scene::OnComponentAdded<SpriteRendererComponent>(Entity entity, SpriteRendererComponent &component) {}
+
+    template <>
+    void Scene::OnComponentAdded<CircleRendererComponent>(Entity entity, CircleRendererComponent &component) {}
 
     template <>
     void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent &component) {}

@@ -68,14 +68,14 @@ namespace Monado {
         CircleVertex *CircleVertexBufferPtr = nullptr;
 
         // Line
-        uint32_t LineVertexCount = 0; // ֻ��Ҫ�ṩ��������
+        uint32_t LineVertexCount = 0;
         LineVertex *LineVertexBufferBase = nullptr;
         LineVertex *LineVertexBufferPtr = nullptr;
 
         float LineWidth = 2.0f;
 
         std::array<Ref<Texture2D>, MaxTextureSlots> TextureSlots;
-        uint32_t TextureSlotIndex = 1; // 0 �Ÿ���ɫ����
+        uint32_t TextureSlotIndex = 1;
 
         glm::vec4 QuadVertexPosition[4];
 
