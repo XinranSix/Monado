@@ -77,7 +77,7 @@ namespace Monado {
         std::array<Ref<Texture2D>, MaxTextureSlots> TextureSlots;
         uint32_t TextureSlotIndex = 1;
 
-        glm::vec4 QuadVertexPosition[4];
+        glm::vec4 QuadVertexPositions[4];
 
         Renderer2D::Statistics Stats;
 
@@ -206,10 +206,10 @@ namespace Monado {
 
         // ��ʼ��///////////////////////////////////////////
         // ����quad�ĳ�ʼλ��
-        s_Data.QuadVertexPosition[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
-        s_Data.QuadVertexPosition[1] = { 0.5f, -0.5f, 0.0f, 1.0f };
-        s_Data.QuadVertexPosition[2] = { 0.5f, 0.5f, 0.0f, 1.0f };
-        s_Data.QuadVertexPosition[3] = { -0.5f, 0.5f, 0.0f, 1.0f };
+        s_Data.QuadVertexPositions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
+        s_Data.QuadVertexPositions[1] = { 0.5f, -0.5f, 0.0f, 1.0f };
+        s_Data.QuadVertexPositions[2] = { 0.5f, 0.5f, 0.0f, 1.0f };
+        s_Data.QuadVertexPositions[3] = { -0.5f, 0.5f, 0.0f, 1.0f };
 
         // ��0��λ�����������ͶӰ��ͼ����
         s_Data.CameraUniformBuffer = UniformBuffer::Create(sizeof(Renderer2DData::CameraData), 0);
@@ -384,28 +384,28 @@ namespace Monado {
             glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
         // quad�����½�Ϊ���
-        s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPosition[0];
+        s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPositions[0];
         s_Data.QuadVertexBufferPtr->Color = color;
         s_Data.QuadVertexBufferPtr->TexCoord = textureCoords[0];
         s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
         s_Data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
         s_Data.QuadVertexBufferPtr++;
 
-        s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPosition[1];
+        s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPositions[1];
         s_Data.QuadVertexBufferPtr->Color = color;
         s_Data.QuadVertexBufferPtr->TexCoord = textureCoords[1];
         s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
         s_Data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
         s_Data.QuadVertexBufferPtr++;
 
-        s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPosition[2];
+        s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPositions[2];
         s_Data.QuadVertexBufferPtr->Color = color;
         s_Data.QuadVertexBufferPtr->TexCoord = textureCoords[2];
         s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
         s_Data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
         s_Data.QuadVertexBufferPtr++;
 
-        s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPosition[3];
+        s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPositions[3];
         s_Data.QuadVertexBufferPtr->Color = color;
         s_Data.QuadVertexBufferPtr->TexCoord = textureCoords[3];
         s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
@@ -430,7 +430,7 @@ namespace Monado {
         constexpr glm::vec2 textureCoords[] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
         // quad�����½�Ϊ���
         for (size_t i = 0; i < quadVertexCount; i++) {
-            s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPosition[i];
+            s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
             s_Data.QuadVertexBufferPtr->Color = color;
             s_Data.QuadVertexBufferPtr->TexCoord = textureCoords[i];
             s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
@@ -471,7 +471,7 @@ namespace Monado {
         }
         for (uint32_t i = 0; i < quadVertexCount; i++) {
             // quad�����½�Ϊ���
-            s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPosition[i];
+            s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
             s_Data.QuadVertexBufferPtr->Color = tintColor;
             s_Data.QuadVertexBufferPtr->TexCoord = textureCoords[i];
             s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
@@ -495,8 +495,8 @@ namespace Monado {
         // quad�����½�Ϊ���
         // ʹ�õ���quad������Ϣ
         for (size_t i = 0; i < quadVertexCount; i++) {
-            s_Data.CircleVertexBufferPtr->WorldPosition = transform * s_Data.QuadVertexPosition[i];
-            s_Data.CircleVertexBufferPtr->LocalPosition = s_Data.QuadVertexPosition[i] * 2.0f; // 2 * 0.5 = 1
+            s_Data.CircleVertexBufferPtr->WorldPosition = transform * s_Data.QuadVertexPositions[i];
+            s_Data.CircleVertexBufferPtr->LocalPosition = s_Data.QuadVertexPositions[i] * 2.0f; // 2 * 0.5 = 1
             s_Data.CircleVertexBufferPtr->Color = color;
             s_Data.CircleVertexBufferPtr->Thickness = thickness;
             s_Data.CircleVertexBufferPtr->Fade = fade;
@@ -523,11 +523,10 @@ namespace Monado {
     }
 
     void Renderer2D::DrawRect(const glm::vec3 &position, const glm::vec2 &size, const glm::vec4 &color, int entityID) {
-        // position������λ��
-        glm::vec3 p0 = glm::vec3(position.x - size.x * 0.5f, position.y - size.y * 0.5f, position.z); // ���½�
-        glm::vec3 p1 = glm::vec3(position.x + size.x * 0.5f, position.y - size.y * 0.5f, position.z); // ���½�
-        glm::vec3 p2 = glm::vec3(position.x + size.x * 0.5f, position.y + size.y * 0.5f, position.z); // ���Ͻ�
-        glm::vec3 p3 = glm::vec3(position.x - size.x * 0.5f, position.y + size.y * 0.5f, position.z); // ���Ͻ�
+        glm::vec3 p0 = glm::vec3(position.x - size.x * 0.5f, position.y - size.y * 0.5f, position.z);
+        glm::vec3 p1 = glm::vec3(position.x + size.x * 0.5f, position.y - size.y * 0.5f, position.z);
+        glm::vec3 p2 = glm::vec3(position.x + size.x * 0.5f, position.y + size.y * 0.5f, position.z);
+        glm::vec3 p3 = glm::vec3(position.x - size.x * 0.5f, position.y + size.y * 0.5f, position.z);
 
         DrawLine(p0, p1, color, entityID);
         DrawLine(p1, p2, color, entityID);
@@ -537,9 +536,9 @@ namespace Monado {
 
     void Renderer2D::DrawRect(const glm::mat4 &transform, const glm::vec4 &color, int entityID) {
         glm::vec3 lineVertices[4];
-        for (size_t i = 0; i < 4; i++) {
-            lineVertices[i] = transform * s_Data.QuadVertexPosition[i]; // quad�Ķ���λ��������rect�Ķ���λ��
-        }
+        for (size_t i = 0; i < 4; i++)
+            lineVertices[i] = transform * s_Data.QuadVertexPositions[i];
+
         DrawLine(lineVertices[0], lineVertices[1], color, entityID);
         DrawLine(lineVertices[1], lineVertices[2], color, entityID);
         DrawLine(lineVertices[2], lineVertices[3], color, entityID);
@@ -611,7 +610,7 @@ namespace Monado {
         DrawQuad(transform, texture, tilingFactor, tintColor);
         // for (uint32_t i = 0; i < quadVertexCount; i++) {
         //	// quad�����½�Ϊ���
-        //	s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPosition[i];
+        //	s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
         //	s_Data.QuadVertexBufferPtr->Color = tintColor;
         //	s_Data.QuadVertexBufferPtr->TexCoord = textureCoords[i];
         //	s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
@@ -679,7 +678,7 @@ namespace Monado {
 
         for (uint32_t i = 0; i < quadVertexCount; i++) {
             // quad�����½�Ϊ���
-            s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPosition[i];
+            s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
             s_Data.QuadVertexBufferPtr->Color = tintColor;
             s_Data.QuadVertexBufferPtr->TexCoord = textureCoords[i];
             s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
