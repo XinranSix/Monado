@@ -16,7 +16,6 @@
 #include "box2d/b2_circle_shape.h"
 
 namespace Monado {
-
     static b2BodyType Rigidbody2DTypeToBox2DBody(Rigidbody2DComponent::BodyType bodyType) {
         switch (bodyType) {
         case Rigidbody2DComponent::BodyType::Static: return b2_staticBody;
@@ -32,24 +31,41 @@ namespace Monado {
 
     Scene::~Scene() { delete m_PhysicsWorld; }
 
-    template <typename Component>
+    template <typename... Component>
     static void CopyComponent(entt::registry &dst, entt::registry &src,
                               const std::unordered_map<UUID, entt::entity> &enttMap) {
-        auto view = src.view<Component>();
-        for (auto e : view) {
-            UUID uuid = src.get<IDComponent>(e).ID;
-            MND_CORE_ASSERT((enttMap.find(uuid) != enttMap.end()), "");
-            entt::entity dstEnttID = enttMap.at(uuid);
+        (
+            [&]() {
+                auto view = src.view<Component>();
+                for (auto srcEntity : view) {
+                    entt::entity dstEntity = enttMap.at(src.get<IDComponent>(srcEntity).ID);
 
-            auto &component = src.get<Component>(e);
-            dst.emplace_or_replace<Component>(dstEnttID, component);
-        }
+                    auto &srcComponent = src.get<Component>(srcEntity);
+                    dst.emplace_or_replace<Component>(dstEntity, srcComponent);
+                }
+            }(),
+            ...);
     }
 
-    template <typename Component>
+    template <typename... Component>
+    static void CopyComponent(ComponentGroup<Component...>, entt::registry &dst, entt::registry &src,
+                              const std::unordered_map<UUID, entt::entity> &enttMap) {
+        CopyComponent<Component...>(dst, src, enttMap);
+    }
+
+    template <typename... Component>
     static void CopyComponentIfExists(Entity dst, Entity src) {
-        if (src.HasComponent<Component>())
-            dst.AddOrReplaceComponent<Component>(src.GetComponent<Component>());
+        (
+            [&]() {
+                if (src.HasComponent<Component>())
+                    dst.AddOrReplaceComponent<Component>(src.GetComponent<Component>());
+            }(),
+            ...);
+    }
+
+    template <typename... Component>
+    static void CopyComponentIfExists(ComponentGroup<Component...>, Entity dst, Entity src) {
+        CopyComponentIfExists<Component...>(dst, src);
     }
 
     Ref<Scene> Scene::Copy(Ref<Scene> other) {
@@ -72,14 +88,7 @@ namespace Monado {
         }
 
         // Copy components (except IDComponent and TagComponent)
-        CopyComponent<TransformComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
-        CopyComponent<SpriteRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
-        CopyComponent<CircleRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
-        CopyComponent<CameraComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
-        CopyComponent<NativeScriptComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
-        CopyComponent<Rigidbody2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
-        CopyComponent<BoxCollider2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
-        CopyComponent<CircleCollider2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+        CopyComponent(AllComponents {}, dstSceneRegistry, srcSceneRegistry, enttMap);
 
         return newScene;
     }
@@ -95,7 +104,7 @@ namespace Monado {
         return entity;
     }
 
-    void Scene::DestroyEntity(Entity entity) { m_Registry.destroy((entt::entity)entity); }
+    void Scene::DestroyEntity(Entity entity) { m_Registry.destroy(entity); }
 
     void Scene::OnRuntimeStart() { OnPhysics2DStart(); }
 
@@ -215,44 +224,33 @@ namespace Monado {
         // Render
         RenderScene(camera);
     }
-    void Scene::DuplicateEntity(Entity entity) {
-        std::string name = entity.GetName();
-        Entity newEntity = CreateEntity(name);
 
-        CopyComponentIfExists<TransformComponent>(newEntity, entity);
-        CopyComponentIfExists<SpriteRendererComponent>(newEntity, entity);
-        CopyComponentIfExists<CircleRendererComponent>(newEntity, entity);
-        CopyComponentIfExists<CameraComponent>(newEntity, entity);
-        CopyComponentIfExists<NativeScriptComponent>(newEntity, entity);
-        CopyComponentIfExists<Rigidbody2DComponent>(newEntity, entity);
-        CopyComponentIfExists<BoxCollider2DComponent>(newEntity, entity);
-        CopyComponentIfExists<CircleCollider2DComponent>(newEntity, entity);
+    void Scene::OnViewportResize(uint32_t width, uint32_t height) {
+        m_ViewportWidth = width;
+        m_ViewportHeight = height;
+
+        // Resize our non-FixedAspectRatio cameras
+        auto view = m_Registry.view<CameraComponent>();
+        for (auto entity : view) {
+            auto &cameraComponent = view.get<CameraComponent>(entity);
+            if (!cameraComponent.FixedAspectRatio)
+                cameraComponent.Camera.SetViewportSize(width, height);
+        }
     }
 
     Entity Scene::GetPrimaryCameraEntity() {
         auto view = m_Registry.view<CameraComponent>();
         for (auto entity : view) {
             const auto &camera = view.get<CameraComponent>(entity);
-            if (camera.Primary) {
+            if (camera.Primary)
                 return Entity { entity, this };
-            }
         }
         return {};
     }
 
-    void Scene::OnUpdate(Timestep ts) {}
-
-    void Scene::OnViewportResize(uint32_t width, uint32_t height) {
-        m_ViewportWidth = width;
-        m_ViewportHeight = height;
-
-        auto view = m_Registry.view<CameraComponent>();
-        for (auto entity : view) {
-            auto &cameraComponent = view.get<CameraComponent>(entity);
-            if (!cameraComponent.FixedAspectRatio) {
-                cameraComponent.Camera.SetViewportSize(width, height);
-            }
-        }
+    void Scene::DuplicateEntity(Entity entity) {
+        Entity newEntity = CreateEntity(entity.GetName());
+        CopyComponentIfExists(AllComponents {}, newEntity, entity);
     }
 
     void Scene::OnPhysics2DStart() {
@@ -340,7 +338,7 @@ namespace Monado {
 
     template <typename T>
     void Scene::OnComponentAdded(Entity entity, T &component) {
-        // static_assert(false);
+        static_assert(sizeof(T) == 0);
     }
 
     template <>

@@ -26,15 +26,20 @@ namespace Monado {
         char **Args = nullptr;
 
         const char *operator[](int index) const {
-            MND_CORE_ASSERT((index < Count), "下标越界");
+            MND_CORE_ASSERT((index < Count), "Index out of range");
             return Args[index];
         }
     };
 
+    struct ApplicationSpecification {
+        std::string Name = "Monado Application";
+        std::string WorkingDirectory;
+        ApplicationCommandLineArgs CommandLineArgs;
+    };
+
     class Application {
     public:
-        Application(const std::string &name = "Hazel App",
-                    ApplicationCommandLineArgs args = ApplicationCommandLineArgs());
+        Application(const ApplicationSpecification &specification);
         virtual ~Application();
 
         void OnEvent(Event &e);
@@ -50,7 +55,7 @@ namespace Monado {
 
         static Application &Get() { return *s_Instance; }
 
-        ApplicationCommandLineArgs GetCommandLineArgs() const { return m_CommandLineArgs; }
+        const ApplicationSpecification &GetSpecification() const { return m_Specification; }
 
     private:
         void Run();
@@ -58,7 +63,7 @@ namespace Monado {
         bool OnWindowResize(WindowResizeEvent &e);
 
     private:
-        ApplicationCommandLineArgs m_CommandLineArgs;
+        ApplicationSpecification m_Specification;
         Scope<Window> m_Window;
         ImGuiLayer *m_ImGuiLayer;
         bool m_Running = true;
