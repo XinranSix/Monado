@@ -58,6 +58,8 @@ namespace Monado {
         void OnPhysics2DStart();
         void OnPhysics2DStop();
 
+        void RenderScene(EditorCamera &camera);
+
     private:
         std::string filepath;
         entt::registry m_Registry; // entt提供的注册表

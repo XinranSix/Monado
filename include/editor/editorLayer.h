@@ -52,6 +52,7 @@ namespace Monado {
 
         void OnScenePlay();
         void OnSceneStop();
+        void OnSceneSimulate();
 
         void OnDuplicateEntity();
 
@@ -89,7 +90,7 @@ namespace Monado {
 
         int m_GizmoType = -1;
 
-        enum class SceneState { Edit = 0, Play = 1 };
+        enum class SceneState { Edit = 0, Play = 1, Simulate = 2 };
         SceneState m_SceneState = SceneState::Edit;
 
         bool m_ShowPhysicsColliders {};
@@ -99,7 +100,7 @@ namespace Monado {
         ContentBrowserPanel m_ContentBrowserPanel;
 
         // Editor resources
-        Ref<Texture2D> m_IconPlay, m_IconStop;
+        Ref<Texture2D> m_IconPlay, m_IconSimulate, m_IconStop;
     };
 
 } // namespace Monado
