@@ -50,7 +50,7 @@ namespace Monado {
         m_EditorScene = CreateRef<Scene>();
         m_ActiveScene = m_EditorScene;
 
-        auto commandLineArgs = Application::Get().GetCommandLineArgs();
+        auto commandLineArgs = Application::Get().GetSpecification().CommandLineArgs;
         if (commandLineArgs.Count > 1) {
             auto sceneFilePath = commandLineArgs[1];
             SceneSerializer serializer(m_ActiveScene);
@@ -58,6 +58,8 @@ namespace Monado {
         }
 
         m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
+
+        Renderer2D::SetLineWidth(4.0f);
     }
 
     void EditorLayer::OnDetach() { MND_PROFILE_FUNCTION(); }
@@ -362,7 +364,9 @@ namespace Monado {
 
     void EditorLayer::OnEvent(Monado::Event &e) {
         m_CameraController.OnEvent(e);
-        m_EditorCamera.OnEvent(e);
+        if (m_SceneState == SceneState::Edit) {
+            m_EditorCamera.OnEvent(e);
+        }
 
         EventDispatcher dispatcher(e);
         dispatcher.Dispatch<KeyPressedEvent>(MND_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
@@ -370,9 +374,6 @@ namespace Monado {
     }
 
     bool EditorLayer::OnKeyPressed(KeyPressedEvent &e) {
-        // if (e.GetRepeatCount() > 0) {
-        //	return false;
-        // }
         if (e.IsRepeat()) {
             return false;
         }
@@ -491,6 +492,12 @@ namespace Monado {
             }
         }
 
+        // Draw selected entity outline
+        if (Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity()) {
+            const TransformComponent &transform = selectedEntity.GetComponent<TransformComponent>();
+            Renderer2D::DrawRect(transform.GetTransform(), glm::vec4(1.0f, 0.5f, 0.0f, 1.0f));
+        }
+
         Renderer2D::EndScene();
     }
 
@@ -574,7 +581,8 @@ namespace Monado {
     }
 
     void EditorLayer::OnSceneStop() {
-        MND_CORE_ASSERT((m_SceneState == SceneState::Play || m_SceneState == SceneState::Simulate), "Unkonw scene state");
+        MND_CORE_ASSERT((m_SceneState == SceneState::Play || m_SceneState == SceneState::Simulate),
+                        "Unkonw scene state");
 
         if (m_SceneState == SceneState::Play)
             m_ActiveScene->OnRuntimeStop();

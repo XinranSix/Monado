@@ -112,7 +112,7 @@ namespace Monado {
                 break;
             }
             case GLFW_RELEASE: {
-                KeyReleaseEvent e(key);
+                KeyReleasedEvent e(key);
                 data.EventCallback(e);
                 break;
             }

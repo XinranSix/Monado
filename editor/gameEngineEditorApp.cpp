@@ -6,15 +6,20 @@
 #include "editor/editorLayer.h"
 
 namespace Monado {
+
     class GameEngineEditor : public Application {
     public:
-        GameEngineEditor(ApplicationCommandLineArgs args) : Application("GameEngineEditor", args) {
-            PushLayer(new EditorLayer());
-        }
+        GameEngineEditor(const ApplicationSpecification &spec) : Application(spec) { PushLayer(new EditorLayer()); }
 
         ~GameEngineEditor() {}
     };
 
-    Application *CreateApplication(ApplicationCommandLineArgs args) { return new GameEngineEditor(args); }
+    Application *CreateApplication(ApplicationCommandLineArgs args) {
+        ApplicationSpecification spec;
+        spec.Name = "GameEngineEditor";
+        spec.CommandLineArgs = args;
+
+        return new GameEngineEditor(spec);
+    }
 
 } // namespace Monado

@@ -268,6 +268,7 @@ namespace Monado {
         try {
             data = YAML::LoadFile(filepath);
         } catch (YAML::ParserException e) {
+            MND_CORE_ERROR("Failed to load .hazel file '{0}'\n     {1}", filepath, e.what());
             return false;
         }
 
