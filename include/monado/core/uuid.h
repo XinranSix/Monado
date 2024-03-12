@@ -18,8 +18,12 @@ namespace Monado {
 } // namespace Monado
 
 namespace std {
+    template <typename T>
+    struct hash;
+
     template <>
     struct hash<Monado::UUID> {
-        std::size_t operator()(const Monado::UUID &uuid) const { return hash<uint64_t>()((uint64_t)uuid); }
+        std::size_t operator()(const Monado::UUID &uuid) const { return (uint64_t)uuid; }
     };
+
 } // namespace std
