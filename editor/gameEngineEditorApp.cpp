@@ -10,8 +10,6 @@ namespace Monado {
     class GameEngineEditor : public Application {
     public:
         GameEngineEditor(const ApplicationSpecification &spec) : Application(spec) { PushLayer(new EditorLayer()); }
-
-        ~GameEngineEditor() {}
     };
 
     Application *CreateApplication(ApplicationCommandLineArgs args) {

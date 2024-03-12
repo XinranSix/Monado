@@ -122,7 +122,7 @@ namespace Monado {
     SceneSerializer::SceneSerializer(const Ref<Scene> &scene) : m_Scene(scene) {}
 
     static void SerializeEntity(YAML::Emitter &out, Entity entity) {
-        MND_CORE_ASSERT(entity.HasComponent<IDComponent>(), "Have no IDComponent");
+        MND_CORE_ASSERT(entity.HasComponent<IDComponent>(), "Has No IDComponent");
 
         out << YAML::BeginMap; // Entity
         out << YAML::Key << "Entity" << YAML::Value << entity.GetUUID();
@@ -179,6 +179,10 @@ namespace Monado {
 
             auto &spriteRendererComponent = entity.GetComponent<SpriteRendererComponent>();
             out << YAML::Key << "Color" << YAML::Value << spriteRendererComponent.Color;
+            if (spriteRendererComponent.Texture)
+                out << YAML::Key << "TexturePath" << YAML::Value << spriteRendererComponent.Texture->GetPath();
+
+            out << YAML::Key << "TilingFactor" << YAML::Value << spriteRendererComponent.TilingFactor;
 
             out << YAML::EndMap; // SpriteRendererComponent
         }
@@ -260,7 +264,7 @@ namespace Monado {
 
     void SceneSerializer::SerializeRuntime(const std::string &filepath) {
         // Not implemented
-        MND_CORE_ASSERT(false, "Not implemented");
+          MND_CORE_ASSERT(false, "Not implemented");
     }
 
     bool SceneSerializer::Deserialize(const std::string &filepath) {
@@ -324,6 +328,11 @@ namespace Monado {
                 if (spriteRendererComponent) {
                     auto &src = deserializedEntity.AddComponent<SpriteRendererComponent>();
                     src.Color = spriteRendererComponent["Color"].as<glm::vec4>();
+                    if (spriteRendererComponent["TexturePath"])
+                        src.Texture = Texture2D::Create(spriteRendererComponent["TexturePath"].as<std::string>());
+
+                    if (spriteRendererComponent["TilingFactor"])
+                        src.TilingFactor = spriteRendererComponent["TilingFactor"].as<float>();
                 }
 
                 auto circleRendererComponent = entity["CircleRendererComponent"];
