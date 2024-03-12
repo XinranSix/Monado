@@ -78,7 +78,9 @@ target("editor")
     set_kind("binary")
     add_files("editor/**.cpp")
     add_deps("monado")
-    add_links("ComDlg32")
+    for _, filepath in ipairs(os.files("./libs/**.*")) do
+        add_links(path.basename(filepath))
+    end
     add_packages("opengl", "glfw", "glad", "stb", "glm", "stb", "spdlog", "entt", "box2d", "yaml-cpp")
     -- set_rundir("$(projectdir)")
     after_build(function (target)
