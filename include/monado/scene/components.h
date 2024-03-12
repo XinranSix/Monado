@@ -118,9 +118,7 @@ namespace Monado {
         BoxCollider2DComponent(const BoxCollider2DComponent &) = default;
     };
 
-    // TODO: 待完善
-    // Circle��Χ��
-    /* struct CircleCollider2DComponent {
+    struct CircleCollider2DComponent {
         glm::vec2 Offset = { 0.0f, 0.0f };
         float Radius = 0.5f;
 
@@ -136,7 +134,8 @@ namespace Monado {
         CircleCollider2DComponent() = default;
         CircleCollider2DComponent(const CircleCollider2DComponent &) = default;
     };
-    // �ű���� */
+
+    // �ű����
     // TODO: 待完善
     /*  struct ScriptComponent {
          std::string ClassName;
@@ -150,6 +149,7 @@ namespace Monado {
     /*     using AllComponents = ComponentGroup<TransformComponent, SpriteRendererComponent, CircleRendererComponent,
                                              CameraComponent, ScriptComponent, NativeScriptComponent,
        Rigidbody2DComponent, BoxCollider2DComponent, CircleCollider2DComponent>; */
-    using AllComponents = ComponentGroup<TransformComponent, SpriteRendererComponent, CameraComponent, ScriptableEntity,
-                                         NativeScriptComponent, Rigidbody2DComponent, BoxCollider2DComponent>;
+    using AllComponents =
+        ComponentGroup<TransformComponent, SpriteRendererComponent, CameraComponent, ScriptableEntity,
+                       NativeScriptComponent, Rigidbody2DComponent, BoxCollider2DComponent, CircleCollider2DComponent>;
 } // namespace Monado
