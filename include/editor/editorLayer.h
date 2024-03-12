@@ -46,6 +46,8 @@ namespace Monado {
         void SaveScene();
         void SaveSceneAs();
 
+        void OnOverlayRender();
+
         void SerializeScene(Ref<Scene> scene, const std::filesystem::path &path);
 
         void OnScenePlay();
@@ -89,6 +91,8 @@ namespace Monado {
 
         enum class SceneState { Edit = 0, Play = 1 };
         SceneState m_SceneState = SceneState::Edit;
+
+        bool m_ShowPhysicsColliders {};
 
         // Panels
         SceneHierarchyPanel m_SceneHierarchyPanel;
