@@ -17,10 +17,9 @@
 #include "monado/renderer//renderCommand.h"
 #include "monado/utils/platformUtils.h"
 #include "monado/renderer/renderer.h"
+#include "monado/scripting/scriptEngine.h"
 
 #include <filesystem>
-
-// #include "Hazel/Scripting/ScriptEngine.h"
 
 namespace Monado {
 
@@ -40,6 +39,7 @@ namespace Monado {
         m_Window->SetEventCallback(MND_BIND_EVENT_FN(Application::OnEvent));
 
         Renderer::Init();
+        ScriptEngine::Init();
 
         m_ImGuiLayer = new ImGuiLayer();
         PushOverlay(m_ImGuiLayer);
