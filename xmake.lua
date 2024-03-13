@@ -49,7 +49,7 @@ add_requires("yaml-cpp")
 add_requires("rttr")    
 
 target("imgui")
-    add_files("./imgui/**.cpp")
+    add_files("./imgui/**.cpp") 
     set_kind("static")
     add_packages("glfw", "glad", "stb", "dirent")
 

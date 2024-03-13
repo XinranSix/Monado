@@ -4,13 +4,7 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "monado/renderer/framebuffer.h"
 
-// 用以前的炸弹人的地图
-/*
-0不绘制
-1是墙壁
-2是草地
-3是箱子
-*/
+
 
 class ExampleLayer : public Monado::Layer {
 public:
