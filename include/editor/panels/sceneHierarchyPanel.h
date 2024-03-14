@@ -1,6 +1,6 @@
 #pragma once
 
-#include "monado/core/core.h"
+#include "monado/core/base.h"
 #include "monado/core/log.h"
 #include "monado/scene/scene.h"
 #include "monado/scene/entity.h"

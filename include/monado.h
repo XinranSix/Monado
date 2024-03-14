@@ -1,7 +1,7 @@
 #pragma once
 
 #include "monado/core/application.h"
-#include "monado/core/core.h"
+#include "monado/core/base.h"
 #include "monado/core/entryPoint.h"
 #include "monado/core/input.h"
 #include "monado/core/keyCodes.h"

@@ -2,7 +2,7 @@
 #include "entt/entity/fwd.hpp"
 #include "glm/fwd.hpp"
 #include "glm/matrix.hpp"
-#include "monado/core/core.h"
+#include "monado/core/base.h"
 #include "monado/renderer/orthographicCameraController.h"
 #include "monado/renderer/framebuffer.h"
 #include "monado/renderer/subTexture2D.h"
@@ -513,7 +513,7 @@ namespace Monado {
     }
 
     void EditorLayer::OpenScene() {
-        std::string filepath = FileDialogs::OpenFile("Hazel Scene (*.scene)\0*.scene\0");
+        std::string filepath = FileDialogs::OpenFile("Monado Scene (*.scene)\0*.scene\0");
         if (!filepath.empty())
             OpenScene(filepath);
     }
@@ -540,7 +540,7 @@ namespace Monado {
     }
 
     void EditorLayer::SaveSceneAs() {
-        std::string filepath = FileDialogs::SaveFile("Monado Scene (*.scene)\0*.hazel\0");
+        std::string filepath = FileDialogs::SaveFile("Monado Scene (*.scene)\0*.scene\0");
         if (!filepath.empty()) {
             SerializeScene(m_ActiveScene, filepath);
             m_EditorScenePath = filepath;

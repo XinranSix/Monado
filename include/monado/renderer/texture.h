@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "monado/core/core.h"
+#include "monado/core/base.h"
 
 namespace Monado {
     class Texture {
