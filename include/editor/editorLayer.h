@@ -6,7 +6,7 @@
 #include "monado/event/event.h"
 #include "monado/event/keyEvent.h"
 #include "monado/event/mouseEvent.h"
-#include "monado/core/core.h"
+#include "monado/core/base.h"
 #include "monado/renderer/orthographicCameraController.h"
 #include "monado/renderer/framebuffer.h"
 #include "monado/renderer/subTexture2D.h"

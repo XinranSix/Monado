@@ -1,5 +1,5 @@
 #include "platform/openGL/openGLContext.h"
-#include "monado/core/core.h"
+#include "monado/core/base.h"
 #include "monado/core/log.h"
 #include "monado/debug/instrumentor.h"
 
@@ -27,7 +27,7 @@ namespace Monado {
         MND_CORE_INFO("  Version: {0}", reinterpret_cast<const char *>(glGetString(GL_VERSION)));
 
     MND_CORE_ASSERT((GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 5)),
-                        "Hazel requires at least OpenGL version 4.5!");
+                        "Monado requires at least OpenGL version 4.5!");
     }
 
     void OpenGLContext::SwapBuffers() {

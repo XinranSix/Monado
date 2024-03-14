@@ -1,7 +1,7 @@
 #include "platform/windows/windowsWindow.h"
 #include "GLFW/glfw3.h"
 #include "monado/core/window.h"
-#include "monado/core/core.h"
+#include "monado/core/base.h"
 #include "monado/event/applicationEvent.h"
 #include "monado/event/mouseEvent.h"
 #include "monado/event/keyEvent.h"
@@ -30,7 +30,7 @@ namespace Monado {
         if (!s_GLFWInitialized) {
             // TODO: glfwTerminate on system shutdown
             int success = glfwInit();
-            MND_CORE_ASSERT(success, "Failed to intialize GLFW!"); // 是Core.h里面预处理器指令定义了HZ_CORE_ASSERT
+            MND_CORE_ASSERT(success, "Failed to intialize GLFW!"); 
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);

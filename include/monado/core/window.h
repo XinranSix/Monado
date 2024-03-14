@@ -1,6 +1,6 @@
 #pragma once
 
-#include "monado/core/core.h"
+#include "monado/core/base.h"
 #include "monado/event/event.h"
 
 #include <string>

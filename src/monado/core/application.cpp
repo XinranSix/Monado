@@ -7,7 +7,7 @@
 
 #include "monado/core/application.h"
 #include "monado/core/log.h"
-#include "monado/core/core.h"
+#include "monado/core/base.h"
 #include "monado/core/timestep.h"
 #include "monado/event/event.h"
 #include "monado/event/applicationEvent.h"
@@ -47,7 +47,8 @@ namespace Monado {
 
     Application::~Application() {
         MND_PROFILE_FUNCTION();
-
+        
+		ScriptEngine::Shutdown();
         Renderer::Shutdown();
     }
 

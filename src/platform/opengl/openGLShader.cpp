@@ -1,6 +1,6 @@
 #include "platform/opengl/openglShader.h"
 #include "monado/debug/instrumentor.h"
-#include "monado/core/core.h"
+#include "monado/core/base.h"
 #include <filesystem>
 #include <fstream>
 
