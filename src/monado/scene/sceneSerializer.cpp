@@ -75,7 +75,6 @@ namespace YAML {
     };
 
 } // namespace YAML
-
 namespace Monado {
 
     YAML::Emitter &operator<<(YAML::Emitter &out, const glm::vec2 &v) {
@@ -122,7 +121,7 @@ namespace Monado {
     SceneSerializer::SceneSerializer(const Ref<Scene> &scene) : m_Scene(scene) {}
 
     static void SerializeEntity(YAML::Emitter &out, Entity entity) {
-        MND_CORE_ASSERT(entity.HasComponent<IDComponent>(), "Has No IDComponent");
+        MND_CORE_ASSERT(entity.HasComponent<IDComponent>());
 
         out << YAML::BeginMap; // Entity
         out << YAML::Key << "Entity" << YAML::Value << entity.GetUUID();
@@ -171,6 +170,15 @@ namespace Monado {
             out << YAML::Key << "FixedAspectRatio" << YAML::Value << cameraComponent.FixedAspectRatio;
 
             out << YAML::EndMap; // CameraComponent
+        }
+
+        if (entity.HasComponent<ScriptComponent>()) {
+            auto &scriptComponent = entity.GetComponent<ScriptComponent>();
+
+            out << YAML::Key << "ScriptComponent";
+            out << YAML::BeginMap; // ScriptComponent
+            out << YAML::Key << "ClassName" << YAML::Value << scriptComponent.ClassName;
+            out << YAML::EndMap; // ScriptComponent
         }
 
         if (entity.HasComponent<SpriteRendererComponent>()) {
@@ -264,7 +272,7 @@ namespace Monado {
 
     void SceneSerializer::SerializeRuntime(const std::string &filepath) {
         // Not implemented
-          MND_CORE_ASSERT(false, "Not implemented");
+        MND_CORE_ASSERT(false);
     }
 
     bool SceneSerializer::Deserialize(const std::string &filepath) {
@@ -272,7 +280,7 @@ namespace Monado {
         try {
             data = YAML::LoadFile(filepath);
         } catch (YAML::ParserException e) {
-            MND_CORE_ERROR("Failed to load .scene file '{0}'\n     {1}", filepath, e.what());
+            MND_CORE_ERROR("Failed to load .hazel file '{0}'\n     {1}", filepath, e.what());
             return false;
         }
 
@@ -322,6 +330,12 @@ namespace Monado {
 
                     cc.Primary = cameraComponent["Primary"].as<bool>();
                     cc.FixedAspectRatio = cameraComponent["FixedAspectRatio"].as<bool>();
+                }
+
+                auto scriptComponent = entity["ScriptComponent"];
+                if (scriptComponent) {
+                    auto &sc = deserializedEntity.AddComponent<ScriptComponent>();
+                    sc.ClassName = scriptComponent["ClassName"].as<std::string>();
                 }
 
                 auto spriteRendererComponent = entity["SpriteRendererComponent"];
@@ -379,7 +393,7 @@ namespace Monado {
 
     bool SceneSerializer::DeserializeRuntime(const std::string &filepath) {
         // Not implemented
-        MND_CORE_ASSERT(false, "Not implemented");
+        MND_CORE_ASSERT(false);
         return false;
     }
 
