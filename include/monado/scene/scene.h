@@ -27,6 +27,8 @@ namespace Monado {
 
         void DestroyEntity(Entity entity);
 
+        Entity GetEntityByUUID(UUID uuid);
+
         void OnRuntimeStart();
         void OnRuntimeStop();
 
@@ -66,6 +68,8 @@ namespace Monado {
         uint32_t m_ViewportWidth, m_ViewportHeight;
 
         b2World *m_PhysicsWorld {};
+
+        std::unordered_map<UUID, entt::entity> m_EntityMap;
 
         friend class Entity;
         friend class SceneHierarchyPanel;

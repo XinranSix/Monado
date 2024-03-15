@@ -5,7 +5,7 @@
 #include "monado/renderer/renderer2D.h"
 #include "monado/scene/sceneCamera.h"
 
-// #include "monado/scripting/scriptEngine.h"
+#include "monado/scripting/scriptEngine.h"
 
 #include "glm/glm.hpp"
 
@@ -16,6 +16,7 @@
 #include "box2d/b2_circle_shape.h"
 
 namespace Monado {
+
     static b2BodyType Rigidbody2DTypeToBox2DBody(Rigidbody2DComponent::BodyType bodyType) {
         switch (bodyType) {
         case Rigidbody2DComponent::BodyType::Static: return b2_staticBody;
@@ -101,14 +102,38 @@ namespace Monado {
         entity.AddComponent<TransformComponent>();
         auto &tag = entity.AddComponent<TagComponent>();
         tag.Tag = name.empty() ? "Entity" : name;
+
+        m_EntityMap[uuid] = entity;
+
         return entity;
     }
 
-    void Scene::DestroyEntity(Entity entity) { m_Registry.destroy(entity); }
+    void Scene::DestroyEntity(Entity entity) {
+        m_Registry.destroy(entity);
+        m_EntityMap.erase(entity.GetUUID());
+    }
 
-    void Scene::OnRuntimeStart() { OnPhysics2DStart(); }
+    void Scene::OnRuntimeStart() {
+        OnPhysics2DStart();
 
-    void Scene::OnRuntimeStop() { OnPhysics2DStop(); }
+        // Scripting
+        {
+            ScriptEngine::OnRuntimeStart(this);
+            // Instantiate all script entities
+
+            auto view = m_Registry.view<ScriptComponent>();
+            for (auto e : view) {
+                Entity entity = { e, this };
+                ScriptEngine::OnCreateEntity(entity);
+            }
+        }
+    }
+
+    void Scene::OnRuntimeStop() {
+        OnPhysics2DStop();
+
+        ScriptEngine::OnRuntimeStop();
+    }
 
     void Scene::OnSimulationStart() { OnPhysics2DStart(); }
 
@@ -117,6 +142,13 @@ namespace Monado {
     void Scene::OnUpdateRuntime(Timestep ts) {
         // Update scripts
         {
+            // C# Entity OnUpdate
+            auto view = m_Registry.view<ScriptComponent>();
+            for (auto e : view) {
+                Entity entity = { e, this };
+                ScriptEngine::OnUpdateEntity(entity, ts);
+            }
+
             m_Registry.view<NativeScriptComponent>().each([=](auto entity, auto &nsc) {
                 // TODO: Move to Scene::OnScenePlay
                 if (!nsc.Instance) {
@@ -143,6 +175,7 @@ namespace Monado {
                 auto &rb2d = entity.GetComponent<Rigidbody2DComponent>();
 
                 b2Body *body = (b2Body *)rb2d.RuntimeBody;
+
                 const auto &position = body->GetPosition();
                 transform.Translation.x = position.x;
                 transform.Translation.y = position.y;
@@ -253,6 +286,14 @@ namespace Monado {
         CopyComponentIfExists(AllComponents {}, newEntity, entity);
     }
 
+    Entity Scene::GetEntityByUUID(UUID uuid) {
+        // TODO(Yan): Maybe should be assert
+        if (m_EntityMap.find(uuid) != m_EntityMap.end())
+            return { m_EntityMap.at(uuid), this };
+
+        return {};
+    }
+
     void Scene::OnPhysics2DStart() {
         m_PhysicsWorld = new b2World({ 0.0f, -9.8f });
 
@@ -352,6 +393,9 @@ namespace Monado {
         if (m_ViewportWidth > 0 && m_ViewportHeight > 0)
             component.Camera.SetViewportSize(m_ViewportWidth, m_ViewportHeight);
     }
+
+    template <>
+    void Scene::OnComponentAdded<ScriptComponent>(Entity entity, ScriptComponent &component) {}
 
     template <>
     void Scene::OnComponentAdded<SpriteRendererComponent>(Entity entity, SpriteRendererComponent &component) {}
