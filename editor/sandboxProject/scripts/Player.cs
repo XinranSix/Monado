@@ -11,21 +11,21 @@ namespace Sandbox
 	public class Player : Entity
 	{
 		private TransformComponent m_Transform;
-		// private Rigidbody2DComponent m_Rigidbody;
+		private Rigidbody2DComponent m_Rigidbody;
 
 		void OnCreate()
 		{
 			Console.WriteLine($"Player.OnCreate - {ID}");
 
 			m_Transform = GetComponent<TransformComponent>();
-			// m_Rigidbody = GetComponent<Rigidbody2DComponent>();
+			m_Rigidbody = GetComponent<Rigidbody2DComponent>();
 		}
 
 		void OnUpdate(float ts)
 		{
 			// Console.WriteLine($"Player.OnUpdate: {ts}");
 
-			float speed = 10f;
+			float speed = 0.01f;
 			Vector3 velocity = Vector3.Zero;
 
 			if (Input.IsKeyDown(KeyCode.W))
@@ -40,11 +40,11 @@ namespace Sandbox
 
 			velocity *= speed;
 
-			// m_Rigidbody.ApplyLinearImpulse(velocity.XY, true);
+			m_Rigidbody.ApplyLinearImpulse(velocity.XY, true);
 
-			Vector3 translation = m_Transform.Translation;
-			translation += velocity * ts;
-			m_Transform.Translation = translation;
+			//Vector3 translation = m_Transform.Translation;
+			//translation += velocity * ts;
+			//m_Transform.Translation = translation;
 		}
 
 	}

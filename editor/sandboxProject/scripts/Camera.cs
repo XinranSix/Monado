@@ -31,6 +31,5 @@ namespace Sandbox
 			translation += velocity * ts;
 			Translation = translation;
 		}
-
 	}
 }
