@@ -1,5 +1,6 @@
 # generate and build 
 /**/build
+/**/bin
 
 # IDE
 /**/.vscode

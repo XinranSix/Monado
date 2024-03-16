@@ -154,7 +154,7 @@ namespace Monado {
         s_Data = new ScriptEngineData();
 
         InitMono();
-        LoadAssembly("scriptCore/Main.dll");
+        LoadAssembly("bin/Main.dll");
         LoadAssemblyClasses(s_Data->CoreAssembly);
 
         ScriptGlue::RegisterComponents();
@@ -203,7 +203,7 @@ namespace Monado {
 
     void ScriptEngine::InitMono() {
         mono_set_assemblies_path(
-            R"(.\mono\microsoft.netcore.app.runtime.mono.win-x64.8.0.3\runtimes\win-x64\lib\net8.0)");
+            R"(.\asset\mono\microsoft.netcore.app.runtime.mono.win-x64.8.0.3\runtimes\win-x64\lib\net8.0)");
 
         MonoDomain *rootDomain = mono_jit_init("MonadoJITRuntime");
         MND_CORE_ASSERT(rootDomain);
