@@ -30,7 +30,6 @@ add_requires("spdlog")
 add_requires("entt") 
 add_requires("box2d") 
 add_requires("yaml-cpp") 
-add_requires("rttr")    
 
 target("imgui")
     add_files("./imgui/**.cpp") 
@@ -46,14 +45,19 @@ target("monado")
 target("editor")
     set_kind("binary")
     add_files("editor/**.cpp")
-    add_links("./libs/win/ComDlg32", "./libs/mono/coreclr.import.lib")
+    if is_plat("windows") then
+        add_links("./libs/win/ComDlg32")
+    end
+    add_links("./libs/mono/coreclr.import.lib")
     add_packages("opengl", "glfw", "glad", "stb", "glm", "stb", "spdlog", "entt", "box2d", "yaml-cpp")
     add_deps("monado")
     -- set_rundir("$(projectdir)")
     after_build(function (target)
+        if is_plat("windows") then
+            os.runv("buildScript.bat", {target:targetdir() .. "/bin/"})
+        end
         os.cp("$(projectdir)/asset", target:targetdir())
         os.cp("$(projectdir)/libs/**.dll", target:targetdir())
-        os.cp("$(projectdir)/bin/**.dll", target:targetdir() .. "/bin/")
     end)
 
 target("sandbox")

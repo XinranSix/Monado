@@ -12,22 +12,17 @@ namespace Monado {
     class Entity;
     class SceneHierarchyPanel;
     class SerializeEntity;
+    
     class Scene {
-
     public:
         Scene();
         ~Scene();
 
         static Ref<Scene> Copy(Ref<Scene> other);
 
-        void DuplicateEntity(Entity entity);
-
-        Entity CreateEntity(const std::string &name);
+        Entity CreateEntity(const std::string &name = std::string());
         Entity CreateEntityWithUUID(UUID uuid, const std::string &name = std::string());
-
         void DestroyEntity(Entity entity);
-
-        Entity GetEntityByUUID(UUID uuid);
 
         void OnRuntimeStart();
         void OnRuntimeStop();
@@ -38,20 +33,20 @@ namespace Monado {
         void OnUpdateRuntime(Timestep ts);
         void OnUpdateSimulation(Timestep ts, EditorCamera &camera);
         void OnUpdateEditor(Timestep ts, EditorCamera &camera);
-
         void OnViewportResize(uint32_t width, uint32_t height);
 
+        void DuplicateEntity(Entity entity);
+
+        Entity GetEntityByUUID(UUID uuid);
+
         Entity GetPrimaryCameraEntity();
+
+        bool IsRunning() const { return m_IsRunning; }
 
         template <typename... Components>
         auto GetAllEntitiesWith() {
             return m_Registry.view<Components...>();
         }
-
-        std::string GetCurFilePath() { return filepath; }
-        void SetCurFilePath(const std::string &path) { filepath = path; }
-
-        void OnUpdate(Timestep ts);
 
     private:
         template <typename T>
@@ -63,16 +58,16 @@ namespace Monado {
         void RenderScene(EditorCamera &camera);
 
     private:
-        std::string filepath;
-        entt::registry m_Registry; // entt提供的注册表
-        uint32_t m_ViewportWidth, m_ViewportHeight;
+        entt::registry m_Registry;
+        uint32_t m_ViewportWidth = 0, m_ViewportHeight = 0;
+        bool m_IsRunning = false;
 
-        b2World *m_PhysicsWorld {};
+        b2World *m_PhysicsWorld = nullptr;
 
         std::unordered_map<UUID, entt::entity> m_EntityMap;
 
         friend class Entity;
-        friend class SceneHierarchyPanel;
         friend class SceneSerializer;
+        friend class SceneHierarchyPanel;
     };
 } // namespace Monado
