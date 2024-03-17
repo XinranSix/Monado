@@ -4,12 +4,6 @@
 [submodule "extern/ImGuizmo"]
 	path = extern/ImGuizmo
 	url = https://github.com/CedricGuillemet/ImGuizmo.git
-[submodule "extern/ImGuiFileDialog"]
-	path = extern/ImGuiFileDialog
-	url = https://github.com/aiekick/ImGuiFileDialog.git
-[submodule "extern/nlohmann"]
-	path = extern/nlohmann
-	url = https://github.com/nlohmann/json.git
-[submodule "extern/rttr"]
-	path = extern/rttr
-	url = https://github.com/rttrorg/rttr.git
+[submodule "extern/filewatch"]
+	path = extern/filewatch
+	url = https://github.com/ThomasMonkman/filewatch.git

@@ -3,6 +3,7 @@
 #include "glm/fwd.hpp"
 #include "glm/matrix.hpp"
 #include "monado/core/base.h"
+#include "monado/scripting/scriptEngine.h"
 #include "monado/renderer/orthographicCameraController.h"
 #include "monado/renderer/framebuffer.h"
 #include "monado/renderer/subTexture2D.h"
@@ -37,8 +38,10 @@ namespace Monado {
 
         m_CheckerboardTexture = Texture2D::Create("asset/textures/Checkerboard.png");
         m_IconPlay = Texture2D::Create("asset/icons/PlayButton.png");
+        m_IconPause = Texture2D::Create("asset/icons/PauseButton.png");
         m_IconSimulate = Texture2D::Create("asset/icons/SimulateButton.png");
-        m_IconStop = Texture2D::Create("asset/Icons/StopButton.png");
+        m_IconStep = Texture2D::Create("asset/icons/StepButton.png");
+        m_IconStop = Texture2D::Create("asset/icons/StopButton.png");
 
         FramebufferSpecification fbSpec;
         fbSpec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER,
@@ -53,8 +56,7 @@ namespace Monado {
         auto commandLineArgs = Application::Get().GetSpecification().CommandLineArgs;
         if (commandLineArgs.Count > 1) {
             auto sceneFilePath = commandLineArgs[1];
-            SceneSerializer serializer(m_ActiveScene);
-            serializer.Deserialize(sceneFilePath);
+            OpenScene(sceneFilePath);
         }
 
         m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
@@ -66,6 +68,8 @@ namespace Monado {
 
     void EditorLayer::OnUpdate(Monado::Timestep ts) {
         MND_PROFILE_FUNCTION();
+
+        m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 
         // Resize
         if (FramebufferSpecification spec = m_Framebuffer->GetSpecification();
@@ -198,6 +202,14 @@ namespace Monado {
 
                 if (ImGui::MenuItem("Exit"))
                     Application::Get().Close();
+
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Script")) {
+                if (ImGui::MenuItem("Reload assembly", "Ctrl+R"))
+                    ScriptEngine::ReloadAssembly();
+
                 ImGui::EndMenu();
             }
 
@@ -237,7 +249,7 @@ namespace Monado {
 
         m_ViewportFocused = ImGui::IsWindowFocused();
         m_ViewportHovered = ImGui::IsWindowHovered();
-        Application::Get().GetImGuiLayer()->BlockEvents(!m_ViewportFocused && !m_ViewportHovered);
+        Application::Get().GetImGuiLayer()->BlockEvents(!m_ViewportHovered);
 
         ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
         m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
@@ -332,10 +344,15 @@ namespace Monado {
             tintColor.w = 0.5f;
 
         float size = ImGui::GetWindowHeight() - 4.0f;
-        {
+        ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
+
+        bool hasPlayButton = m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play;
+        bool hasSimulateButton = m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate;
+        bool hasPauseButton = m_SceneState != SceneState::Edit;
+
+        if (hasPlayButton) {
             Ref<Texture2D> icon =
                 (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate) ? m_IconPlay : m_IconStop;
-            ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
             if (ImGui::ImageButton((ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1),
                                    0, ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) &&
                 toolbarEnabled) {
@@ -345,12 +362,13 @@ namespace Monado {
                     OnSceneStop();
             }
         }
-        ImGui::SameLine();
-        {
-            Ref<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play)
-                                      ? m_IconSimulate
-                                      : m_IconStop; // ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x *
-                                                    // 0.5f) - (size * 0.5f));
+
+        if (hasSimulateButton) {
+            if (hasPlayButton)
+                ImGui::SameLine();
+
+            Ref<Texture2D> icon =
+                (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play) ? m_IconSimulate : m_IconStop;
             if (ImGui::ImageButton((ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1),
                                    0, ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) &&
                 toolbarEnabled) {
@@ -358,6 +376,32 @@ namespace Monado {
                     OnSceneSimulate();
                 else if (m_SceneState == SceneState::Simulate)
                     OnSceneStop();
+            }
+        }
+        if (hasPauseButton) {
+            bool isPaused = m_ActiveScene->IsPaused();
+            ImGui::SameLine();
+            {
+                Ref<Texture2D> icon = m_IconPause;
+                if (ImGui::ImageButton((ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0),
+                                       ImVec2(1, 1), 0, ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) &&
+                    toolbarEnabled) {
+                    m_ActiveScene->SetPaused(!isPaused);
+                }
+            }
+
+            // Step button
+            if (isPaused) {
+                ImGui::SameLine();
+                {
+                    Ref<Texture2D> icon = m_IconStep;
+                    bool isPaused = m_ActiveScene->IsPaused();
+                    if (ImGui::ImageButton((ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0),
+                                           ImVec2(1, 1), 0, ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) &&
+                        toolbarEnabled) {
+                        m_ActiveScene->Step();
+                    }
+                }
             }
         }
         ImGui::PopStyleVar(2);
@@ -377,9 +421,9 @@ namespace Monado {
     }
 
     bool EditorLayer::OnKeyPressed(KeyPressedEvent &e) {
-        if (e.IsRepeat()) {
+        // Shortcuts
+        if (e.IsRepeat())
             return false;
-        }
 
         bool control = Input::IsKeyPressed(Key::LeftControl) || Input::IsKeyPressed(Key::RightControl);
         bool shift = Input::IsKeyPressed(Key::LeftShift) || Input::IsKeyPressed(Key::RightShift);
@@ -433,8 +477,12 @@ namespace Monado {
             break;
         }
         case Key::R: {
-            if (!ImGuizmo::IsUsing())
-                m_GizmoType = ImGuizmo::OPERATION::SCALE;
+            if (control) {
+                ScriptEngine::ReloadAssembly();
+            } else {
+                if (!ImGuizmo::IsUsing())
+                    m_GizmoType = ImGuizmo::OPERATION::SCALE;
+            }
             break;
         }
         }
@@ -506,7 +554,7 @@ namespace Monado {
 
     void EditorLayer::NewScene() {
         m_ActiveScene = CreateRef<Scene>();
-        m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+        // m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
         m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 
         m_EditorScenePath = std::filesystem::path();
@@ -531,7 +579,7 @@ namespace Monado {
         SceneSerializer serializer(newScene);
         if (serializer.Deserialize(path.string())) {
             m_EditorScene = newScene;
-            m_EditorScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+            // m_EditorScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
             m_SceneHierarchyPanel.SetContext(m_EditorScene);
 
             m_ActiveScene = m_EditorScene;

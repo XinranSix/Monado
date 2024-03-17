@@ -68,6 +68,12 @@ namespace Monado {
 
     void Application::Close() { m_Running = false; }
 
+    void Application::SubmitToMainThread(const std::function<void()> &function) {
+        std::scoped_lock<std::mutex> lock(m_MainThreadQueueMutex);
+
+        m_MainThreadQueue.emplace_back(function);
+    }
+
     void Application::OnEvent(Event &e) {
         MND_PROFILE_FUNCTION();
 
@@ -91,6 +97,8 @@ namespace Monado {
             float time = Time::GetTime();
             Timestep timestep = time - m_LastFrameTime;
             m_LastFrameTime = time;
+
+            ExecuteMainThreadQueue();
 
             if (!m_Minimized) {
                 {
@@ -131,5 +139,14 @@ namespace Monado {
         Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
 
         return false;
+    }
+
+    void Application::ExecuteMainThreadQueue() {
+        std::scoped_lock<std::mutex> lock(m_MainThreadQueueMutex);
+
+        for (auto &func : m_MainThreadQueue)
+           { func();}
+
+        m_MainThreadQueue.clear();
     }
 } // namespace Monado
