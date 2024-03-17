@@ -53,6 +53,7 @@ namespace Monado {
         void OnScenePlay();
         void OnSceneStop();
         void OnSceneSimulate();
+        void OnScenePause();
 
         void OnDuplicateEntity();
 
@@ -100,7 +101,7 @@ namespace Monado {
         ContentBrowserPanel m_ContentBrowserPanel;
 
         // Editor resources
-        Ref<Texture2D> m_IconPlay, m_IconSimulate, m_IconStop;
+        Ref<Texture2D> m_IconPlay, m_IconPause, m_IconStep, m_IconSimulate, m_IconStop;
     };
 
 } // namespace Monado
