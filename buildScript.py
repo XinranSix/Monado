@@ -27,7 +27,7 @@ if not sandboxProject_files:
     print("No .cs files found in editor/sandboxProject/scripts directory.")
     exit()
 
-output_dir = "bin"
+output_dir = "build/windows/x64/debug/bin"
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 

@@ -41,6 +41,10 @@ namespace Sandbox
 
 			velocity *= speed;
 
+			// Console.WriteLine("Velocity: {0}", velocity);
+
+			// DistanceFromPlayer += ts;
+
 			Vector3 translation = Translation;
 			translation += velocity * ts;
 			Translation = translation;

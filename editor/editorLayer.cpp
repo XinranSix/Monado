@@ -3,6 +3,7 @@
 #include "glm/fwd.hpp"
 #include "glm/matrix.hpp"
 #include "monado/core/base.h"
+#include "monado/scripting/scriptEngine.h"
 #include "monado/renderer/orthographicCameraController.h"
 #include "monado/renderer/framebuffer.h"
 #include "monado/renderer/subTexture2D.h"
@@ -199,6 +200,14 @@ namespace Monado {
 
                 if (ImGui::MenuItem("Exit"))
                     Application::Get().Close();
+
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Script")) {
+                if (ImGui::MenuItem("Reload assembly", "Ctrl+R"))
+                    ScriptEngine::ReloadAssembly();
+
                 ImGui::EndMenu();
             }
 
@@ -378,9 +387,9 @@ namespace Monado {
     }
 
     bool EditorLayer::OnKeyPressed(KeyPressedEvent &e) {
-        if (e.IsRepeat()) {
+        // Shortcuts
+        if (e.IsRepeat())
             return false;
-        }
 
         bool control = Input::IsKeyPressed(Key::LeftControl) || Input::IsKeyPressed(Key::RightControl);
         bool shift = Input::IsKeyPressed(Key::LeftShift) || Input::IsKeyPressed(Key::RightShift);
@@ -434,8 +443,12 @@ namespace Monado {
             break;
         }
         case Key::R: {
-            if (!ImGuizmo::IsUsing())
-                m_GizmoType = ImGuizmo::OPERATION::SCALE;
+            if (control) {
+                ScriptEngine::ReloadAssembly();
+            } else {
+                if (!ImGuizmo::IsUsing())
+                    m_GizmoType = ImGuizmo::OPERATION::SCALE;
+            }
             break;
         }
         }

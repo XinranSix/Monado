@@ -138,7 +138,10 @@ namespace Monado {
         RegisterComponent<Component...>();
     }
 
-    void ScriptGlue::RegisterComponents() { RegisterComponent(AllComponents {}); }
+    void ScriptGlue::RegisterComponents() {
+        s_EntityHasComponentFuncs.clear();
+        RegisterComponent(AllComponents {});
+    }
 
     void ScriptGlue::RegisterFunctions() {
         MND_ADD_INTERNAL_CALL(NativeLog);
