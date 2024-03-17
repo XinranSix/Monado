@@ -12,7 +12,7 @@ namespace Monado {
     class Entity;
     class SceneHierarchyPanel;
     class SerializeEntity;
-    
+
     class Scene {
     public:
         Scene();
@@ -37,6 +37,7 @@ namespace Monado {
 
         void DuplicateEntity(Entity entity);
 
+        Entity FindEntityByName(std::string_view name);
         Entity GetEntityByUUID(UUID uuid);
 
         Entity GetPrimaryCameraEntity();

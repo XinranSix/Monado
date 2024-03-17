@@ -66,6 +66,8 @@ namespace Monado {
     void EditorLayer::OnUpdate(Monado::Timestep ts) {
         MND_PROFILE_FUNCTION();
 
+        m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+
         // Resize
         if (FramebufferSpecification spec = m_Framebuffer->GetSpecification();
             m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f && // zero sized framebuffer is invalid
@@ -505,7 +507,7 @@ namespace Monado {
 
     void EditorLayer::NewScene() {
         m_ActiveScene = CreateRef<Scene>();
-        m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+        // m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
         m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 
         m_EditorScenePath = std::filesystem::path();
@@ -530,7 +532,7 @@ namespace Monado {
         SceneSerializer serializer(newScene);
         if (serializer.Deserialize(path.string())) {
             m_EditorScene = newScene;
-            m_EditorScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+            // m_EditorScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
             m_SceneHierarchyPanel.SetContext(m_EditorScene);
 
             m_ActiveScene = m_EditorScene;
