@@ -1,6 +1,7 @@
 #include "editor/panels/contentBrowserPanel.h"
 
 #include "monado/project/project.h"
+#include "monado/ui/ui.h"
 
 #include "imgui.h"
 #include <cwchar>

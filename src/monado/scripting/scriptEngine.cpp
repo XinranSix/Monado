@@ -170,7 +170,11 @@ namespace Monado {
         Scope<filewatch::FileWatch<std::string>> AppAssemblyFileWatcher;
         bool AssemblyReloadPending = false;
 
+#ifdef MND_DEBUG
         bool EnableDebugging = true;
+#else
+        bool EnableDebugging = false;
+#endif
 
         // Runtime
 
@@ -192,7 +196,6 @@ namespace Monado {
 
     void ScriptEngine::Init() {
         s_Data = new ScriptEngineData();
-        s_Data->EnableDebugging = false;
 
         InitMono();
         ScriptGlue::RegisterFunctions();
@@ -240,8 +243,10 @@ namespace Monado {
         // Store the root domain pointer
         s_Data->RootDomain = rootDomain;
 
-        if (s_Data->EnableDebugging)
-            mono_debug_domain_create(s_Data->RootDomain);
+        if (s_Data->EnableDebugging) {
+            // FIXME(Yao Jie):
+            // mono_debug_domain_create(s_Data->RootDomain);
+        }
 
         mono_thread_set_main(mono_thread_current());
     }
