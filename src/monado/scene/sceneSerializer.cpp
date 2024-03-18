@@ -7,7 +7,7 @@
 #include "monado/scene/components.h"
 #include "monado/scripting/scriptEngine.h"
 #include "monado/core/uuid.h"
-
+#include "monado/project/project.h"
 
 namespace YAML {
 
@@ -456,13 +456,16 @@ namespace Monado {
                 if (spriteRendererComponent) {
                     auto &src = deserializedEntity.AddComponent<SpriteRendererComponent>();
                     src.Color = spriteRendererComponent["Color"].as<glm::vec4>();
-                    if (spriteRendererComponent["TexturePath"])
-                        src.Texture = Texture2D::Create(spriteRendererComponent["TexturePath"].as<std::string>());
+                    if (spriteRendererComponent["TexturePath"]) {
+                        std::string texturePath = spriteRendererComponent["TexturePath"].as<std::string>();
+                        auto path = Project::GetAssetFileSystemPath(texturePath);
+                        src.Texture = Texture2D::Create(path.string());
+                    }
 
                     if (spriteRendererComponent["TilingFactor"])
                         src.TilingFactor = spriteRendererComponent["TilingFactor"].as<float>();
                 }
-
+                
                 auto circleRendererComponent = entity["CircleRendererComponent"];
                 if (circleRendererComponent) {
                     auto &crc = deserializedEntity.AddComponent<CircleRendererComponent>();

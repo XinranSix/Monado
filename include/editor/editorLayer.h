@@ -24,6 +24,7 @@
 #include "monado/scene/sceneSerializer.h"
 
 namespace Monado {
+
     class EditorLayer : public Layer {
     public:
         EditorLayer();
@@ -40,19 +41,23 @@ namespace Monado {
         bool OnKeyPressed(KeyPressedEvent &e);
         bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
 
+        void OnOverlayRender();
+
+        void NewProject();
+        void OpenProject(const std::filesystem::path &path);
+        void SaveProject();
+
         void NewScene();
         void OpenScene();
         void OpenScene(const std::filesystem::path &path);
         void SaveScene();
         void SaveSceneAs();
 
-        void OnOverlayRender();
-
         void SerializeScene(Ref<Scene> scene, const std::filesystem::path &path);
 
         void OnScenePlay();
-        void OnSceneStop();
         void OnSceneSimulate();
+        void OnSceneStop();
         void OnScenePause();
 
         void OnDuplicateEntity();
@@ -91,14 +96,14 @@ namespace Monado {
 
         int m_GizmoType = -1;
 
+        bool m_ShowPhysicsColliders = false;
+
         enum class SceneState { Edit = 0, Play = 1, Simulate = 2 };
         SceneState m_SceneState = SceneState::Edit;
 
-        bool m_ShowPhysicsColliders {};
-
         // Panels
         SceneHierarchyPanel m_SceneHierarchyPanel;
-        ContentBrowserPanel m_ContentBrowserPanel;
+        Scope<ContentBrowserPanel> m_ContentBrowserPanel;
 
         // Editor resources
         Ref<Texture2D> m_IconPlay, m_IconPause, m_IconStep, m_IconSimulate, m_IconStop;

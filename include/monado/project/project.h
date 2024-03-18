@@ -1,9 +1,9 @@
 #pragma once
 
-#include "monado/core/base.h"
-
 #include <string>
 #include <filesystem>
+
+#include "monado/core/base.h"
 
 namespace Monado {
 
@@ -19,18 +19,18 @@ namespace Monado {
     class Project {
     public:
         static const std::filesystem::path &GetProjectDirectory() {
-            MND_CORE_ASSERT(s_ActiveProject, "asd");
+            MND_CORE_ASSERT(s_ActiveProject);
             return s_ActiveProject->m_ProjectDirectory;
         }
 
         static std::filesystem::path GetAssetDirectory() {
-            MND_CORE_ASSERT(s_ActiveProject, "asd");
+            MND_CORE_ASSERT(s_ActiveProject);
             return GetProjectDirectory() / s_ActiveProject->m_Config.AssetDirectory;
         }
 
         // TODO(Yan): move to asset manager when we have one
         static std::filesystem::path GetAssetFileSystemPath(const std::filesystem::path &path) {
-            MND_CORE_ASSERT(s_ActiveProject, "asd");
+            MND_CORE_ASSERT(s_ActiveProject);
             return GetAssetDirectory() / path;
         }
 

@@ -14,5 +14,4 @@ namespace Monado {
     private:
         Ref<Project> m_Project;
     };
-
 } // namespace Monado

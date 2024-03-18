@@ -1,7 +1,7 @@
 #include "monado/project/projectSerializer.h"
 
 #include <fstream>
-#include "yaml-cpp/yaml.h"
+#include <yaml-cpp/yaml.h>
 
 namespace Monado {
 

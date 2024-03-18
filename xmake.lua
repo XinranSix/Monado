@@ -43,6 +43,7 @@ target("monado")
 target("editor")
     set_kind("binary")
     add_files("editor/**.cpp")
+    set_runargs("Sandbox.mproj")
     if is_plat("windows") then
         add_links("./libs/win/ComDlg32")
     end
@@ -56,6 +57,7 @@ target("editor")
         end
         os.cp("$(projectdir)/asset", target:targetdir())
         os.cp("$(projectdir)/libs/**.dll", target:targetdir())
+        os.cp("$(projectdir)/asset/**.mproj", target:targetdir())
     end)
 
 target("sandbox")
