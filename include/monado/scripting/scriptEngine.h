@@ -146,8 +146,8 @@ namespace Monado {
         static void Init();
         static void Shutdown();
 
-        static void LoadAssembly(const std::filesystem::path &filepath);
-        static void LoadAppAssembly(const std::filesystem::path &filepath);
+        static bool LoadAssembly(const std::filesystem::path &filepath);
+        static bool LoadAppAssembly(const std::filesystem::path &filepath);
 
         static void ReloadAssembly();
 
