@@ -10,7 +10,7 @@ def process_directory(directory):
     return file_list
 
 def compile_dll(file_list, output_file, extra_args=None):
-    command = ["csc", "/target:library", "/out:" + output_file]
+    command = ["csc", "/debug","/target:library", "/out:" + output_file]
     if extra_args:
         command += extra_args
     command += file_list
@@ -27,7 +27,7 @@ if not sandboxProject_files:
     print("No .cs files found in editor/sandboxProject/scripts directory.")
     exit()
 
-output_dir = "bin"
+output_dir = "build/windows/x64/debug/bin"
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 

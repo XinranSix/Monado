@@ -1,6 +1,7 @@
 #include "editor/panels/contentBrowserPanel.h"
 
 #include "monado/project/project.h"
+#include "monado/ui/ui.h"
 
 #include "imgui.h"
 #include <cwchar>
@@ -8,10 +9,8 @@
 
 namespace Monado {
 
-    // Once we have projects, change this
-    extern const std::filesystem::path g_AssetPath = "asset";
-
-    ContentBrowserPanel::ContentBrowserPanel() : m_CurrentDirectory(g_AssetPath) {
+    ContentBrowserPanel::ContentBrowserPanel()
+        : m_BaseDirectory(Project::GetAssetDirectory()), m_CurrentDirectory(m_BaseDirectory) {
         m_DirectoryIcon = Texture2D::Create("asset/icons/ContentBrowser/DirectoryIcon.png");
         m_FileIcon = Texture2D::Create("asset/icons/ContentBrowser/FileIcon.png");
     }
@@ -19,7 +18,7 @@ namespace Monado {
     void ContentBrowserPanel::OnImGuiRender() {
         ImGui::Begin("Content Browser");
 
-        if (m_CurrentDirectory != std::filesystem::path(g_AssetPath)) {
+        if (m_CurrentDirectory != std::filesystem::path(m_BaseDirectory)) {
             if (ImGui::Button("<-")) {
                 m_CurrentDirectory = m_CurrentDirectory.parent_path();
             }
@@ -47,7 +46,7 @@ namespace Monado {
                                { 1, 0 });
 
             if (ImGui::BeginDragDropSource()) {
-                auto relativePath = std::filesystem::relative(path, g_AssetPath);
+                std::filesystem::path relativePath(path);
                 const wchar_t *itemPath = relativePath.c_str();
                 ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", itemPath, (wcslen(itemPath) + 1) * sizeof(wchar_t));
                 ImGui::EndDragDropSource();

@@ -1,5 +1,4 @@
 #include "monado/project/project.h"
-
 #include "monado/project/projectSerializer.h"
 
 namespace Monado {

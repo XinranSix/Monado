@@ -43,7 +43,7 @@ namespace Sandbox
 
 			// Console.WriteLine("Velocity: {0}", velocity);
 
-			DistanceFromPlayer += ts;
+			// DistanceFromPlayer += (float)Math.Sin(ts);
 
 			Vector3 translation = Translation;
 			translation += velocity * ts;

@@ -64,6 +64,11 @@
 
 #include "monado/core/application.h"
 #include "monado/core/timer.h"
+#include "monado/core/buffer.h"
+#include "monado/core/fileSystem.h"
+
+#include "mono/metadata/mono-debug.h"
+#include "mono/metadata/threads.h"
 
 namespace Monado {
 
@@ -83,40 +88,13 @@ namespace Monado {
 
     namespace Utils {
 
-        // TODO: move to FileSystem class
-        static char *ReadBytes(const std::filesystem::path &filepath, uint32_t *outSize) {
-            std::ifstream stream(filepath, std::ios::binary | std::ios::ate);
-
-            if (!stream) {
-                // Failed to open the file
-                return nullptr;
-            }
-
-            std::streampos end = stream.tellg();
-            stream.seekg(0, std::ios::beg);
-            uint64_t size = end - stream.tellg();
-
-            if (size == 0) {
-                // File is empty
-                return nullptr;
-            }
-
-            char *buffer = new char[size];
-            stream.read((char *)buffer, size);
-            stream.close();
-
-            *outSize = (uint32_t)size;
-            return buffer;
-        }
-
-        static MonoAssembly *LoadMonoAssembly(const std::filesystem::path &assemblyPath) {
-            uint32_t fileSize = 0;
-            char *fileData = ReadBytes(assemblyPath, &fileSize);
+        static MonoAssembly *LoadMonoAssembly(const std::filesystem::path &assemblyPath, bool loadPDB = false) {
+            ScopedBuffer fileData = FileSystem::ReadFileBinary(assemblyPath);
 
             // NOTE: We can't use this image for anything other than loading the assembly because this image doesn't
             // have a reference to the assembly
             MonoImageOpenStatus status;
-            MonoImage *image = mono_image_open_from_data_full(fileData, fileSize, 1, &status, 0);
+            MonoImage *image = mono_image_open_from_data_full(fileData.As<char>(), fileData.Size(), 1, &status, 0);
 
             if (status != MONO_IMAGE_OK) {
                 const char *errorMessage = mono_image_strerror(status);
@@ -124,12 +102,20 @@ namespace Monado {
                 return nullptr;
             }
 
+            if (loadPDB) {
+                std::filesystem::path pdbPath = assemblyPath;
+                pdbPath.replace_extension(".pdb");
+
+                if (std::filesystem::exists(pdbPath)) {
+                    ScopedBuffer pdbFileData = FileSystem::ReadFileBinary(pdbPath);
+                    mono_debug_open_image_from_memory(image, pdbFileData.As<const mono_byte>(), pdbFileData.Size());
+                    MND_CORE_INFO("Loaded PDB {}", pdbPath);
+                }
+            }
+
             std::string pathString = assemblyPath.string();
             MonoAssembly *assembly = mono_assembly_load_from_full(image, pathString.c_str(), &status, 0);
             mono_image_close(image);
-
-            // Don't forget to free the file data
-            delete[] fileData;
 
             return assembly;
         }
@@ -184,6 +170,12 @@ namespace Monado {
         Scope<filewatch::FileWatch<std::string>> AppAssemblyFileWatcher;
         bool AssemblyReloadPending = false;
 
+#ifdef MND_DEBUG
+        bool EnableDebugging = true;
+#else
+        bool EnableDebugging = false;
+#endif
+
         // Runtime
 
         Scene *SceneContext = nullptr;
@@ -208,46 +200,23 @@ namespace Monado {
         InitMono();
         ScriptGlue::RegisterFunctions();
 
-        LoadAssembly("./bin/MonadoScriptCore.dll");
-        LoadAppAssembly("./bin/Sandbox.dll");
+        bool status = LoadAssembly("./bin/MonadoScriptCore.dll");
+        if (!status) {
+            MND_CORE_ERROR("[ScriptEngine] Could not load MonadoScriptCore assembly.");
+            return;
+        }
+        status = LoadAppAssembly("./bin/Sandbox.dll");
+        if (!status) {
+            MND_CORE_ERROR("[ScriptEngine] Could not load app assembly.");
+            return;
+        }
+
         LoadAssemblyClasses();
 
         ScriptGlue::RegisterComponents();
 
         // Retrieve and instantiate class
         s_Data->EntityClass = ScriptClass("Monado", "Entity", true);
-#if 0
-	
-		MonoObject* instance = s_Data->EntityClass.Instantiate();
-	
-		// Call method
-		MonoMethod* printMessageFunc = s_Data->EntityClass.GetMethod("PrintMessage", 0);
-		s_Data->EntityClass.InvokeMethod(instance, printMessageFunc);
-
-		// Call method with param
-		MonoMethod* printIntFunc = s_Data->EntityClass.GetMethod("PrintInt", 1);
-
-		int value = 5;
-		void* param = &value;
-
-		s_Data->EntityClass.InvokeMethod(instance, printIntFunc, &param);
-
-		MonoMethod* printIntsFunc = s_Data->EntityClass.GetMethod("PrintInts", 2);
-		int value2 = 508;
-		void* params[2] =
-		{
-			&value,
-			&value2
-		};
-		s_Data->EntityClass.InvokeMethod(instance, printIntsFunc, params);
-
-		MonoString* monoString = mono_string_new(s_Data->AppDomain, "Hello World from C++!");
-		MonoMethod* printCustomMessageFunc = s_Data->EntityClass.GetMethod("PrintCustomMessage", 1);
-		void* stringParam = monoString;
-		s_Data->EntityClass.InvokeMethod(instance, printCustomMessageFunc, &stringParam);
-
-		MND_CORE_ASSERT(false);
-#endif
     }
 
     void ScriptEngine::Shutdown() {
@@ -259,11 +228,27 @@ namespace Monado {
         mono_set_assemblies_path(
             R"(.\asset\mono\microsoft.netcore.app.runtime.mono.win-x64.8.0.3\runtimes\win-x64\lib\net8.0)");
 
+        if (s_Data->EnableDebugging) {
+            const char *argv[2] = { "--debugger-agent=transport=dt_socket,address=127.0.0.1:2550,server=y,suspend=n,"
+                                    "loglevel=3,logfile=MonoDebugger.log",
+                                    "--soft-breakpoints" };
+
+            mono_jit_parse_options(2, (char **)argv);
+            mono_debug_init(MONO_DEBUG_FORMAT_MONO);
+        }
+
         MonoDomain *rootDomain = mono_jit_init("MonadoJITRuntime");
         MND_CORE_ASSERT(rootDomain);
 
         // Store the root domain pointer
         s_Data->RootDomain = rootDomain;
+
+        if (s_Data->EnableDebugging) {
+            // FIXME(Yao Jie):
+            // mono_debug_domain_create(s_Data->RootDomain);
+        }
+
+        mono_thread_set_main(mono_thread_current());
     }
 
     void ScriptEngine::ShutdownMono() {
@@ -276,30 +261,32 @@ namespace Monado {
         s_Data->RootDomain = nullptr;
     }
 
-    void ScriptEngine::LoadAssembly(const std::filesystem::path &filepath) {
+    bool ScriptEngine::LoadAssembly(const std::filesystem::path &filepath) {
         // Create an App Domain
         s_Data->AppDomain = mono_domain_create_appdomain((char *)"MonadoScriptRuntime", nullptr);
         mono_domain_set(s_Data->AppDomain, true);
 
-        // Move this maybe
         s_Data->CoreAssemblyFilepath = filepath;
-        s_Data->CoreAssembly = Utils::LoadMonoAssembly(filepath);
+        s_Data->CoreAssembly = Utils::LoadMonoAssembly(filepath, s_Data->EnableDebugging);
+        if (s_Data->CoreAssembly == nullptr)
+            return false;
+
         s_Data->CoreAssemblyImage = mono_assembly_get_image(s_Data->CoreAssembly);
-        // Utils::PrintAssemblyTypes(s_Data->CoreAssembly);
+        return true;
     }
 
-    void ScriptEngine::LoadAppAssembly(const std::filesystem::path &filepath) {
-        // Move this maybe
+    bool ScriptEngine::LoadAppAssembly(const std::filesystem::path &filepath) {
         s_Data->AppAssemblyFilepath = filepath;
-        s_Data->AppAssembly = Utils::LoadMonoAssembly(filepath);
-        auto assemb = s_Data->AppAssembly;
+        s_Data->AppAssembly = Utils::LoadMonoAssembly(filepath, s_Data->EnableDebugging);
+        if (s_Data->AppAssembly == nullptr)
+            return false;
+
         s_Data->AppAssemblyImage = mono_assembly_get_image(s_Data->AppAssembly);
-        auto assembi = s_Data->AppAssemblyImage;
-        // Utils::PrintAssemblyTypes(s_Data->AppAssembly);
 
         s_Data->AppAssemblyFileWatcher =
             CreateScope<filewatch::FileWatch<std::string>>(filepath.string(), OnAppAssemblyFileSystemEvent);
         s_Data->AssemblyReloadPending = false;
+        return true;
     }
 
     void ScriptEngine::ReloadAssembly() {
@@ -344,10 +331,12 @@ namespace Monado {
 
     void ScriptEngine::OnUpdateEntity(Entity entity, Timestep ts) {
         UUID entityUUID = entity.GetUUID();
-        MND_CORE_ASSERT(s_Data->EntityInstances.find(entityUUID) != s_Data->EntityInstances.end());
-
-        Ref<ScriptInstance> instance = s_Data->EntityInstances[entityUUID];
-        instance->InvokeOnUpdate((float)ts);
+        if (s_Data->EntityInstances.find(entityUUID) != s_Data->EntityInstances.end()) {
+            Ref<ScriptInstance> instance = s_Data->EntityInstances[entityUUID];
+            instance->InvokeOnUpdate((float)ts);
+        } else {
+            MND_CORE_ERROR("Could not find ScriptInstance for entity {}", entityUUID);
+        }
     }
 
     Scene *ScriptEngine::GetSceneContext() { return s_Data->SceneContext; }
@@ -465,7 +454,8 @@ namespace Monado {
     }
 
     MonoObject *ScriptClass::InvokeMethod(MonoObject *instance, MonoMethod *method, void **params) {
-        return mono_runtime_invoke(method, instance, params, nullptr);
+        MonoObject *exception = nullptr;
+        return mono_runtime_invoke(method, instance, params, &exception);
     }
 
     ScriptInstance::ScriptInstance(Ref<ScriptClass> scriptClass, Entity entity) : m_ScriptClass(scriptClass) {

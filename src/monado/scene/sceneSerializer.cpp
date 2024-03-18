@@ -7,7 +7,7 @@
 #include "monado/scene/components.h"
 #include "monado/scripting/scriptEngine.h"
 #include "monado/core/uuid.h"
-
+#include "monado/project/project.h"
 
 namespace YAML {
 
@@ -410,42 +410,43 @@ namespace Monado {
                     auto scriptFields = scriptComponent["ScriptFields"];
                     if (scriptFields) {
                         Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(sc.ClassName);
-                        MND_CORE_ASSERT(entityClass);
-                        const auto &fields = entityClass->GetFields();
-                        auto &entityFields = ScriptEngine::GetScriptFieldMap(deserializedEntity);
+                        if (entityClass) {
+                            const auto &fields = entityClass->GetFields();
+                            auto &entityFields = ScriptEngine::GetScriptFieldMap(deserializedEntity);
 
-                        for (auto scriptField : scriptFields) {
-                            std::string name = scriptField["Name"].as<std::string>();
-                            std::string typeString = scriptField["Type"].as<std::string>();
-                            ScriptFieldType type = Utils::ScriptFieldTypeFromString(typeString);
+                            for (auto scriptField : scriptFields) {
+                                std::string name = scriptField["Name"].as<std::string>();
+                                std::string typeString = scriptField["Type"].as<std::string>();
+                                ScriptFieldType type = Utils::ScriptFieldTypeFromString(typeString);
 
-                            ScriptFieldInstance &fieldInstance = entityFields[name];
+                                ScriptFieldInstance &fieldInstance = entityFields[name];
 
-                            // TODO(Yan): turn this assert into Monadonut log warning
-                            MND_CORE_ASSERT(fields.find(name) != fields.end());
+                                // TODO(Yan): turn this assert into Hazelnut log warning
+                                MND_CORE_ASSERT(fields.find(name) != fields.end());
 
-                            if (fields.find(name) == fields.end())
-                                continue;
+                                if (fields.find(name) == fields.end())
+                                    continue;
 
-                            fieldInstance.Field = fields.at(name);
+                                fieldInstance.Field = fields.at(name);
 
-                            switch (type) {
-                                READ_SCRIPT_FIELD(Float, float);
-                                READ_SCRIPT_FIELD(Double, double);
-                                READ_SCRIPT_FIELD(Bool, bool);
-                                READ_SCRIPT_FIELD(Char, char);
-                                READ_SCRIPT_FIELD(Byte, int8_t);
-                                READ_SCRIPT_FIELD(Short, int16_t);
-                                READ_SCRIPT_FIELD(Int, int32_t);
-                                READ_SCRIPT_FIELD(Long, int64_t);
-                                READ_SCRIPT_FIELD(UByte, uint8_t);
-                                READ_SCRIPT_FIELD(UShort, uint16_t);
-                                READ_SCRIPT_FIELD(UInt, uint32_t);
-                                READ_SCRIPT_FIELD(ULong, uint64_t);
-                                READ_SCRIPT_FIELD(Vector2, glm::vec2);
-                                READ_SCRIPT_FIELD(Vector3, glm::vec3);
-                                READ_SCRIPT_FIELD(Vector4, glm::vec4);
-                                READ_SCRIPT_FIELD(Entity, UUID);
+                                switch (type) {
+                                    READ_SCRIPT_FIELD(Float, float);
+                                    READ_SCRIPT_FIELD(Double, double);
+                                    READ_SCRIPT_FIELD(Bool, bool);
+                                    READ_SCRIPT_FIELD(Char, char);
+                                    READ_SCRIPT_FIELD(Byte, int8_t);
+                                    READ_SCRIPT_FIELD(Short, int16_t);
+                                    READ_SCRIPT_FIELD(Int, int32_t);
+                                    READ_SCRIPT_FIELD(Long, int64_t);
+                                    READ_SCRIPT_FIELD(UByte, uint8_t);
+                                    READ_SCRIPT_FIELD(UShort, uint16_t);
+                                    READ_SCRIPT_FIELD(UInt, uint32_t);
+                                    READ_SCRIPT_FIELD(ULong, uint64_t);
+                                    READ_SCRIPT_FIELD(Vector2, glm::vec2);
+                                    READ_SCRIPT_FIELD(Vector3, glm::vec3);
+                                    READ_SCRIPT_FIELD(Vector4, glm::vec4);
+                                    READ_SCRIPT_FIELD(Entity, UUID);
+                                }
                             }
                         }
                     }
@@ -455,13 +456,16 @@ namespace Monado {
                 if (spriteRendererComponent) {
                     auto &src = deserializedEntity.AddComponent<SpriteRendererComponent>();
                     src.Color = spriteRendererComponent["Color"].as<glm::vec4>();
-                    if (spriteRendererComponent["TexturePath"])
-                        src.Texture = Texture2D::Create(spriteRendererComponent["TexturePath"].as<std::string>());
+                    if (spriteRendererComponent["TexturePath"]) {
+                        std::string texturePath = spriteRendererComponent["TexturePath"].as<std::string>();
+                        auto path = Project::GetAssetFileSystemPath(texturePath);
+                        src.Texture = Texture2D::Create(path.string());
+                    }
 
                     if (spriteRendererComponent["TilingFactor"])
                         src.TilingFactor = spriteRendererComponent["TilingFactor"].as<float>();
                 }
-
+                
                 auto circleRendererComponent = entity["CircleRendererComponent"];
                 if (circleRendererComponent) {
                     auto &crc = deserializedEntity.AddComponent<CircleRendererComponent>();
