@@ -20,7 +20,7 @@ call :process_directory "%CD%\scriptCore"
 echo File list: %file_list%
 
 echo Compiling all C# files into a dynamic library (MonadoScriptCore.dll)...
-csc -target:library -out:"%output_directory%\MonadoScriptCore.dll" %file_list%
+csc -target:library -debug -out:"%output_directory%\MonadoScriptCore.dll" %file_list%
 
 if errorlevel 1 (
     echo Compilation of MonadoScriptCore.dll failed.
@@ -36,7 +36,7 @@ call :process_directory "%CD%\editor\sandboxProject\scripts"
 echo File list: %file_list%
 
 echo Compiling all C# files into a dynamic library (Sandbox.dll)...
-csc -target:library -out:"%output_directory%\Sandbox.dll" -r:"%output_directory%\MonadoScriptCore.dll" %file_list%
+csc -target:library -debug -out:"%output_directory%\Sandbox.dll" -r:"%output_directory%\MonadoScriptCore.dll" %file_list%
 
 if errorlevel 1 (
     echo Compilation of Sandbox.dll failed.
