@@ -207,7 +207,8 @@ namespace Monado {
             return;
         }
         // status = LoadAppAssembly("./bin/Sandbox.dll");
-        auto scriptModulePath = Project::GetAssetDirectory() / Project::GetActive()->GetConfig().ScriptModulePath;
+        // auto scriptModulePath = Project::GetAssetDirectory() / Project::GetActive()->GetConfig().ScriptModulePath;
+        auto scriptModulePath = Project::GetActive()->GetConfig().ScriptModulePath;
         status = LoadAppAssembly(scriptModulePath);
         if (!status) {
             MND_CORE_ERROR("[ScriptEngine] Could not load app assembly.");

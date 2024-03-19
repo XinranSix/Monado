@@ -20,6 +20,7 @@
 #include "monado/utils/platformUtils.h"
 #include "monado/core/mouseCodes.h"
 #include "monado/project/project.h"
+#include "monado/renderer/font.h"
 
 #include "imgui.h"
 #include "monado/math/math.h"
@@ -30,7 +31,9 @@
 namespace Monado {
 
     EditorLayer::EditorLayer()
-        : Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f), m_SquareColor({ 0.2f, 0.3f, 0.8f, 1.0f }) {}
+        : Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f), m_SquareColor({ 0.2f, 0.3f, 0.8f, 1.0f }) {
+        Font font("asset/font/opensans/OpenSans-Regular.ttf");
+    }
 
     void EditorLayer::OnAttach() {
         MND_PROFILE_FUNCTION();
