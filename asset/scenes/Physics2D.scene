@@ -1,4 +1,4 @@
-Scene: Physics2D
+Scene: Untitled
 Entities:
   - Entity: 16672940118998907085
     TagComponent:
@@ -131,3 +131,15 @@ Entities:
       Friction: 0.100000001
       Restitution: 0.819999993
       RestitutionThreshold: 0.5
+  - Entity: 16800623311951327675
+    TagComponent:
+      Tag: Empty Entity
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TextComponent:
+      TextString: Added TextComponent with some more text params
+      Color: [1, 1, 1, 1]
+      Kerning: 0
+      LineSpacing: 0

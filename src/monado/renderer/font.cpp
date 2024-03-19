@@ -137,6 +137,7 @@ namespace Monado {
         static Ref<Font> DefaultFont;
         if (!DefaultFont)
             DefaultFont = CreateRef<Font>("asset/font/opensans/OpenSans-Regular.ttf");
+            // DefaultFont = CreateRef<Font>(R"(asset/font/hwkt/STKAITI.TTF)");
 
         return DefaultFont;
     }
