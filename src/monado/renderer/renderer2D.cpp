@@ -88,35 +88,25 @@ namespace Monado {
         Ref<UniformBuffer> CameraUniformBuffer;
     };
     static Renderer2DData s_Data;
+
     void Renderer2D::Init() {
         MND_PROFILE_FUNCTION();
 
-        // 0.��CPU���ٴ洢s_Data.MaxVertices����QuadVertex���ڴ�
-        s_Data.QuadVertexBufferBase = new QuadVertex[s_Data.MaxVertices];
-        // quad//////////////////////////////////////////////////////////
-        // 1.������������
         s_Data.QuadVertexArray = VertexArray::Create();
 
-        // 2.�������㻺����,����GPU����һ��s_Data.MaxVertices * sizeof(QuadVertex)��С���ڴ�
-        // ��cpu��Ӧ����Ϊ�˴��䶥������
         s_Data.QuadVertexBuffer = VertexBuffer::Create(s_Data.MaxVertices * sizeof(QuadVertex));
-
-        // 2.1���ö��㻺��������
         s_Data.QuadVertexBuffer->SetLayout({ { ShaderDataType::Float3, "a_Position" },
                                              { ShaderDataType::Float4, "a_Color" },
                                              { ShaderDataType::Float2, "a_TexCoord" },
                                              { ShaderDataType::Float, "a_TexIndex" },
                                              { ShaderDataType::Float, "a_TilingFactor" },
                                              { ShaderDataType::Int, "a_EntityID" } });
-
-        // 1.1���ö�������ʹ�õĻ���������������������������ò���
         s_Data.QuadVertexArray->AddVertexBuffer(s_Data.QuadVertexBuffer);
 
-        // 3.��������
-        // uint32_t flatIndices[] = { 0, 1, 2, 2, 3, 0 };
+        s_Data.QuadVertexBufferBase = new QuadVertex[s_Data.MaxVertices];
+
         uint32_t *quadIndices = new uint32_t[s_Data.MaxIndices];
 
-        // һ��quad��6��������012 230��456 674
         uint32_t offset = 0;
         for (uint32_t i = 0; i < s_Data.MaxIndices; i += 6) {
             quadIndices[i + 0] = offset + 0;
@@ -130,88 +120,54 @@ namespace Monado {
             offset += 4;
         }
 
-        // 3.1��������������
         Ref<IndexBuffer> quadIB = IndexBuffer::Create(quadIndices, s_Data.MaxIndices);
-
-        // 1.2����������������������
         s_Data.QuadVertexArray->SetIndexBuffer(quadIB);
-        // cpu�ϴ���gpu���˿���ɾ��cpu���������ݿ���
         delete[] quadIndices;
 
-        // circle//////////////////////////////////////////////////////////
-        // 0.��CPU���ٴ洢s_Data.MaxVertices����QuadVertex���ڴ�
-        s_Data.CircleVertexBufferBase = new CircleVertex[s_Data.MaxVertices];
-        // 1.������������
+        // Circles
         s_Data.CircleVertexArray = VertexArray::Create();
 
-        // 2.�������㻺����,����GPU����һ��s_Data.MaxVertices * sizeof(QuadVertex)��С���ڴ�
-        // ��cpu��Ӧ����Ϊ�˴��䶥������
         s_Data.CircleVertexBuffer = VertexBuffer::Create(s_Data.MaxVertices * sizeof(CircleVertex));
-
-        // 2.1���ö��㻺��������
         s_Data.CircleVertexBuffer->SetLayout({ { ShaderDataType::Float3, "a_WorldPosition" },
                                                { ShaderDataType::Float3, "a_LocalPosition" },
                                                { ShaderDataType::Float4, "a_Color" },
                                                { ShaderDataType::Float, "a_Thickness" },
                                                { ShaderDataType::Float, "a_Fade" },
                                                { ShaderDataType::Int, "a_EntityID" } });
-
-        // 1.1���ö�������ʹ�õĻ���������������������������ò���
         s_Data.CircleVertexArray->AddVertexBuffer(s_Data.CircleVertexBuffer);
+        s_Data.CircleVertexArray->SetIndexBuffer(quadIB); // Use quad IB
+        s_Data.CircleVertexBufferBase = new CircleVertex[s_Data.MaxVertices];
 
-        // 3.��������-��quadʹ�õ���ͬһ��������Ҫ���½�
-
-        // 1.2����������������������
-        s_Data.CircleVertexArray->SetIndexBuffer(
-            quadIB); // ����д������s_Data.QuadVertexArray����û�и�circle�Ķ���������������
-
-        // Line//////////////////////////////////////////////////////////
-        // 0.��CPU���ٴ洢s_Data.MaxVertices����QuadVertex���ڴ�
-        s_Data.LineVertexBufferBase = new LineVertex[s_Data.MaxVertices];
-        // 1.������������
+        // Lines
         s_Data.LineVertexArray = VertexArray::Create();
 
-        // 2.�������㻺����,����GPU����һ��s_Data.MaxVertices * sizeof(QuadVertex)��С���ڴ�
-        // ��cpu��Ӧ����Ϊ�˴��䶥������
         s_Data.LineVertexBuffer = VertexBuffer::Create(s_Data.MaxVertices * sizeof(LineVertex));
-
-        // 2.1���ö��㻺��������
         s_Data.LineVertexBuffer->SetLayout({ { ShaderDataType::Float3, "a_Position" },
                                              { ShaderDataType::Float4, "a_Color" },
                                              { ShaderDataType::Int, "a_EntityID" } });
-
-        // 1.1���ö�������ʹ�õĻ���������������������������ò���
         s_Data.LineVertexArray->AddVertexBuffer(s_Data.LineVertexBuffer);
+        s_Data.LineVertexBufferBase = new LineVertex[s_Data.MaxVertices];
 
-        // 3.��������-Line����Ҫ����������
-
-        // ����////////////////////////////////////////
-        // ����һ����ɫTexture
-        s_Data.WhiteTexture = Texture2D::Create(1, 1);
+        s_Data.WhiteTexture = Texture2D::Create(TextureSpecification());
         uint32_t whiteTextureData = 0xffffffff;
         s_Data.WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
 
-        // 0�Ÿ���ɫ����
-        s_Data.TextureSlots[0] = s_Data.WhiteTexture;
-
         int32_t samplers[s_Data.MaxTextureSlots];
-        for (uint32_t i = 0; i < s_Data.MaxTextureSlots; i++) {
+        for (uint32_t i = 0; i < s_Data.MaxTextureSlots; i++)
             samplers[i] = i;
-        }
 
-        // shader ////////////////////////////////////////////////
         s_Data.QuadShader = Shader::Create("asset/shaders/Renderer2D_Quad.glsl");
         s_Data.CircleShader = Shader::Create("asset/shaders/Renderer2D_Circle.glsl");
         s_Data.LineShader = Shader::Create("asset/shaders/Renderer2D_Line.glsl");
 
-        // ��ʼ��///////////////////////////////////////////
-        // ����quad�ĳ�ʼλ��
+        // Set first texture slot to 0
+        s_Data.TextureSlots[0] = s_Data.WhiteTexture;
+
         s_Data.QuadVertexPositions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
         s_Data.QuadVertexPositions[1] = { 0.5f, -0.5f, 0.0f, 1.0f };
         s_Data.QuadVertexPositions[2] = { 0.5f, 0.5f, 0.0f, 1.0f };
         s_Data.QuadVertexPositions[3] = { -0.5f, 0.5f, 0.0f, 1.0f };
 
-        // ��0��λ�����������ͶӰ��ͼ����
         s_Data.CameraUniformBuffer = UniformBuffer::Create(sizeof(Renderer2DData::CameraData), 0);
     }
 
