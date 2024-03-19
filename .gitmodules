@@ -7,3 +7,6 @@
 [submodule "extern/filewatch"]
 	path = extern/filewatch
 	url = https://github.com/ThomasMonkman/filewatch.git
+[submodule "extern/msdf-atlas-gen"]
+	path = extern/msdf-atlas-gen
+	url = https://github.com/Chlumsky/msdf-atlas-gen.git

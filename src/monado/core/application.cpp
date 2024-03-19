@@ -39,7 +39,6 @@ namespace Monado {
         m_Window->SetEventCallback(MND_BIND_EVENT_FN(Application::OnEvent));
 
         Renderer::Init();
-        ScriptEngine::Init();
 
         m_ImGuiLayer = new ImGuiLayer();
         PushOverlay(m_ImGuiLayer);
@@ -47,8 +46,8 @@ namespace Monado {
 
     Application::~Application() {
         MND_PROFILE_FUNCTION();
-        
-		ScriptEngine::Shutdown();
+
+        ScriptEngine::Shutdown();
         Renderer::Shutdown();
     }
 
@@ -144,8 +143,9 @@ namespace Monado {
     void Application::ExecuteMainThreadQueue() {
         std::scoped_lock<std::mutex> lock(m_MainThreadQueueMutex);
 
-        for (auto &func : m_MainThreadQueue)
-           { func();}
+        for (auto &func : m_MainThreadQueue) {
+            func();
+        }
 
         m_MainThreadQueue.clear();
     }

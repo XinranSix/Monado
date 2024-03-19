@@ -6,6 +6,7 @@
 #include "monado/core/keyCodes.h"
 #include "monado/scene/entity.h"
 #include "monado/core/base.h"
+#include "monado/physics/physics2D.h"
 
 #include "glm/glm.hpp"
 #include "mono/metadata/object.h"
@@ -111,6 +112,40 @@ namespace Monado {
         body->ApplyLinearImpulseToCenter(b2Vec2(impulse->x, impulse->y), wake);
     }
 
+    static void Rigidbody2DComponent_GetLinearVelocity(UUID entityID, glm::vec2 *outLinearVelocity) {
+        Scene *scene = ScriptEngine::GetSceneContext();
+        MND_CORE_ASSERT(scene);
+        Entity entity = scene->GetEntityByUUID(entityID);
+        MND_CORE_ASSERT(entity);
+
+        auto &rb2d = entity.GetComponent<Rigidbody2DComponent>();
+        b2Body *body = (b2Body *)rb2d.RuntimeBody;
+        const b2Vec2 &linearVelocity = body->GetLinearVelocity();
+        *outLinearVelocity = glm::vec2(linearVelocity.x, linearVelocity.y);
+    }
+
+    static Rigidbody2DComponent::BodyType Rigidbody2DComponent_GetType(UUID entityID) {
+        Scene *scene = ScriptEngine::GetSceneContext();
+        MND_CORE_ASSERT(scene);
+        Entity entity = scene->GetEntityByUUID(entityID);
+        MND_CORE_ASSERT(entity);
+
+        auto &rb2d = entity.GetComponent<Rigidbody2DComponent>();
+        b2Body *body = (b2Body *)rb2d.RuntimeBody;
+        return Utils::Rigidbody2DTypeFromBox2DBody(body->GetType());
+    }
+
+    static void Rigidbody2DComponent_SetType(UUID entityID, Rigidbody2DComponent::BodyType bodyType) {
+        Scene *scene = ScriptEngine::GetSceneContext();
+        MND_CORE_ASSERT(scene);
+        Entity entity = scene->GetEntityByUUID(entityID);
+        MND_CORE_ASSERT(entity);
+
+        auto &rb2d = entity.GetComponent<Rigidbody2DComponent>();
+        b2Body *body = (b2Body *)rb2d.RuntimeBody;
+        body->SetType(Utils::Rigidbody2DTypeToBox2DBody(bodyType));
+    }
+
     static bool Input_IsKeyDown(KeyCode keycode) { return Input::IsKeyPressed(keycode); }
 
     template <typename... Component>
@@ -158,6 +193,9 @@ namespace Monado {
 
         MND_ADD_INTERNAL_CALL(Rigidbody2DComponent_ApplyLinearImpulse);
         MND_ADD_INTERNAL_CALL(Rigidbody2DComponent_ApplyLinearImpulseToCenter);
+        MND_ADD_INTERNAL_CALL(Rigidbody2DComponent_GetLinearVelocity);
+        MND_ADD_INTERNAL_CALL(Rigidbody2DComponent_GetType);
+        MND_ADD_INTERNAL_CALL(Rigidbody2DComponent_SetType);
 
         MND_ADD_INTERNAL_CALL(Input_IsKeyDown);
     }
