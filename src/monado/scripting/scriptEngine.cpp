@@ -10,6 +10,7 @@
 #include "mono/metadata/class.h"
 #include "mono/metadata/attrdefs.h"
 #include "monado/debug/instrumentor.h"
+#include "monado/project/project.h"
 
 #include <fstream>
 
@@ -205,7 +206,10 @@ namespace Monado {
             MND_CORE_ERROR("[ScriptEngine] Could not load MonadoScriptCore assembly.");
             return;
         }
-        status = LoadAppAssembly("./bin/Sandbox.dll");
+        // status = LoadAppAssembly("./bin/Sandbox.dll");
+        // auto scriptModulePath = Project::GetAssetDirectory() / Project::GetActive()->GetConfig().ScriptModulePath;
+        auto scriptModulePath = Project::GetActive()->GetConfig().ScriptModulePath;
+        status = LoadAppAssembly(scriptModulePath);
         if (!status) {
             MND_CORE_ERROR("[ScriptEngine] Could not load app assembly.");
             return;

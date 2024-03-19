@@ -9,12 +9,11 @@ namespace Monado {
     class ImGuiLayer : public Layer {
     public:
         ImGuiLayer();
-        ~ImGuiLayer();
+        ~ImGuiLayer() = default;
 
         virtual void OnAttach() override;
         virtual void OnDetach() override;
-        virtual void OnImGuiRender() override;
-        virtual void OnEvent(Event &event) override;
+        virtual void OnEvent(Event &e) override;
 
         void Begin();
         void End();
@@ -23,17 +22,10 @@ namespace Monado {
 
         void SetDarkThemeColors();
 
-    private:
-      /*   // FIXME: 临时的
-        bool OnMouseCursorMoved(MouseMovedEvent &e);
+        uint32_t GetActiveWidgetID() const;
 
-        bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
-
-        bool OnMouseButtonReleased(MouseButtonReleasedEvent &e);
- */
     private:
         bool m_BlockEvents = true;
-        float m_Time = 0.0f;
     };
 
 } // namespace Monado
