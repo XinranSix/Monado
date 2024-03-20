@@ -33,8 +33,8 @@ static void ImGuiShowHelpMarker(const char *desc) {
 class EditorLayer : public Monado::Layer {
 public:
     EditorLayer()
-        : m_ClearColor { 0.1f, 0.1f, 0.1f, 1.0f }, m_Scene(Scene::Spheres),
-          m_Camera(glm::perspectiveFov(glm::radians(45.0f), 1280.0f, 720.0f, 0.1f, 10000.0f)) {}
+        : m_Scene(Scene::Spheres), m_Camera(glm::perspectiveFov(glm::radians(45.0f), 1280.0f, 720.0f, 0.1f, 10000.0f)) {
+    }
 
     virtual ~EditorLayer() {}
 
@@ -51,6 +51,7 @@ public:
         // Environment
         m_EnvironmentCubeMap.reset(
             Monado::TextureCube::Create("sandbox/assets/textures/environments/Arches_E_PineTree_Radiance.tga"));
+        // m_EnvironmentCubeMap.reset(Monado::TextureCube::Create("assets/textures/environments/DebugCubeMap.tga"));
         m_EnvironmentIrradiance.reset(
             Monado::TextureCube::Create("sandbox/assets/textures/environments/Arches_E_PineTree_Irradiance.tga"));
         m_BRDFLUT.reset(Monado::Texture2D::Create("sandbox/assets/textures/BRDF_LUT.tga"));
@@ -107,7 +108,7 @@ public:
         auto viewProjection = m_Camera.GetProjectionMatrix() * m_Camera.GetViewMatrix();
 
         m_Framebuffer->Bind();
-        Renderer::Clear(m_ClearColor[0], m_ClearColor[1], m_ClearColor[2], m_ClearColor[3]);
+        Renderer::Clear();
 
         Monado::UniformBufferDeclaration<sizeof(mat4), 1> quadShaderUB;
         quadShaderUB.Push("u_InverseVP", inverse(viewProjection));
@@ -193,6 +194,73 @@ public:
         m_FinalPresentBuffer->Unbind();
     }
 
+    enum class PropertyFlag { None = 0, ColorProperty = 1 };
+
+    void Property(const std::string &name, bool &value) {
+        ImGui::Text(name.c_str());
+        ImGui::NextColumn();
+        ImGui::PushItemWidth(-1);
+
+        std::string id = "##" + name;
+        ImGui::Checkbox(id.c_str(), &value);
+
+        ImGui::PopItemWidth();
+        ImGui::NextColumn();
+    }
+
+    void Property(const std::string &name, float &value, float min = -1.0f, float max = 1.0f,
+                  PropertyFlag flags = PropertyFlag::None) {
+        ImGui::Text(name.c_str());
+        ImGui::NextColumn();
+        ImGui::PushItemWidth(-1);
+
+        std::string id = "##" + name;
+        ImGui::SliderFloat(id.c_str(), &value, min, max);
+
+        ImGui::PopItemWidth();
+        ImGui::NextColumn();
+    }
+
+    void Property(const std::string &name, glm::vec3 &value, PropertyFlag flags) {
+        Property(name, value, -1.0f, 1.0f, flags);
+    }
+
+    void Property(const std::string &name, glm::vec3 &value, float min = -1.0f, float max = 1.0f,
+                  PropertyFlag flags = PropertyFlag::None) {
+        ImGui::Text(name.c_str());
+        ImGui::NextColumn();
+        ImGui::PushItemWidth(-1);
+
+        std::string id = "##" + name;
+        if ((int)flags & (int)PropertyFlag::ColorProperty)
+            ImGui::ColorEdit3(id.c_str(), glm::value_ptr(value), ImGuiColorEditFlags_NoInputs);
+        else
+            ImGui::SliderFloat3(id.c_str(), glm::value_ptr(value), min, max);
+
+        ImGui::PopItemWidth();
+        ImGui::NextColumn();
+    }
+
+    void Property(const std::string &name, glm::vec4 &value, PropertyFlag flags) {
+        Property(name, value, -1.0f, 1.0f, flags);
+    }
+
+    void Property(const std::string &name, glm::vec4 &value, float min = -1.0f, float max = 1.0f,
+                  PropertyFlag flags = PropertyFlag::None) {
+        ImGui::Text(name.c_str());
+        ImGui::NextColumn();
+        ImGui::PushItemWidth(-1);
+
+        std::string id = "##" + name;
+        if ((int)flags & (int)PropertyFlag::ColorProperty)
+            ImGui::ColorEdit4(id.c_str(), glm::value_ptr(value), ImGuiColorEditFlags_NoInputs);
+        else
+            ImGui::SliderFloat4(id.c_str(), glm::value_ptr(value), min, max);
+
+        ImGui::PopItemWidth();
+        ImGui::NextColumn();
+    }
+
     virtual void OnImGuiRender() override {
         static bool p_open = true;
 
@@ -235,32 +303,27 @@ public:
         }
 
         // Editor Panel ------------------------------------------------------------------------------
-        ImGui::Begin("Settings");
-        if (ImGui::TreeNode("Shaders")) {
-            auto &shaders = Monado::Shader::s_AllShaders;
-            for (auto &shader : shaders) {
-                if (ImGui::TreeNode(shader->GetName().c_str())) {
-                    std::string buttonName = "Reload##" + shader->GetName();
-                    if (ImGui::Button(buttonName.c_str()))
-                        shader->Reload();
-                    ImGui::TreePop();
-                }
-            }
-            ImGui::TreePop();
-        }
-
+        ImGui::Begin("Model");
         ImGui::RadioButton("Spheres", (int *)&m_Scene, (int)Scene::Spheres);
         ImGui::SameLine();
         ImGui::RadioButton("Model", (int *)&m_Scene, (int)Scene::Model);
 
-        ImGui::ColorEdit4("Clear Color", m_ClearColor);
+        ImGui::Begin("Environment");
 
-        ImGui::SliderFloat3("Light Dir", glm::value_ptr(m_Light.Direction), -1, 1);
-        ImGui::ColorEdit3("Light Radiance", glm::value_ptr(m_Light.Radiance));
-        ImGui::SliderFloat("Light Multiplier", &m_LightMultiplier, 0.0f, 5.0f);
-        ImGui::SliderFloat("Exposure", &m_Exposure, 0.0f, 10.0f);
-        auto cameraForward = m_Camera.GetForwardDirection();
-        ImGui::Text("Camera Forward: %.2f, %.2f, %.2f", cameraForward.x, cameraForward.y, cameraForward.z);
+        ImGui::Columns(2);
+        ImGui::AlignTextToFramePadding();
+
+        Property("Light Direction", m_Light.Direction);
+        Property("Light Radiance", m_Light.Radiance, PropertyFlag::ColorProperty);
+        Property("Light Multiplier", m_LightMultiplier, 0.0f, 5.0f);
+        Property("Exposure", m_Exposure, 0.0f, 5.0f);
+
+        Property("Radiance Prefiltering", m_RadiancePrefilter);
+        Property("Env Map Rotation", m_EnvMapRotation, -360.0f, 360.0f);
+
+        ImGui::Columns(1);
+
+        ImGui::End();
 
         ImGui::Separator();
         {
@@ -276,12 +339,6 @@ public:
                     m_Mesh.reset(new Monado::Mesh(filename));
             }
         }
-        ImGui::Separator();
-
-        ImGui::Text("Shader Parameters");
-        ImGui::Checkbox("Radiance Prefiltering", &m_RadiancePrefilter);
-        ImGui::SliderFloat("Env Map Rotation", &m_EnvMapRotation, -360.0f, 360.0f);
-
         ImGui::Separator();
 
         // Textures ------------------------------------------------------------------------------
@@ -409,6 +466,19 @@ public:
 
         ImGui::Separator();
 
+        if (ImGui::TreeNode("Shaders")) {
+            auto &shaders = Monado::Shader::s_AllShaders;
+            for (auto &shader : shaders) {
+                if (ImGui::TreeNode(shader->GetName().c_str())) {
+                    std::string buttonName = "Reload##" + shader->GetName();
+                    if (ImGui::Button(buttonName.c_str()))
+                        shader->Reload();
+                    ImGui::TreePop();
+                }
+            }
+            ImGui::TreePop();
+        }
+
         ImGui::End();
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -519,8 +589,6 @@ private:
     std::unique_ptr<Monado::TextureCube> m_EnvironmentCubeMap, m_EnvironmentIrradiance;
 
     Monado::Camera m_Camera;
-
-    float m_ClearColor[4];
 
     struct Light {
         glm::vec3 Direction;

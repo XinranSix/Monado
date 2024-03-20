@@ -65,15 +65,16 @@ namespace Monado {
     void Application::Run() {
         OnInit();
         while (m_Running) {
-            for (Layer *layer : m_LayerStack)
-                layer->OnUpdate();
+            if (!m_Minimized) {
+                for (Layer *layer : m_LayerStack)
+                    layer->OnUpdate();
 
-            // Render ImGui on render thread
-            Application *app = this;
-            MND_RENDER_1(app, { app->RenderImGui(); });
+                // Render ImGui on render thread
+                Application *app = this;
+                MND_RENDER_1(app, { app->RenderImGui(); });
 
-            Renderer::Get().WaitAndRender();
-
+                Renderer::Get().WaitAndRender();
+            }
             m_Window->OnUpdate();
         }
         OnShutdown();
@@ -93,6 +94,11 @@ namespace Monado {
 
     bool Application::OnWindowResize(WindowResizeEvent &e) {
         int width = e.GetWidth(), height = e.GetHeight();
+        if (width == 0 || height == 0) {
+            m_Minimized = true;
+            return false;
+        }
+        m_Minimized = false;
         MND_RENDER_2(width, height, { glViewport(0, 0, width, height); });
         auto &fbs = FramebufferPool::GetGlobal()->GetAll();
         for (auto &fb : fbs)

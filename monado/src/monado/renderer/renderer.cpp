@@ -9,7 +9,9 @@ namespace Monado {
         MND_RENDER({ RendererAPI::Init(); });
     }
 
-    void Renderer::Clear() {}
+    void Renderer::Clear() {
+        MND_RENDER({ RendererAPI::Clear(0.0f, 0.0f, 0.0f, 1.0f); });
+    }
 
     void Renderer::Clear(float r, float g, float b, float a) {
         MND_RENDER_4(r, g, b, a, { RendererAPI::Clear(r, g, b, a); });
