@@ -1,4 +1,5 @@
 #include "monado/renderer/rendererAPI.h"
+#include "monado/renderer/shader.h"
 #include "monado/core/log.h"
 
 // clang-format off
@@ -14,12 +15,13 @@ namespace Monado {
             MND_CORE_ERROR("{0}", message);
             MND_CORE_ASSERT(false, "");
         } else {
-            MND_CORE_TRACE("{0}", message);
+            // MND_CORE_TRACE("{0}", message);
         }
     }
 
     void RendererAPI::Init() {
         glDebugMessageCallback(OpenGLLogMessage, nullptr);
+        glEnable(GL_DEBUG_OUTPUT);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
         unsigned int vao;
@@ -48,9 +50,13 @@ namespace Monado {
             MND_CORE_ERROR("OpenGL Error {0}", error);
             error = glGetError();
         }
+
+        LoadRequiredAssets();
     }
 
     void RendererAPI::Shutdown() {}
+
+    void RendererAPI::LoadRequiredAssets() {}
 
     void RendererAPI::Clear(float r, float g, float b, float a) {
         glClearColor(r, g, b, a);

@@ -2,9 +2,13 @@
 
 #include "renderCommandQueue.h"
 #include "rendererAPI.h"
+#include "monado/core/base.h"
 
 namespace Monado {
 
+    class ShaderLibrary;
+
+    // TODO: Maybe this should be renamed to RendererAPI? Because we want an actual renderer vs API calls...
     class Renderer {
     public:
         typedef void (*RenderCommandFn)(void *);
@@ -20,6 +24,8 @@ namespace Monado {
 
         static void Init();
 
+        static const Scope<ShaderLibrary> &GetShaderLibrary() { return Get().m_ShaderLibrary; }
+
         static void *Submit(RenderCommandFn fn, unsigned int size) {
             return s_Instance->m_CommandQueue.Allocate(fn, size);
         }
@@ -32,6 +38,7 @@ namespace Monado {
         static Renderer *s_Instance;
 
         RenderCommandQueue m_CommandQueue;
+        Scope<ShaderLibrary> m_ShaderLibrary;
     };
 
 } // namespace Monado

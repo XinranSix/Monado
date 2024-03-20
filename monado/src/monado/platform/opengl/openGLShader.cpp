@@ -24,6 +24,9 @@ namespace Monado {
     OpenGLShader::OpenGLShader(const std::string &filepath) : m_AssetPath(filepath) {
         size_t found = filepath.find_last_of("/\\");
         m_Name = found != std::string::npos ? filepath.substr(found + 1) : filepath;
+        found = m_Name.find_last_of(".");
+        m_Name = found != std::string::npos ? m_Name.substr(0, found) : m_Name;
+
         Reload();
     }
 

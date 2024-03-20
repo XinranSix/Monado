@@ -51,7 +51,6 @@ void main()
 	vs_Output.WorldNormals = mat3(u_ModelMatrix) * mat3(a_Tangent, a_Binormal, a_Normal);
 	vs_Output.Binormal = mat3(boneTransform) * a_Binormal;
 
-	//gl_Position = u_ViewProjectionMatrix * u_ModelMatrix * vec4(a_Position, 1.0);
 	gl_Position = u_ViewProjectionMatrix * u_ModelMatrix * localPosition;
 }
 

@@ -4,6 +4,7 @@
 #include "monado/core/buffer.h"
 #include "monado/renderer/shader.h"
 #include "monado/renderer/texture.h"
+#include "material.h"
 
 #include <unordered_set>
 
@@ -42,6 +43,9 @@ namespace Monado {
 
         void Set(const std::string &name, const Ref<TextureCube> &texture) { Set(name, (const Ref<Texture> &)texture); }
 
+    public:
+        static Ref<Material> Create(const Ref<Shader> &shader);
+
     private:
         void AllocateStorage();
         void OnShaderReloaded();
@@ -72,7 +76,9 @@ namespace Monado {
         template <typename T>
         void Set(const std::string &name, const T &value) {
             auto decl = m_Material->FindUniformDeclaration(name);
-            // MND_CORE_ASSERT(decl, "Could not find uniform with name '{0}'", name);
+            if (!decl)
+                return;
+            // HZ_CORE_ASSERT(decl, "Could not find uniform with name '{0}'", name);
             MND_CORE_ASSERT(decl, "Could not find uniform with name 'x'");
             auto &buffer = GetUniformBufferTarget(decl);
             buffer.Write((byte *)&value, decl->GetSize(), decl->GetOffset());
@@ -93,6 +99,9 @@ namespace Monado {
         void Set(const std::string &name, const Ref<TextureCube> &texture) { Set(name, (const Ref<Texture> &)texture); }
 
         void Bind() const;
+
+    public:
+        static Ref<MaterialInstance> Create(const Ref<Material> &material);
 
     private:
         void AllocateStorage();

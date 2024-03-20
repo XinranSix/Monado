@@ -1,4 +1,5 @@
 #include "monado/renderer/renderer.h"
+#include "monado/renderer/shader.h"
 
 namespace Monado {
 
@@ -6,7 +7,11 @@ namespace Monado {
     RendererAPIType RendererAPI::s_CurrentRendererAPI = RendererAPIType::OpenGL;
 
     void Renderer::Init() {
+        s_Instance->m_ShaderLibrary = std::make_unique<ShaderLibrary>();
         MND_RENDER({ RendererAPI::Init(); });
+
+        Renderer::GetShaderLibrary()->Load("sandbox/assets/shaders/MonadoPBR_Static.glsl");
+        Renderer::GetShaderLibrary()->Load("sandbox/assets/shaders/MonadoPBR_Anim.glsl");
     }
 
     void Renderer::Clear() {
