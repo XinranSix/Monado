@@ -36,6 +36,8 @@ namespace Monado {
         float fontSize = 18.0f; // *2.0f;
         io.Fonts->AddFontFromFileTTF("asset/font/OpenSans/OpenSans-Bold.ttf", 18.0f);
         io.FontDefault = io.Fonts->AddFontFromFileTTF("asset/font/OpenSans/OpenSans-Regular.ttf", 18.0f);
+        /*   io.Fonts->AddFontFromFileTTF(R"(asset/font/hwkt/STKAITI.TTF)", 18.0f);
+          io.FontDefault = io.Fonts->AddFontFromFileTTF(R"(asset/font/hwkt/STKAITI.TTF)", 18.0f);*/
 
         // Setup Dear ImGui style
         ImGui::StyleColorsDark();
