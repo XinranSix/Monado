@@ -17,7 +17,9 @@ end
 
 add_defines("STB_IMAGE_IMPLEMENTATION")
 
-add_includedirs("include")
+-- add_includedirs("include")
+add_includedirs("imgui/include")
+add_includedirs("monado/include")
 add_includedirs("extern/msdf-atlas-gen/msdf-atlas-gen")
 add_includedirs("extern/msdf-atlas-gen/msdfgen")
 
@@ -56,17 +58,17 @@ add_requires("yaml-cpp")
 add_requires("msdf-atlas-gen") 
 
 target("imgui")
-    add_files("./imgui/**.cpp") 
+    add_files("./imgui/src/**.cpp") 
     set_kind("static")
     add_packages("glfw", "glad", "stb")
 
 target("monado")
     set_kind("static")
-    add_files("src/**.cpp")
+    add_files("monado/src/**.cpp")
     add_deps("imgui")
     add_packages("opengl", "glfw", "glad", "stb", "glm", "stb", "spdlog", "entt", "box2d", "yaml-cpp", "msdf-atlas-gen")
 
-target("editor")
+--[[ target("editor")
     set_kind("binary")
     add_files("editor/**.cpp")
     set_runargs("Sandbox.mproj")
@@ -84,13 +86,13 @@ target("editor")
         os.cp("$(projectdir)/asset", target:targetdir())
         os.cp("$(projectdir)/libs/**.dll", target:targetdir())
         os.cp("$(projectdir)/asset/**.mproj", target:targetdir())
-    end)
+    end) ]]
 
 target("sandbox")
     set_kind("binary")
     add_files("sandbox/**.cpp")
-    add_deps("monado", "editor")
+    add_deps("monado")
     add_packages("opengl", "glfw", "glad", "stb", "glm", "stb", "spdlog", "entt", "box2d")
     after_build(function (target)
-        os.cp("$(projectdir)/asset", target:targetdir())
+        os.cp("sandbox/assets", target:targetdir() .. "/sandbox")
     end)
