@@ -14,6 +14,7 @@ typedef struct _MonoMethod MonoMethod;
 typedef struct _MonoAssembly MonoAssembly;
 typedef struct _MonoImage MonoImage;
 typedef struct _MonoClassField MonoClassField;
+typedef struct _MonoString MonoString;
 }
 
 namespace Monado {
@@ -89,7 +90,7 @@ namespace Monado {
 
         std::map<std::string, ScriptField> m_Fields;
 
-        MonoClass *m_MonoClass {};
+        MonoClass *m_MonoClass = nullptr;
 
         friend class ScriptEngine;
     };
@@ -168,6 +169,8 @@ namespace Monado {
         static MonoImage *GetCoreAssemblyImage();
 
         static MonoObject *GetManagedInstance(UUID uuid);
+
+        static MonoString *CreateString(const char *string);
 
     private:
         static void InitMono();
@@ -248,4 +251,4 @@ namespace Monado {
 
     } // namespace Utils
 
-} // namespace Monado
+} // namespace Hazel
