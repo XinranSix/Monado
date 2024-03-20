@@ -6,7 +6,10 @@
 #include "glm/gtc/type_ptr.hpp"
 
 #include "monado/core/base.h"
-#include "monado/renderer/renderer.h"
+#include "renderer.h"
+#include "monado/core/buffer.h"
+#include "renderer.h"
+#include "shaderUniform.h"
 
 namespace Monado {
     struct ShaderUniform {};
@@ -28,24 +31,24 @@ namespace Monado {
         // this currently does not assume any alignment. This also has
         // nothing to do with GL uniform buffers, this is simply a CPU-side
         // buffer abstraction.
-        unsigned char *Buffer;
+        byte *Buffer;
         std::vector<UniformDecl> Uniforms;
     };
 
     struct UniformBufferBase {
-        virtual const unsigned char *GetBuffer() const = 0;
+        virtual const byte *GetBuffer() const = 0;
         virtual const UniformDecl *GetUniforms() const = 0;
         virtual unsigned int GetUniformCount() const = 0;
     };
 
     template <unsigned int N, unsigned int U>
     struct UniformBufferDeclaration : public UniformBufferBase {
-        unsigned char Buffer[N];
+        byte Buffer[N];
         UniformDecl Uniforms[U];
         std::ptrdiff_t Cursor = 0;
         int Index = 0;
 
-        virtual const unsigned char *GetBuffer() const override { return Buffer; }
+        virtual const byte *GetBuffer() const override { return Buffer; }
         virtual const UniformDecl *GetUniforms() const override { return Uniforms; }
         virtual unsigned int GetUniformCount() const { return U; }
 
@@ -83,6 +86,8 @@ namespace Monado {
 
     class Shader {
     public:
+        using ShaderReloadedCallback = std::function<void()>;
+
         virtual void Reload() = 0;
 
         virtual void Bind() = 0;
@@ -91,6 +96,7 @@ namespace Monado {
         // Temporary while we don't have materials
         virtual void SetFloat(const std::string &name, float value) = 0;
         virtual void SetMat4(const std::string &name, const glm::mat4 &value) = 0;
+        virtual void SetMat4FromRenderThread(const std::string &name, const glm::mat4 &value) = 0;
 
         virtual const std::string &GetName() const = 0;
 
@@ -98,6 +104,18 @@ namespace Monado {
         // Note: currently for simplicity this is simply a string filepath, however
         //       in the future this will be an asset object + metadata
         static Shader *Create(const std::string &filepath);
+
+        virtual void SetVSMaterialUniformBuffer(Buffer buffer) = 0;
+        virtual void SetPSMaterialUniformBuffer(Buffer buffer) = 0;
+
+        virtual const ShaderUniformBufferList &GetVSRendererUniforms() const = 0;
+        virtual const ShaderUniformBufferList &GetPSRendererUniforms() const = 0;
+        virtual const ShaderUniformBufferDeclaration &GetVSMaterialUniformBuffer() const = 0;
+        virtual const ShaderUniformBufferDeclaration &GetPSMaterialUniformBuffer() const = 0;
+
+        virtual const ShaderResourceList &GetResources() const = 0;
+
+        virtual void AddShaderReloadedCallback(const ShaderReloadedCallback &callback) = 0;
 
         // Temporary, before we have an asset manager
         static std::vector<Shader *> s_AllShaders;

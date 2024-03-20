@@ -7,15 +7,21 @@ namespace Monado {
 
     class OpenGLTexture2D : public Texture2D {
     public:
-        OpenGLTexture2D(TextureFormat format, unsigned int width, unsigned int height);
+        OpenGLTexture2D(TextureFormat format, unsigned int width, unsigned int height, TextureWrap wrap);
         OpenGLTexture2D(const std::string &path, bool srgb);
         virtual ~OpenGLTexture2D();
 
-        virtual void Bind(unsigned int slot = 0) const override;
+        virtual void Bind(uint32_t slot = 0) const override;
 
         virtual TextureFormat GetFormat() const override { return m_Format; }
-        virtual unsigned int GetWidth() const override { return m_Width; }
-        virtual unsigned int GetHeight() const override { return m_Height; }
+        virtual uint32_t GetWidth() const override { return m_Width; }
+        virtual uint32_t GetHeight() const override { return m_Height; }
+
+        virtual void Lock() override;
+        virtual void Unlock() override;
+
+        virtual void Resize(uint32_t width, uint32_t height) override;
+        virtual Buffer GetWriteableBuffer() override;
 
         virtual const std::string &GetPath() const override { return m_FilePath; }
 
@@ -24,9 +30,12 @@ namespace Monado {
     private:
         RendererID m_RendererID;
         TextureFormat m_Format;
-        unsigned int m_Width, m_Height;
+        TextureWrap m_Wrap = TextureWrap::Clamp;
+        uint32_t m_Width, m_Height;
 
-        unsigned char *m_ImageData;
+        Buffer m_ImageData;
+
+        bool m_Locked = false;
 
         std::string m_FilePath;
     };
@@ -36,11 +45,11 @@ namespace Monado {
         OpenGLTextureCube(const std::string &path);
         virtual ~OpenGLTextureCube();
 
-        virtual void Bind(unsigned int slot = 0) const;
+        virtual void Bind(uint32_t slot = 0) const override;
 
-        virtual TextureFormat GetFormat() const { return m_Format; }
-        virtual unsigned int GetWidth() const { return m_Width; }
-        virtual unsigned int GetHeight() const { return m_Height; }
+        virtual TextureFormat GetFormat() const override { return m_Format; }
+        virtual unsigned int GetWidth() const override { return m_Width; }
+        virtual unsigned int GetHeight() const override { return m_Height; }
 
         virtual const std::string &GetPath() const override { return m_FilePath; }
 

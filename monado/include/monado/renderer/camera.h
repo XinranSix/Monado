@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include "monado/core/timeStep.h"
+
 namespace Monado {
 
     class Camera {
@@ -9,7 +11,7 @@ namespace Monado {
         Camera(const glm::mat4 &projectionMatrix);
 
         void Focus();
-        void Update();
+        void Update(TimeStep ts);
 
         inline float GetDistance() const { return m_Distance; }
         inline void SetDistance(float distance) { m_Distance = distance; }
