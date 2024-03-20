@@ -25,6 +25,8 @@ namespace Monado {
         void PushOverlay(Layer *layer);
         void RenderImGui();
 
+        std::string OpenFile(const std::string &filter) const;
+
         inline Window &GetWindow() { return *m_Window; }
 
         static inline Application &Get() { return *s_Instance; }

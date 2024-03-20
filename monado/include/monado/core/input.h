@@ -4,11 +4,11 @@ namespace Monado {
 
     class Input {
     public:
-        static bool IsKeyPressed(int keycode) { return s_Instance->IsKeyPressed(keycode); }
+        static bool IsKeyPressed(int keycode) { return s_Instance->IsKeyPressedImpl(keycode); }
 
-        inline static bool IsMouseButtonPressed(int button) { return s_Instance->IsMouseButtonPressed(button); }
-        inline static float GetMouseX() { return s_Instance->GetMouseX(); }
-        inline static float GetMouseY() { return s_Instance->GetMouseY(); }
+        inline static bool IsMouseButtonPressed(int button) { return s_Instance->IsMouseButtonPressedImpl(button); }
+        inline static float GetMouseX() { return s_Instance->GetMouseXImpl(); }
+        inline static float GetMouseY() { return s_Instance->GetMouseYImpl(); }
 
     protected:
         virtual bool IsKeyPressedImpl(int keycode) = 0;
@@ -19,5 +19,4 @@ namespace Monado {
     private:
         static Input *s_Instance;
     };
-
 } // namespace Monado

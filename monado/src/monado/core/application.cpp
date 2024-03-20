@@ -1,11 +1,19 @@
 #include "monado/core/application.h"
 #include "monado/renderer/renderer.h"
 #include "monado/core/log.h"
+#include "monado/renderer/framebuffer.h"
 
 // clang-format off
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 // clang-format on
+
+#include "imgui.h"
+
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include "GLFW/glfw3native.h"
+#include <Windows.h>
+#include <Commdlg.h>
 
 namespace Monado {
 
@@ -26,7 +34,7 @@ namespace Monado {
         Renderer::Init();
     }
 
-    Application::~Application() { }
+    Application::~Application() {}
 
     void Application::PushLayer(Layer *layer) {
         m_LayerStack.PushLayer(layer);
@@ -40,6 +48,14 @@ namespace Monado {
 
     void Application::RenderImGui() {
         m_ImGuiLayer->Begin();
+
+        ImGui::Begin("Renderer");
+        auto &caps = RendererAPI::GetCapabilities();
+        ImGui::Text("Vendor: %s", caps.Vendor.c_str());
+        ImGui::Text("Renderer: %s", caps.Renderer.c_str());
+        ImGui::Text("Version: %s", caps.Version.c_str());
+        ImGui::End();
+
         for (Layer *layer : m_LayerStack)
             layer->OnImGuiRender();
 
@@ -75,11 +91,41 @@ namespace Monado {
         }
     }
 
-    bool Application::OnWindowResize(WindowResizeEvent &e) { return false; }
+    bool Application::OnWindowResize(WindowResizeEvent &e) {
+        int width = e.GetWidth(), height = e.GetHeight();
+        MND_RENDER_2(width, height, { glViewport(0, 0, width, height); });
+        auto &fbs = FramebufferPool::GetGlobal()->GetAll();
+        for (auto &fb : fbs)
+            fb->Resize(width, height);
+        return false;
+    }
 
     bool Application::OnWindowClose(WindowCloseEvent &e) {
         m_Running = false;
         return true;
+    }
+
+    std::string Application::OpenFile(const std::string &filter) const {
+        OPENFILENAMEA ofn;        // common dialog box structure
+        CHAR szFile[260] = { 0 }; // if using TCHAR macros
+
+        // Initialize OPENFILENAME
+        ZeroMemory(&ofn, sizeof(OPENFILENAME));
+        ofn.lStructSize = sizeof(OPENFILENAME);
+        ofn.hwndOwner = glfwGetWin32Window((GLFWwindow *)m_Window->GetNativeWindow());
+        ofn.lpstrFile = szFile;
+        ofn.nMaxFile = sizeof(szFile);
+        ofn.lpstrFilter = "All\0*.*\0";
+        ofn.nFilterIndex = 1;
+        ofn.lpstrFileTitle = NULL;
+        ofn.nMaxFileTitle = 0;
+        ofn.lpstrInitialDir = NULL;
+        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+        if (GetOpenFileNameA(&ofn) == TRUE) {
+            return ofn.lpstrFile;
+        }
+        return std::string();
     }
 
 } // namespace Monado

@@ -19,8 +19,8 @@ namespace Monado {
 
     void Renderer::SetClearColor(float r, float g, float b, float a) {}
 
-    void Renderer::DrawIndexed(unsigned int count) {
-        MND_RENDER_1(count, { RendererAPI::DrawIndexed(count); });
+    void Renderer::DrawIndexed(unsigned int count, bool depthTest) {
+        MND_RENDER_2(count, depthTest, { RendererAPI::DrawIndexed(count, depthTest); });
     }
 
     void Renderer::WaitAndRender() { s_Instance->m_CommandQueue.Execute(); }

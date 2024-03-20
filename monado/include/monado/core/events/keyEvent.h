@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "event.h"
+#include "monado/core/keyCodes.h"
 
 namespace Monado {
 

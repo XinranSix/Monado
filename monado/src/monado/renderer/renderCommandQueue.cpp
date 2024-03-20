@@ -31,8 +31,8 @@ namespace Monado {
     }
 
     void RenderCommandQueue::Execute() {
-        MND_RENDER_TRACE("RenderCommandQueue::Execute -- {0} commands, {1} bytes", m_CommandCount,
-                         (m_CommandBufferPtr - m_CommandBuffer));
+        /*         MND_RENDER_TRACE("RenderCommandQueue::Execute -- {0} commands, {1} bytes", m_CommandCount,
+                                 (m_CommandBufferPtr - m_CommandBuffer)); */
 
         byte *buffer = m_CommandBuffer;
 
