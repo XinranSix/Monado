@@ -32,4 +32,19 @@ namespace Monado {
 
     void Renderer::WaitAndRender() { s_Instance->m_CommandQueue.Execute(); }
 
+    void Renderer::IBeginRenderPass(const Ref<RenderPass> &renderPass) {
+        // TODO: Convert all of this into a render command buffer
+        m_ActiveRenderPass = renderPass;
+
+        renderPass->GetSpecification().TargetFramebuffer->Bind();
+    }
+
+    void Renderer::IEndRenderPass() {
+        MND_CORE_ASSERT(m_ActiveRenderPass, "No active render pass! Have you called Renderer::EndRenderPass twice?");
+        m_ActiveRenderPass->GetSpecification().TargetFramebuffer->Unbind();
+        m_ActiveRenderPass = nullptr;
+    }
+
+    void Renderer::SubmitMeshI(const Ref<Mesh> &mesh) {}
+
 } // namespace Monado

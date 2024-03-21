@@ -6,9 +6,7 @@
 #include "glm/gtc/type_ptr.hpp"
 
 #include "monado/core/base.h"
-#include "renderer.h"
 #include "monado/core/buffer.h"
-#include "renderer.h"
 #include "shaderUniform.h"
 
 namespace Monado {

@@ -2,6 +2,7 @@
 
 #include "monado/renderer/shader.h"
 #include "openGLShaderUniform.h"
+#include "monado/renderer/renderer.h"
 
 // clang-format off
 #include "glad/glad.h"

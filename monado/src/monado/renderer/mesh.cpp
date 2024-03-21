@@ -1,5 +1,6 @@
 #include "monado/renderer/mesh.h"
 #include "monado/core/log.h"
+#include "monado/renderer/renderer.h"
 
 #include "imgui.h"
 
@@ -417,8 +418,9 @@ namespace Monado {
                     }
                 }
 
-                if (!materialOverride)
-                    self->m_MeshShader->SetMat4FromRenderThread("u_ModelMatrix", transform * submesh.Transform);
+                // if (!materialOverride)
+                //	self->m_MeshShader->SetMat4FromRenderThread("u_ModelMatrix", transform * submesh.Transform,
+                //false);
                 glDrawElementsBaseVertex(GL_TRIANGLES, submesh.IndexCount, GL_UNSIGNED_INT,
                                          (void *)(sizeof(uint32_t) * submesh.BaseIndex), submesh.BaseVertex);
             }

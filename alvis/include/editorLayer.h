@@ -3,12 +3,13 @@
 #include <string>
 
 #include "monado/imGui/imGuiLayer.h"
-#include "monado/renderer/shader.h"
-#include "monado/renderer/mesh.h"
 #include "monado/renderer/camera.h"
 #include "monado/renderer/framebuffer.h"
+#include "monado/renderer/renderPass.h"
 #include "monado/core/events/keyEvent.h"
 #include "imgui_internal.h"
+#include "monado/renderer/shader.h"
+#include "monado/renderer/mesh.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -52,6 +53,7 @@ namespace Monado {
         Ref<Mesh> m_Mesh;
         Ref<Mesh> m_SphereMesh, m_PlaneMesh;
         Ref<Texture2D> m_BRDFLUT;
+        Ref<RenderPass> m_GeoPass, m_CompositePass;
 
         Ref<MaterialInstance> m_MeshMaterial;
         Ref<MaterialInstance> m_GridMaterial;
@@ -91,8 +93,6 @@ namespace Monado {
         };
         RoughnessInput m_RoughnessInput;
 
-        std::unique_ptr<Framebuffer> m_Framebuffer, m_FinalPresentBuffer;
-
         Ref<VertexArray> m_FullscreenQuadVertexArray;
         Ref<TextureCube> m_EnvironmentCubeMap, m_EnvironmentIrradiance;
 
@@ -121,5 +121,4 @@ namespace Monado {
         int m_GizmoType = -1; // -1 = no gizmo
         glm::mat4 m_Transform;
     };
-
 } // namespace Monado

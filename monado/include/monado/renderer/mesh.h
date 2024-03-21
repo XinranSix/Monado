@@ -7,9 +7,7 @@
 #include "glm/glm.hpp"
 
 #include "monado/renderer/vertexArray.h"
-#include "monado/renderer/buffer.h"
 #include "monado/core/timeStep.h"
-#include "monado/renderer/shader.h"
 #include "monado/core/log.h"
 #include "monado/renderer/material.h"
 

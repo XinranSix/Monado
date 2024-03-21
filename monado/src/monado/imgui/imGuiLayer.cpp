@@ -1,6 +1,5 @@
 #include "monado/imgui/imGuiLayer.h"
 #include "monado/core/events/keyEvent.h"
-#include "editorLayer.h"
 
 #include "monado/core/base.h"
 #include "monado/core/application.h"

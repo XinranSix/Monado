@@ -1,4 +1,5 @@
 #include "monado/platform/opengl/openGLBuffer.h"
+#include "monado/renderer/renderer.h"
 
 // clang-format off
 #include "glad/glad.h"

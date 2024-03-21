@@ -1,5 +1,6 @@
 #include "monado/platform/opengl/openGLVertexArray.h"
 #include "monado/core/log.h"
+#include "monado/renderer/renderer.h"
 
 // clang-format off
 #include "glad/glad.h"
