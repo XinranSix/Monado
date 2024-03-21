@@ -11,7 +11,7 @@ namespace Monado {
         OpenGLTexture2D(const std::string &path, bool srgb);
         virtual ~OpenGLTexture2D();
 
-        virtual void Bind(uint32_t slot = 0) const;
+        virtual void Bind(uint32_t slot = 0) const override;
 
         virtual TextureFormat GetFormat() const override { return m_Format; }
         virtual uint32_t GetWidth() const override { return m_Width; }
@@ -31,6 +31,10 @@ namespace Monado {
         virtual bool Loaded() const override { return m_Loaded; }
 
         virtual RendererID GetRendererID() const override { return m_RendererID; }
+
+        virtual bool operator==(const Texture &other) const override {
+            return m_RendererID == ((OpenGLTexture2D &)other).m_RendererID;
+        }
 
     private:
         RendererID m_RendererID;
@@ -53,7 +57,7 @@ namespace Monado {
         OpenGLTextureCube(const std::string &path);
         virtual ~OpenGLTextureCube();
 
-        virtual void Bind(uint32_t slot = 0) const override;
+        virtual void Bind(uint32_t slot = 0) const;
 
         virtual TextureFormat GetFormat() const override { return m_Format; }
         virtual uint32_t GetWidth() const override { return m_Width; }
@@ -65,6 +69,10 @@ namespace Monado {
         virtual const std::string &GetPath() const override { return m_FilePath; }
 
         virtual RendererID GetRendererID() const override { return m_RendererID; }
+
+        virtual bool operator==(const Texture &other) const override {
+            return m_RendererID == ((OpenGLTextureCube &)other).m_RendererID;
+        }
 
     private:
         RendererID m_RendererID;

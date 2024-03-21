@@ -42,10 +42,11 @@ namespace Monado {
 
             glTexImage2D(GL_TEXTURE_2D, 0, MonadoToOpenGLTextureFormat(m_Format), m_Width, m_Height, 0,
                          MonadoToOpenGLTextureFormat(m_Format), GL_UNSIGNED_BYTE, nullptr);
-            glGenerateMipmap(GL_TEXTURE_2D);
 
             glBindTexture(GL_TEXTURE_2D, 0);
         });
+
+        m_ImageData.Allocate(width * height * Texture::GetBPP(m_Format));
     }
 
     OpenGLTexture2D::OpenGLTexture2D(const std::string &path, bool srgb) : m_FilePath(path) {
@@ -129,7 +130,7 @@ namespace Monado {
         MND_CORE_ASSERT(m_Locked, "Texture must be locked!");
 
         m_ImageData.Allocate(width * height * Texture::GetBPP(m_Format));
-#if MND_DEBUG
+#if MN_DEBUG
         m_ImageData.ZeroInitialize();
 #endif
     }

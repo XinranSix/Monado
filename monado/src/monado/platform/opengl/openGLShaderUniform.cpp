@@ -39,7 +39,7 @@ namespace Monado {
     }
 
     OpenGLShaderUniformDeclaration::Type OpenGLShaderUniformDeclaration::StringToType(const std::string &type) {
-        if (type == "int32")
+        if (type == "int")
             return Type::INT32;
         if (type == "float")
             return Type::FLOAT32;
@@ -101,6 +101,8 @@ namespace Monado {
 
     OpenGLShaderResourceDeclaration::Type OpenGLShaderResourceDeclaration::StringToType(const std::string &type) {
         if (type == "sampler2D")
+            return Type::TEXTURE2D;
+        if (type == "sampler2DMS")
             return Type::TEXTURE2D;
         if (type == "samplerCube")
             return Type::TEXTURECUBE;
