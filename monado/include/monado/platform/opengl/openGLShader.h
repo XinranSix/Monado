@@ -12,7 +12,9 @@ namespace Monado {
 
     class OpenGLShader : public Shader {
     public:
+        OpenGLShader() = default;
         OpenGLShader(const std::string &filepath);
+        static Ref<OpenGLShader> CreateFromString(const std::string &source);
 
         virtual void Reload() override;
         virtual void AddShaderReloadedCallback(const ShaderReloadedCallback &callback) override;
@@ -31,6 +33,8 @@ namespace Monado {
         virtual const std::string &GetName() const override { return m_Name; }
 
     private:
+        void Load(const std::string &source);
+
         std::string ReadShaderFromFile(const std::string &filepath) const;
         std::unordered_map<GLenum, std::string> PreProcess(const std::string &source);
         void Parse();

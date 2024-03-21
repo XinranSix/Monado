@@ -6,6 +6,7 @@
 
 #include "glm/glm.hpp"
 
+#include "monado/renderer/vertexArray.h"
 #include "monado/renderer/buffer.h"
 #include "monado/core/timeStep.h"
 #include "monado/renderer/shader.h"
@@ -141,8 +142,7 @@ namespace Monado {
         uint32_t m_BoneCount = 0;
         std::vector<BoneInfo> m_BoneInfo;
 
-        std::unique_ptr<VertexBuffer> m_VertexBuffer;
-        std::unique_ptr<IndexBuffer> m_IndexBuffer;
+        Ref<VertexArray> m_VertexArray;
 
         std::vector<Vertex> m_StaticVertices;
         std::vector<AnimatedVertex> m_AnimatedVertices;
