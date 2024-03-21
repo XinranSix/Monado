@@ -17,9 +17,9 @@ end
 
 add_defines("STB_IMAGE_IMPLEMENTATION")
 
--- add_includedirs("include")
 add_includedirs("imgui/include")
 add_includedirs("monado/include")
+add_includedirs("alvis/include")
 add_includedirs("extern/msdf-atlas-gen/msdf-atlas-gen")
 add_includedirs("extern/msdf-atlas-gen/msdfgen")
 
@@ -65,3 +65,14 @@ target("sandbox")
     after_build(function (target)
         os.cp("sandbox/assets", target:targetdir() .. "/sandbox")
     end)
+
+target("alvis")
+    set_kind("binary")
+    add_files("alvis/**.cpp")
+    add_links("libs/win/ComDlg32")
+    add_deps("monado")
+    add_packages("opengl", "glfw", "glad", "stb", "glm", "stb", "spdlog", "entt", "box2d")
+    after_build(function (target)
+        os.cp("alvis/assets", target:targetdir() .. "/alvis")
+    end)
+

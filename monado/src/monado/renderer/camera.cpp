@@ -78,7 +78,7 @@ namespace Monado {
 
     void Camera::MousePan(const glm::vec2 &delta) {
         auto [xSpeed, ySpeed] = PanSpeed();
-        MND_CORE_TRACE("{0}, {1}", xSpeed, ySpeed);
+        // MND_CORE_TRACE("{0}, {1}", xSpeed, ySpeed);
         m_FocalPoint += -GetRightDirection() * delta.x * xSpeed * m_Distance;
         m_FocalPoint += GetUpDirection() * delta.y * ySpeed * m_Distance;
     }
