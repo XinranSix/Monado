@@ -43,15 +43,18 @@ namespace Monado {
 
     void OpenGLShader::Load(const std::string &source) {
         m_ShaderSource = PreProcess(source);
-        Parse();
+        if (!m_IsCompute)
+            Parse();
 
-        Renderer::Submit([this]() {
+        Renderer::Submit([=]() {
             if (m_RendererID)
-                glDeleteShader(m_RendererID);
+                glDeleteProgram(m_RendererID);
 
             CompileAndUploadShader();
-            ResolveUniforms();
-            ValidateUniforms();
+            if (!m_IsCompute) {
+                ResolveUniforms();
+                ValidateUniforms();
+            }
 
             if (m_Loaded) {
                 for (auto &callback : m_ShaderReloadedCallbacks)
@@ -67,7 +70,7 @@ namespace Monado {
     }
 
     void OpenGLShader::Bind() {
-        Renderer::Submit([this]() { glUseProgram(m_RendererID); });
+        Renderer::Submit([=]() { glUseProgram(m_RendererID); });
     }
 
     std::string OpenGLShader::ReadShaderFromFile(const std::string &filepath) const {
@@ -80,7 +83,7 @@ namespace Monado {
             in.read(&result[0], result.size());
             in.close();
         } else {
-            MND_CORE_WARN("Could not read shader file {0}", filepath);
+            MND_CORE_ASSERT(false, "Could not load shader!");
         }
 
         return result;
@@ -97,12 +100,20 @@ namespace Monado {
             MND_CORE_ASSERT(eol != std::string::npos, "Syntax error");
             size_t begin = pos + typeTokenLength + 1;
             std::string type = source.substr(begin, eol - begin);
-            MND_CORE_ASSERT(type == "vertex" || type == "fragment" || type == "pixel", "Invalid shader type specified");
+            MND_CORE_ASSERT(type == "vertex" || type == "fragment" || type == "pixel" || type == "compute",
+                            "Invalid shader type specified");
 
             size_t nextLinePos = source.find_first_not_of("\r\n", eol);
             pos = source.find(typeToken, nextLinePos);
-            shaderSources[ShaderTypeFromString(type)] =
+            auto shaderType = ShaderTypeFromString(type);
+            shaderSources[shaderType] =
                 source.substr(nextLinePos, pos - (nextLinePos == std::string::npos ? source.size() - 1 : nextLinePos));
+
+            // Compute shaders cannot contain other types
+            if (shaderType == GL_COMPUTE_SHADER) {
+                m_IsCompute = true;
+                break;
+            }
         }
 
         return shaderSources;
@@ -213,6 +224,8 @@ namespace Monado {
 
     static bool IsTypeStringResource(const std::string &type) {
         if (type == "sampler2D")
+            return true;
+        if (type == "sampler2DMS")
             return true;
         if (type == "samplerCube")
             return true;
@@ -445,6 +458,8 @@ namespace Monado {
             return GL_VERTEX_SHADER;
         if (type == "fragment" || type == "pixel")
             return GL_FRAGMENT_SHADER;
+        if (type == "compute")
+            return GL_COMPUTE_SHADER;
 
         return GL_NONE;
     }
@@ -664,6 +679,10 @@ namespace Monado {
         Renderer::Submit([=]() { UploadUniformFloat(name, value); });
     }
 
+    void OpenGLShader::SetInt(const std::string &name, int value) {
+        Renderer::Submit([=]() { UploadUniformInt(name, value); });
+    }
+
     void OpenGLShader::SetMat4(const std::string &name, const glm::mat4 &value) {
         Renderer::Submit([=]() { UploadUniformMat4(name, value); });
     }
@@ -676,6 +695,10 @@ namespace Monado {
             if (location != -1)
                 UploadUniformMat4(location, value);
         }
+    }
+
+    void OpenGLShader::SetIntArray(const std::string &name, int *values, uint32_t size) {
+        Renderer::Submit([=]() { UploadUniformIntArray(name, values, size); });
     }
 
     void OpenGLShader::UploadUniformInt(uint32_t location, int32_t value) { glUniform1i(location, value); }
@@ -725,7 +748,7 @@ namespace Monado {
         glUniform1i(location, value);
     }
 
-    void OpenGLShader::UploadUniformIntArray(const std::string &name, int32_t *values, int32_t count) {
+    void OpenGLShader::UploadUniformIntArray(const std::string &name, int32_t *values, uint32_t count) {
         int32_t location = GetUniformLocation(name);
         glUniform1iv(location, count, values);
     }

@@ -1,6 +1,5 @@
-#include "monado/platform/windows/windowsInput.h"
 #include "monado/platform/windows/windowsWindow.h"
-
+#include "monado/core/input.h"
 #include "monado/core/application.h"
 
 // clang-format off
@@ -10,37 +9,35 @@
 
 namespace Monado {
 
-    Input *Input::s_Instance = new WindowsInput;
-
-    bool WindowsInput::IsKeyPressedImpl(int keycode) {
+    bool Input::IsKeyPressed(int keycode) {
         auto &window = static_cast<WindowsWindow &>(Application::Get().GetWindow());
         auto state = glfwGetKey(static_cast<GLFWwindow *>(window.GetNativeWindow()), keycode);
         return state == GLFW_PRESS || state == GLFW_REPEAT;
     }
 
-    bool WindowsInput::IsMouseButtonPressedImpl(int button) {
+    bool Input::IsMouseButtonPressed(int button) {
         auto &window = static_cast<WindowsWindow &>(Application::Get().GetWindow());
 
         auto state = glfwGetMouseButton(static_cast<GLFWwindow *>(window.GetNativeWindow()), button);
         return state == GLFW_PRESS;
     }
 
-    float WindowsInput::GetMouseXImpl() {
-        auto &window = static_cast<WindowsWindow &>(Application::Get().GetWindow());
-
-        double xpos, ypos;
-        glfwGetCursorPos(static_cast<GLFWwindow *>(window.GetNativeWindow()), &xpos, &ypos);
-
-        return (float)xpos;
+    float Input::GetMouseX() {
+        auto [x, y] = GetMousePosition();
+        return (float)x;
     }
 
-    float WindowsInput::GetMouseYImpl() {
+    float Input::GetMouseY() {
+        auto [x, y] = GetMousePosition();
+        return (float)y;
+    }
+
+    std::pair<float, float> Input::GetMousePosition() {
         auto &window = static_cast<WindowsWindow &>(Application::Get().GetWindow());
 
-        double xpos, ypos;
-        glfwGetCursorPos(static_cast<GLFWwindow *>(window.GetNativeWindow()), &xpos, &ypos);
-
-        return (float)ypos;
+        double x, y;
+        glfwGetCursorPos(static_cast<GLFWwindow *>(window.GetNativeWindow()), &x, &y);
+        return { (float)x, (float)y };
     }
 
 } // namespace Monado

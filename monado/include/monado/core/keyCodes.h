@@ -123,3 +123,7 @@
 #define MND_KEY_RIGHT_ALT          346
 #define MND_KEY_RIGHT_SUPER        347
 #define MND_KEY_MENU               348
+
+#define MND_MOUSE_BUTTON_LEFT        0
+#define MND_MOUSE_BUTTON_RIGHT       1
+#define MND_MOUSE_BUTTON_MIDDLE      2

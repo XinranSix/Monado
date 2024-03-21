@@ -20,6 +20,8 @@ namespace Monado {
         }
         virtual const std::shared_ptr<IndexBuffer> &GetIndexBuffer() const override { return m_IndexBuffer; }
 
+        virtual RendererID GetRendererID() const override { return m_RendererID; };
+
     private:
         RendererID m_RendererID = 0;
         uint32_t m_VertexBufferIndex = 0;

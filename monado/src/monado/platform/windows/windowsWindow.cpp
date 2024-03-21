@@ -38,6 +38,7 @@ namespace Monado {
 
         m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.Title.c_str(), nullptr, nullptr);
         glfwMakeContextCurrent(m_Window);
+        glfwMaximizeWindow(m_Window);
         int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
         MND_CORE_ASSERT(status, "Failed to initialize Glad!");
         glfwSetWindowUserPointer(m_Window, &m_Data);
@@ -131,6 +132,14 @@ namespace Monado {
         m_ImGuiMouseCursors[ImGuiMouseCursor_ResizeNWSE] =
             glfwCreateStandardCursor(GLFW_ARROW_CURSOR); // FIXME: GLFW doesn't have this.
         m_ImGuiMouseCursors[ImGuiMouseCursor_Hand] = glfwCreateStandardCursor(GLFW_HAND_CURSOR);
+
+        // Update window size to actual size
+        {
+            int width, height;
+            glfwGetWindowSize(m_Window, &width, &height);
+            m_Data.Width = width;
+            m_Data.Height = height;
+        }
     }
 
     void WindowsWindow::Shutdown() {}
