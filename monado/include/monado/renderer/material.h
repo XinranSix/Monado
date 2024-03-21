@@ -78,7 +78,7 @@ namespace Monado {
             auto decl = m_Material->FindUniformDeclaration(name);
             if (!decl)
                 return;
-            // HZ_CORE_ASSERT(decl, "Could not find uniform with name '{0}'", name);
+            // MND_CORE_ASSERT(decl, "Could not find uniform with name '{0}'", name);
             MND_CORE_ASSERT(decl, "Could not find uniform with name 'x'");
             auto &buffer = GetUniformBufferTarget(decl);
             buffer.Write((byte *)&value, decl->GetSize(), decl->GetOffset());

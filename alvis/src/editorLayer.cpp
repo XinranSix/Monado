@@ -73,7 +73,6 @@ namespace Monado {
         colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.0f, 1.0f, 1.0f, 0.7f);
 
         using namespace glm;
-
         m_Mesh.reset(new Mesh("alvis/assets/models/m1911/m1911.fbx"));
         m_MeshMaterial.reset(new MaterialInstance(m_Mesh->GetMaterial()));
 
@@ -92,7 +91,8 @@ namespace Monado {
         m_CheckerboardTex.reset(Texture2D::Create("alvis/assets/editor/Checkerboard.tga"));
 
         // Environment
-        m_EnvironmentCubeMap.reset(TextureCube::Create("alvis/assets/textures/environments/Arches_E_PineTree_Radiance.tga"));
+        m_EnvironmentCubeMap.reset(
+            TextureCube::Create("alvis/assets/textures/environments/Arches_E_PineTree_Radiance.tga"));
         // m_EnvironmentCubeMap.reset(TextureCube::Create("assets/textures/environments/DebugCubeMap.tga"));
         m_EnvironmentIrradiance.reset(
             TextureCube::Create("alvis/assets/textures/environments/Arches_E_PineTree_Irradiance.tga"));
@@ -187,7 +187,7 @@ namespace Monado {
 
     void EditorLayer::OnDetach() {}
 
-    void EditorLayer::OnUpdate(TimeStep ts) {
+    void EditorLayer::OnUpdate(Timestep ts) {
         // THINGS TO LOOK AT:
         // - BRDF LUT
         // - Cubemap mips and filtering
@@ -198,8 +198,9 @@ namespace Monado {
         m_Camera.Update(ts);
         auto viewProjection = m_Camera.GetProjectionMatrix() * m_Camera.GetViewMatrix();
 
+        // m_Mesh->OnUpdate(ts);
+
         Renderer::BeginRenderPass(m_GeoPass);
-        Renderer::Clear();
         // TODO:
         // Renderer::BeginScene(m_Camera);
         // Renderer::EndScene();
@@ -257,18 +258,18 @@ namespace Monado {
         if (m_Scene == Scene::Spheres) {
             // Metals
             for (int i = 0; i < 8; i++)
-                m_SphereMesh->Render(ts, glm::mat4(1.0f), m_MetalSphereMaterialInstances[i]);
+                Renderer::SubmitMesh(m_SphereMesh, glm::mat4(1.0f), m_MetalSphereMaterialInstances[i]);
 
             // Dielectrics
             for (int i = 0; i < 8; i++)
-                m_SphereMesh->Render(ts, glm::mat4(1.0f), m_DielectricSphereMaterialInstances[i]);
+                Renderer::SubmitMesh(m_SphereMesh, glm::mat4(1.0f), m_DielectricSphereMaterialInstances[i]);
         } else if (m_Scene == Scene::Model) {
             if (m_Mesh)
-                m_Mesh->Render(ts, m_Transform, m_MeshMaterial);
+                Renderer::SubmitMesh(m_Mesh, m_Transform, m_MeshMaterial);
         }
 
         m_GridMaterial->Set("u_MVP", viewProjection * glm::scale(glm::mat4(1.0f), glm::vec3(16.0f)));
-        m_PlaneMesh->Render(ts, m_GridMaterial);
+        Renderer::SubmitMesh(m_PlaneMesh, glm::mat4(1.0f), m_GridMaterial);
 
         Renderer::EndRenderPass();
 

@@ -11,7 +11,7 @@ namespace Monado {
         OpenGLTexture2D(const std::string &path, bool srgb);
         virtual ~OpenGLTexture2D();
 
-        virtual void Bind(uint32_t slot = 0) const override;
+        virtual void Bind(uint32_t slot = 0) const;
 
         virtual TextureFormat GetFormat() const override { return m_Format; }
         virtual uint32_t GetWidth() const override { return m_Width; }

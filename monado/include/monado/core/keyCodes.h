@@ -1,6 +1,5 @@
 #pragma once
 
-// clang-format off
 // From glfw3.h
 #define MND_KEY_SPACE              32
 #define MND_KEY_APOSTROPHE         39  /* ' */
@@ -124,4 +123,3 @@
 #define MND_KEY_RIGHT_ALT          346
 #define MND_KEY_RIGHT_SUPER        347
 #define MND_KEY_MENU               348
-// clang-format on

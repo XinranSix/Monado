@@ -19,4 +19,5 @@ namespace Monado {
     private:
         static Input *s_Instance;
     };
+
 } // namespace Monado

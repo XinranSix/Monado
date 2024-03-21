@@ -107,9 +107,7 @@ namespace Monado {
         Mesh(const std::string &filename);
         ~Mesh();
 
-        void Render(TimeStep ts, Ref<MaterialInstance> materialInstance = Ref<MaterialInstance>());
-        void Render(TimeStep ts, const glm::mat4 &transform = glm::mat4(1.0f),
-                    Ref<MaterialInstance> materialInstance = Ref<MaterialInstance>());
+        void OnUpdate(Timestep ts);
         void OnImGuiRender();
         void DumpVertexBuffer();
 
@@ -120,7 +118,7 @@ namespace Monado {
     private:
         void BoneTransform(float time);
         void ReadNodeHierarchy(float AnimationTime, const aiNode *pNode, const glm::mat4 &ParentTransform);
-        void TraverseNodes(aiNode *node, int level = 0);
+        void TraverseNodes(aiNode *node);
 
         const aiNodeAnim *FindNodeAnim(const aiAnimation *animation, const std::string &nodeName);
         uint32_t FindPosition(float AnimationTime, const aiNodeAnim *pNodeAnim);
@@ -161,5 +159,8 @@ namespace Monado {
         bool m_AnimationPlaying = true;
 
         std::string m_FilePath;
+
+        friend class Renderer;
     };
+
 } // namespace Monado

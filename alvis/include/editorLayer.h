@@ -29,7 +29,7 @@ namespace Monado {
 
         virtual void OnAttach() override;
         virtual void OnDetach() override;
-        virtual void OnUpdate(TimeStep ts) override;
+        virtual void OnUpdate(Timestep ts) override;
 
         virtual void OnImGuiRender() override;
         virtual void OnEvent(Event &event) override;
@@ -121,4 +121,5 @@ namespace Monado {
         int m_GizmoType = -1; // -1 = no gizmo
         glm::mat4 m_Transform;
     };
+
 } // namespace Monado

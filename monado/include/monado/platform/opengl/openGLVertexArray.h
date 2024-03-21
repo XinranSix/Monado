@@ -18,7 +18,6 @@ namespace Monado {
         virtual const std::vector<std::shared_ptr<VertexBuffer>> &GetVertexBuffers() const override {
             return m_VertexBuffers;
         }
-
         virtual const std::shared_ptr<IndexBuffer> &GetIndexBuffer() const override { return m_IndexBuffer; }
 
     private:

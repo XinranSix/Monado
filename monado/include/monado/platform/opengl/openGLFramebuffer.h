@@ -16,9 +16,9 @@ namespace Monado {
 
         virtual void BindTexture(uint32_t slot = 0) const override;
 
-        virtual RendererID GetRendererID() const { return m_RendererID; }
-        virtual RendererID GetColorAttachmentRendererID() const { return m_ColorAttachment; }
-        virtual RendererID GetDepthAttachmentRendererID() const { return m_DepthAttachment; }
+        virtual RendererID GetRendererID() const override { return m_RendererID; }
+        virtual RendererID GetColorAttachmentRendererID() const override { return m_ColorAttachment; }
+        virtual RendererID GetDepthAttachmentRendererID() const override { return m_DepthAttachment; }
 
         virtual const FramebufferSpecification &GetSpecification() const override { return m_Specification; }
 

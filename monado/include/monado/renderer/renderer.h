@@ -28,9 +28,25 @@ namespace Monado {
 
         static const Scope<ShaderLibrary> &GetShaderLibrary() { return Get().m_ShaderLibrary; }
 
-        static void *Submit(RenderCommandFn fn, unsigned int size) {
-            return s_Instance->m_CommandQueue.Allocate(fn, size);
+        template <typename FuncT>
+        static void Submit(FuncT &&func) {
+            auto renderCmd = [](void *ptr) {
+                auto pFunc = (FuncT *)ptr;
+                (*pFunc)();
+
+                // NOTE: Instead of destroying we could try and enforce all items to be trivally destructible
+                // however some items like uniforms which contain std::strings still exist for now
+                // static_assert(std::is_trivially_destructible_v<FuncT>, "FuncT must be trivially destructible");
+                pFunc->~FuncT();
+            };
+            auto storageBuffer = s_Instance->m_CommandQueue.Allocate(renderCmd, sizeof(func));
+            new (storageBuffer) FuncT(std::forward<FuncT>(func));
         }
+
+        /*static void* Submit(RenderCommandFn fn, unsigned int size)
+        {
+                return s_Instance->m_CommandQueue.Allocate(fn, size);
+        }*/
 
         void WaitAndRender();
 
@@ -40,13 +56,17 @@ namespace Monado {
         static void BeginRenderPass(const Ref<RenderPass> &renderPass) { s_Instance->IBeginRenderPass(renderPass); }
         static void EndRenderPass() { s_Instance->IEndRenderPass(); }
 
-        static void SubmitMesh(const Ref<Mesh> &mesh) { s_Instance->SubmitMeshI(mesh); }
+        static void SubmitMesh(const Ref<Mesh> &mesh, const glm::mat4 &transform,
+                               const Ref<MaterialInstance> &overrideMaterial = nullptr) {
+            s_Instance->SubmitMeshI(mesh, transform, overrideMaterial);
+        }
 
     private:
         void IBeginRenderPass(const Ref<RenderPass> &renderPass);
         void IEndRenderPass();
 
-        void SubmitMeshI(const Ref<Mesh> &mesh);
+        void SubmitMeshI(const Ref<Mesh> &mesh, const glm::mat4 &transform,
+                         const Ref<MaterialInstance> &overrideMaterial);
 
     private:
         static Renderer *s_Instance;
@@ -58,129 +78,3 @@ namespace Monado {
     };
 
 } // namespace Monado
-
-#define MND_RENDER_PASTE2(a, b) a##b
-#define MND_RENDER_PASTE(a, b) MND_RENDER_PASTE2(a, b)
-#define MND_RENDER_UNIQUE(x) MND_RENDER_PASTE(x, __LINE__)
-
-#define MND_RENDER(code)                                                                                               \
-    struct MND_RENDER_UNIQUE(MNDRenderCommand) {                                                                       \
-        static void Execute(void *) { code }                                                                           \
-    };                                                                                                                 \
-    {                                                                                                                  \
-        auto mem = ::Monado::Renderer::Submit(MND_RENDER_UNIQUE(MNDRenderCommand)::Execute,                            \
-                                              sizeof(MND_RENDER_UNIQUE(MNDRenderCommand)));                            \
-        new (mem) MND_RENDER_UNIQUE(MNDRenderCommand)();                                                               \
-    }
-
-#define MND_RENDER_1(arg0, code)                                                                                       \
-    do {                                                                                                               \
-        struct MND_RENDER_UNIQUE(MNDRenderCommand) {                                                                   \
-            MND_RENDER_UNIQUE(MNDRenderCommand)                                                                        \
-            (typename ::std::remove_const<typename ::std::remove_reference<decltype(arg0)>::type>::type arg0)          \
-                : arg0(arg0) {}                                                                                        \
-                                                                                                                       \
-            static void Execute(void *argBuffer) {                                                                     \
-                auto &arg0 = ((MND_RENDER_UNIQUE(MNDRenderCommand) *)argBuffer) -> arg0;                               \
-                code                                                                                                   \
-            }                                                                                                          \
-                                                                                                                       \
-            typename ::std::remove_const<typename ::std::remove_reference<decltype(arg0)>::type>::type arg0;           \
-        };                                                                                                             \
-        {                                                                                                              \
-            auto mem = ::Monado::Renderer::Submit(MND_RENDER_UNIQUE(MNDRenderCommand)::Execute,                        \
-                                                  sizeof(MND_RENDER_UNIQUE(MNDRenderCommand)));                        \
-            new (mem) MND_RENDER_UNIQUE(MNDRenderCommand)(arg0);                                                       \
-        }                                                                                                              \
-    } while (0)
-
-#define MND_RENDER_2(arg0, arg1, code)                                                                                 \
-    struct MND_RENDER_UNIQUE(MNDRenderCommand) {                                                                       \
-        MND_RENDER_UNIQUE(MNDRenderCommand)                                                                            \
-        (typename ::std::remove_const<typename ::std::remove_reference<decltype(arg0)>::type>::type arg0,              \
-         typename ::std::remove_const<typename ::std::remove_reference<decltype(arg1)>::type>::type arg1)              \
-            : arg0(arg0), arg1(arg1) {}                                                                                \
-                                                                                                                       \
-        static void Execute(void *argBuffer) {                                                                         \
-            auto &arg0 = ((MND_RENDER_UNIQUE(MNDRenderCommand) *)argBuffer) -> arg0;                                   \
-            auto &arg1 = ((MND_RENDER_UNIQUE(MNDRenderCommand) *)argBuffer) -> arg1;                                   \
-            code                                                                                                       \
-        }                                                                                                              \
-                                                                                                                       \
-        typename ::std::remove_const<typename ::std::remove_reference<decltype(arg0)>::type>::type arg0;               \
-        typename ::std::remove_const<typename ::std::remove_reference<decltype(arg1)>::type>::type arg1;               \
-    };                                                                                                                 \
-    {                                                                                                                  \
-        auto mem = ::Monado::Renderer::Submit(MND_RENDER_UNIQUE(MNDRenderCommand)::Execute,                            \
-                                              sizeof(MND_RENDER_UNIQUE(MNDRenderCommand)));                            \
-        new (mem) MND_RENDER_UNIQUE(MNDRenderCommand)(arg0, arg1);                                                     \
-    }
-
-#define MND_RENDER_3(arg0, arg1, arg2, code)                                                                           \
-    struct MND_RENDER_UNIQUE(MNDRenderCommand) {                                                                       \
-        MND_RENDER_UNIQUE(MNDRenderCommand)                                                                            \
-        (typename ::std::remove_const<typename ::std::remove_reference<decltype(arg0)>::type>::type arg0,              \
-         typename ::std::remove_const<typename ::std::remove_reference<decltype(arg1)>::type>::type arg1,              \
-         typename ::std::remove_const<typename ::std::remove_reference<decltype(arg2)>::type>::type arg2)              \
-            : arg0(arg0), arg1(arg1), arg2(arg2) {}                                                                    \
-                                                                                                                       \
-        static void Execute(void *argBuffer) {                                                                         \
-            auto &arg0 = ((MND_RENDER_UNIQUE(MNDRenderCommand) *)argBuffer) -> arg0;                                   \
-            auto &arg1 = ((MND_RENDER_UNIQUE(MNDRenderCommand) *)argBuffer) -> arg1;                                   \
-            auto &arg2 = ((MND_RENDER_UNIQUE(MNDRenderCommand) *)argBuffer) -> arg2;                                   \
-            code                                                                                                       \
-        }                                                                                                              \
-                                                                                                                       \
-        typename ::std::remove_const<typename ::std::remove_reference<decltype(arg0)>::type>::type arg0;               \
-        typename ::std::remove_const<typename ::std::remove_reference<decltype(arg1)>::type>::type arg1;               \
-        typename ::std::remove_const<typename ::std::remove_reference<decltype(arg2)>::type>::type arg2;               \
-    };                                                                                                                 \
-    {                                                                                                                  \
-        auto mem = ::Monado::Renderer::Submit(MND_RENDER_UNIQUE(MNDRenderCommand)::Execute,                            \
-                                              sizeof(MND_RENDER_UNIQUE(MNDRenderCommand)));                            \
-        new (mem) MND_RENDER_UNIQUE(MNDRenderCommand)(arg0, arg1, arg2);                                               \
-    }
-
-#define MND_RENDER_4(arg0, arg1, arg2, arg3, code)                                                                     \
-    struct MND_RENDER_UNIQUE(MNDRenderCommand) {                                                                       \
-        MND_RENDER_UNIQUE(MNDRenderCommand)                                                                            \
-        (typename ::std::remove_const<typename ::std::remove_reference<decltype(arg0)>::type>::type arg0,              \
-         typename ::std::remove_const<typename ::std::remove_reference<decltype(arg1)>::type>::type arg1,              \
-         typename ::std::remove_const<typename ::std::remove_reference<decltype(arg2)>::type>::type arg2,              \
-         typename ::std::remove_const<typename ::std::remove_reference<decltype(arg3)>::type>::type arg3)              \
-            : arg0(arg0), arg1(arg1), arg2(arg2), arg3(arg3) {}                                                        \
-                                                                                                                       \
-        static void Execute(void *argBuffer) {                                                                         \
-            auto &arg0 = ((MND_RENDER_UNIQUE(MNDRenderCommand) *)argBuffer) -> arg0;                                   \
-            auto &arg1 = ((MND_RENDER_UNIQUE(MNDRenderCommand) *)argBuffer) -> arg1;                                   \
-            auto &arg2 = ((MND_RENDER_UNIQUE(MNDRenderCommand) *)argBuffer) -> arg2;                                   \
-            auto &arg3 = ((MND_RENDER_UNIQUE(MNDRenderCommand) *)argBuffer) -> arg3;                                   \
-            code                                                                                                       \
-        }                                                                                                              \
-                                                                                                                       \
-        typename ::std::remove_const<typename ::std::remove_reference<decltype(arg0)>::type>::type arg0;               \
-        typename ::std::remove_const<typename ::std::remove_reference<decltype(arg1)>::type>::type arg1;               \
-        typename ::std::remove_const<typename ::std::remove_reference<decltype(arg2)>::type>::type arg2;               \
-        typename ::std::remove_const<typename ::std::remove_reference<decltype(arg3)>::type>::type arg3;               \
-    };                                                                                                                 \
-    {                                                                                                                  \
-        auto mem = Renderer::Submit(MND_RENDER_UNIQUE(MNDRenderCommand)::Execute,                                      \
-                                    sizeof(MND_RENDER_UNIQUE(MNDRenderCommand)));                                      \
-        new (mem) MND_RENDER_UNIQUE(MNDRenderCommand)(arg0, arg1, arg2, arg3);                                         \
-    }
-
-#define MND_RENDER_S(code)                                                                                             \
-    auto self = this;                                                                                                  \
-    MND_RENDER_1(self, code)
-
-#define MND_RENDER_S1(arg0, code)                                                                                      \
-    auto self = this;                                                                                                  \
-    MND_RENDER_2(self, arg0, code)
-
-#define MND_RENDER_S2(arg0, arg1, code)                                                                                \
-    auto self = this;                                                                                                  \
-    MND_RENDER_3(self, arg0, arg1, code)
-
-#define MND_RENDER_S3(arg0, arg1, arg2, code)                                                                          \
-    auto self = this;                                                                                                  \
-    MND_RENDER_4(self, arg0, arg1, arg2, code)

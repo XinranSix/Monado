@@ -6,9 +6,9 @@
 namespace Monado {
 
     void InitializeCore() {
-        Log::Init();
+        Monado::Log::Init();
 
-        MND_CORE_TRACE("Hazel Engine {}", MONADO_BUILD_ID);
+        MND_CORE_TRACE("Monado Engine {}", MONADO_BUILD_ID);
         MND_CORE_TRACE("Initializing...");
     }
 

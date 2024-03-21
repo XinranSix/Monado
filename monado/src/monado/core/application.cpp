@@ -18,7 +18,6 @@
 namespace Monado {
 
 #define BIND_EVENT_FN(fn) std::bind(&Application::fn, this, std::placeholders::_1)
-
     Application *Application::s_Instance = nullptr;
 
     Application::Application(const ApplicationProps &props) {
@@ -74,7 +73,7 @@ namespace Monado {
 
                 // Render ImGui on render thread
                 Application *app = this;
-                MND_RENDER_1(app, { app->RenderImGui(); });
+                Renderer::Submit([app]() { app->RenderImGui(); });
 
                 Renderer::Get().WaitAndRender();
             }
@@ -106,7 +105,7 @@ namespace Monado {
             return false;
         }
         m_Minimized = false;
-        MND_RENDER_2(width, height, { glViewport(0, 0, width, height); });
+        Renderer::Submit([=]() { glViewport(0, 0, width, height); });
         auto &fbs = FramebufferPool::GetGlobal()->GetAll();
         for (auto &fb : fbs) {
             if (auto fbp = fb.lock())

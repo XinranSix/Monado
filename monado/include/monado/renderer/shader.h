@@ -10,6 +10,7 @@
 #include "shaderUniform.h"
 
 namespace Monado {
+
     struct ShaderUniform {};
 
     struct ShaderUniformCollection {};
@@ -94,7 +95,7 @@ namespace Monado {
         // Temporary while we don't have materials
         virtual void SetFloat(const std::string &name, float value) = 0;
         virtual void SetMat4(const std::string &name, const glm::mat4 &value) = 0;
-        virtual void SetMat4FromRenderThread(const std::string &name, const glm::mat4 &value) = 0;
+        virtual void SetMat4FromRenderThread(const std::string &name, const glm::mat4 &value, bool bind = true) = 0;
 
         virtual const std::string &GetName() const = 0;
 
@@ -102,7 +103,7 @@ namespace Monado {
         // Note: currently for simplicity this is simply a string filepath, however
         //       in the future this will be an asset object + metadata
         static Ref<Shader> Create(const std::string &filepath);
-        static Ref<Shader> CreateFromString(const std::string& source);
+        static Ref<Shader> CreateFromString(const std::string &source);
 
         virtual void SetVSMaterialUniformBuffer(Buffer buffer) = 0;
         virtual void SetPSMaterialUniformBuffer(Buffer buffer) = 0;

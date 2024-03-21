@@ -5,7 +5,7 @@
 #include "window.h"
 #include "monado/core/events/applicationEvent.h"
 #include "monado/imGui/imGuiLayer.h"
-#include "timeStep.h"
+#include "timestep.h"
 #include "window.h"
 #include "layerStack.h"
 
@@ -25,7 +25,7 @@ namespace Monado {
 
         virtual void OnInit() {}
         virtual void OnShutdown() {}
-        virtual void OnUpdate(TimeStep ts) {}
+        virtual void OnUpdate(Timestep ts) {}
 
         virtual void OnEvent(Event &event);
 
@@ -49,7 +49,7 @@ namespace Monado {
         bool m_Running = true, m_Minimized = false;
         LayerStack m_LayerStack;
         ImGuiLayer *m_ImGuiLayer;
-        TimeStep m_TimeStep;
+        Timestep m_TimeStep;
 
         float m_LastFrameTime = 0.0f;
 

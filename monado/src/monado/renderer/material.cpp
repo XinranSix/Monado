@@ -1,7 +1,6 @@
 #include "monado/renderer/material.h"
 
 namespace Monado {
-
     //////////////////////////////////////////////////////////////////////////////////
     // Material
     //////////////////////////////////////////////////////////////////////////////////
@@ -71,7 +70,6 @@ namespace Monado {
     }
 
     void Material::Bind() const {
-
         m_Shader->Bind();
 
         if (m_VSUniformStorageBuffer)
@@ -155,4 +153,5 @@ namespace Monado {
                 texture->Bind(i);
         }
     }
+
 } // namespace Monado
