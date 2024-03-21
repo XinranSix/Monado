@@ -42,16 +42,16 @@ public:
     virtual void OnAttach() override {
         using namespace glm;
 
-        m_Mesh.reset(new Monado::Mesh("sandbox/assets/models/m1911/m1911.fbx"));
+        m_Mesh.reset(new Monado::Mesh("alvis/assets/models/m1911/m1911.fbx"));
         m_MeshMaterial.reset(new Monado::MaterialInstance(m_Mesh->GetMaterial()));
 
-        m_QuadShader = Monado::Shader::Create("sandbox/assets/shaders/quad.glsl");
-        m_HDRShader = Monado::Shader::Create("sandbox/assets/shaders/hdr.glsl");
+        m_QuadShader = Monado::Shader::Create("alvis/assets/shaders/quad.glsl");
+        m_HDRShader = Monado::Shader::Create("alvis/assets/shaders/hdr.glsl");
 
-        m_SphereMesh.reset(new Monado::Mesh("sandbox/assets/models/Sphere1m.fbx"));
-        m_PlaneMesh.reset(new Monado::Mesh("sandbox/assets/models/Plane1m.obj"));
+        m_SphereMesh.reset(new Monado::Mesh("alvis/assets/models/Sphere1m.fbx"));
+        m_PlaneMesh.reset(new Monado::Mesh("alvis/assets/models/Plane1m.obj"));
 
-        m_GridShader = Monado::Shader::Create("sandbox/assets/shaders/Grid.glsl");
+        m_GridShader = Monado::Shader::Create("alvis/assets/shaders/Grid.glsl");
         m_GridMaterial = Monado::MaterialInstance::Create(Monado::Material::Create(m_GridShader));
         m_GridMaterial->Set("u_Scale", m_GridScale);
         m_GridMaterial->Set("u_Res", m_GridSize);

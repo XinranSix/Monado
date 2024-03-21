@@ -8,6 +8,7 @@ namespace Monado {
 
     class Camera {
     public:
+        Camera() = default;
         Camera(const glm::mat4 &projectionMatrix);
 
         void Focus();
@@ -29,6 +30,9 @@ namespace Monado {
         glm::vec3 GetRightDirection();
         glm::vec3 GetForwardDirection();
         const glm::vec3 &GetPosition() const { return m_Position; }
+
+        float GetExposure() const { return m_Exposure; }
+        float &GetExposure() { return m_Exposure; }
 
     private:
         void MousePan(const glm::vec2 &delta);
@@ -52,6 +56,8 @@ namespace Monado {
 
         float m_Distance;
         float m_Pitch, m_Yaw;
+
+        float m_Exposure = 0.8f;
 
         uint32_t m_ViewportWidth = 1280, m_ViewportHeight = 720;
     };
