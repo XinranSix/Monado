@@ -7,6 +7,7 @@
 #include "monado/renderer/mesh.h"
 #include "monado/renderer/camera.h"
 #include "monado/renderer/framebuffer.h"
+#include "monado/core/events/keyEvent.h"
 #include "imgui_internal.h"
 
 #include "glm/glm.hpp"
@@ -31,6 +32,7 @@ namespace Monado {
 
         virtual void OnImGuiRender() override;
         virtual void OnEvent(Event &event) override;
+        bool OnKeyPressedEvent(KeyPressedEvent &e);
 
         // ImGui UI helpers
         void Property(const std::string &name, bool &value);
@@ -91,7 +93,7 @@ namespace Monado {
 
         std::unique_ptr<Framebuffer> m_Framebuffer, m_FinalPresentBuffer;
 
-      	Ref<VertexArray> m_FullscreenQuadVertexArray;
+        Ref<VertexArray> m_FullscreenQuadVertexArray;
         Ref<TextureCube> m_EnvironmentCubeMap, m_EnvironmentIrradiance;
 
         Camera m_Camera;
@@ -115,6 +117,9 @@ namespace Monado {
 
         // Editor resources
         Ref<Texture2D> m_CheckerboardTex;
+
+        int m_GizmoType = -1; // -1 = no gizmo
+        glm::mat4 m_Transform;
     };
 
 } // namespace Monado

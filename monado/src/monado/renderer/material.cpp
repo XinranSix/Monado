@@ -71,6 +71,7 @@ namespace Monado {
     }
 
     void Material::Bind() const {
+
         m_Shader->Bind();
 
         if (m_VSUniformStorageBuffer)
@@ -139,6 +140,8 @@ namespace Monado {
     }
 
     void MaterialInstance::Bind() const {
+        m_Material->m_Shader->Bind();
+
         if (m_VSUniformStorageBuffer)
             m_Material->m_Shader->SetVSMaterialUniformBuffer(m_VSUniformStorageBuffer);
 
