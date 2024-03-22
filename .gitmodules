@@ -10,3 +10,7 @@
 [submodule "extern/msdf-atlas-gen"]
 	path = extern/msdf-atlas-gen
 	url = https://github.com/Chlumsky/msdf-atlas-gen.git
+[submodule "extern/FastNoise"]
+	path = extern/FastNoise
+	url = https://github.com/Auburn/FastNoiseLite.git
+	branch = FastNoise-Legacy
