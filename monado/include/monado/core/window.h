@@ -18,7 +18,8 @@ namespace Monado {
     };
 
     // Interface representing a desktop system based Window
-    class Window {
+    // Interface representing a desktop system based Window
+    class Window : public RefCounted {
     public:
         using EventCallbackFn = std::function<void(Event &)>;
 

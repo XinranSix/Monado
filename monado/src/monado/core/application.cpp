@@ -2,6 +2,7 @@
 #include "monado/renderer/renderer.h"
 #include "monado/core/log.h"
 #include "monado/renderer/framebuffer.h"
+#include "monado/script/scriptEngine.h"
 
 // clang-format off
 #include "glad/glad.h"
@@ -26,10 +27,13 @@ namespace Monado {
         m_Window =
             std::unique_ptr<Window>(Window::Create(WindowProps(props.Name, props.WindowWidth, props.WindowHeight)));
         m_Window->SetEventCallback(BIND_EVENT_FN(OnEvent));
-        m_Window->SetVSync(false);
+        m_Window->SetVSync(true);
 
         m_ImGuiLayer = new ImGuiLayer("ImGui");
         PushOverlay(m_ImGuiLayer);
+
+        // TODO: 改成自己的
+        ScriptEngine::Init("assets/scripts/ExampleApp.dll");
 
         Renderer::Init();
         Renderer::WaitAndRender();
@@ -107,13 +111,12 @@ namespace Monado {
         m_Minimized = false;
         Renderer::Submit([=]() { glViewport(0, 0, width, height); });
         auto &fbs = FramebufferPool::GetGlobal()->GetAll();
-        for (auto &fb : fbs) {
-            if (auto fbp = fb.lock())
-                fbp->Resize(width, height);
-        }
+        for (auto &fb : fbs)
+            fb->Resize(width, height);
+
         return false;
     }
-
+    
     bool Application::OnWindowClose(WindowCloseEvent &e) {
         m_Running = false;
         return true;

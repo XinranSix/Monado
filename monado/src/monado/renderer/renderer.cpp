@@ -16,14 +16,14 @@ namespace Monado {
     struct RendererData {
         Ref<RenderPass> m_ActiveRenderPass;
         RenderCommandQueue m_CommandQueue;
-        Scope<ShaderLibrary> m_ShaderLibrary;
+        Ref<ShaderLibrary> m_ShaderLibrary;
         Ref<VertexArray> m_FullscreenQuadVertexArray;
     };
 
     static RendererData s_Data;
 
     void Renderer::Init() {
-        s_Data.m_ShaderLibrary = std::make_unique<ShaderLibrary>();
+        s_Data.m_ShaderLibrary = Ref<ShaderLibrary>::Create();
         Renderer::Submit([]() { RendererAPI::Init(); });
 
         Renderer::GetShaderLibrary()->Load("alvis/assets/shaders/MonadoPBR_Static.glsl");
@@ -69,7 +69,7 @@ namespace Monado {
         Renderer2D::Init();
     }
 
-    const Scope<ShaderLibrary> &Renderer::GetShaderLibrary() { return s_Data.m_ShaderLibrary; }
+    Ref<ShaderLibrary> Renderer::GetShaderLibrary() { return s_Data.m_ShaderLibrary; }
 
     void Renderer::Clear() {
         Renderer::Submit([]() { RendererAPI::Clear(0.0f, 0.0f, 0.0f, 1.0f); });
@@ -93,7 +93,7 @@ namespace Monado {
 
     void Renderer::WaitAndRender() { s_Data.m_CommandQueue.Execute(); }
 
-    void Renderer::BeginRenderPass(const Ref<RenderPass> &renderPass, bool clear) {
+    void Renderer::BeginRenderPass(Ref<RenderPass> renderPass, bool clear) {
         MND_CORE_ASSERT(renderPass, "Render pass cannot be null!");
 
         // TODO: Convert all of this into a render command buffer
@@ -109,12 +109,12 @@ namespace Monado {
 
     void Renderer::EndRenderPass() {
         MND_CORE_ASSERT(s_Data.m_ActiveRenderPass,
-                        "No active render pass! Have you called Renderer::EndRenderPass twice?");
+                       "No active render pass! Have you called Renderer::EndRenderPass twice?");
         s_Data.m_ActiveRenderPass->GetSpecification().TargetFramebuffer->Unbind();
         s_Data.m_ActiveRenderPass = nullptr;
     }
 
-    void Renderer::SubmitQuad(const Ref<MaterialInstance> &material, const glm::mat4 &transform) {
+    void Renderer::SubmitQuad(Ref<MaterialInstance> material, const glm::mat4 &transform) {
         bool depthTest = true;
         if (material) {
             material->Bind();
@@ -128,7 +128,7 @@ namespace Monado {
         Renderer::DrawIndexed(6, PrimitiveType::Triangles, depthTest);
     }
 
-    void Renderer::SubmitFullscreenQuad(const Ref<MaterialInstance> &material) {
+    void Renderer::SubmitFullscreenQuad(Ref<MaterialInstance> material) {
         bool depthTest = true;
         if (material) {
             material->Bind();
@@ -139,8 +139,7 @@ namespace Monado {
         Renderer::DrawIndexed(6, PrimitiveType::Triangles, depthTest);
     }
 
-    void Renderer::SubmitMesh(const Ref<Mesh> &mesh, const glm::mat4 &transform,
-                              const Ref<MaterialInstance> &overrideMaterial) {
+    void Renderer::SubmitMesh(Ref<Mesh> mesh, const glm::mat4 &transform, Ref<MaterialInstance> overrideMaterial) {
         // auto material = overrideMaterial ? overrideMaterial : mesh->GetMaterialInstance();
         // auto shader = material->GetShader();
         // TODO: Sort this out
@@ -173,7 +172,7 @@ namespace Monado {
         }
     }
 
-    void Renderer::DrawAABB(const Ref<Mesh> &mesh, const glm::mat4 &transform, const glm::vec4 &color) {
+    void Renderer::DrawAABB(Ref<Mesh> mesh, const glm::mat4 &transform, const glm::vec4 &color) {
         for (Submesh &submesh : mesh->m_Submeshes) {
             auto &aabb = submesh.BoundingBox;
             auto aabbTransform = transform * submesh.Transform;

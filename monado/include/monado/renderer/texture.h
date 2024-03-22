@@ -10,7 +10,7 @@ namespace Monado {
 
     enum class TextureWrap { None = 0, Clamp = 1, Repeat = 2 };
 
-    class Texture {
+    class Texture : public RefCounted {
     public:
         virtual ~Texture() {}
 

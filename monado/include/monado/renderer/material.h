@@ -12,14 +12,14 @@ namespace Monado {
 
     enum class MaterialFlag { None = BIT(0), DepthTest = BIT(1), Blend = BIT(2) };
 
-    class Material {
+    class Material : public RefCounted {
         friend class MaterialInstance;
 
     public:
         Material(const Ref<Shader> &shader);
         virtual ~Material();
 
-        void Bind() const;
+        void Bind();
 
         uint32_t GetFlags() const { return m_MaterialFlags; }
         void SetFlag(MaterialFlag flag) { m_MaterialFlags |= (uint32_t)flag; }
@@ -54,7 +54,7 @@ namespace Monado {
     private:
         void AllocateStorage();
         void OnShaderReloaded();
-        void BindTextures() const;
+        void BindTextures();
 
         ShaderUniformDeclaration *FindUniformDeclaration(const std::string &name);
         ShaderResourceDeclaration *FindResourceDeclaration(const std::string &name);
@@ -71,7 +71,7 @@ namespace Monado {
         uint32_t m_MaterialFlags;
     };
 
-    class MaterialInstance {
+    class MaterialInstance : public RefCounted {
         friend class Material;
 
     public:
@@ -105,7 +105,7 @@ namespace Monado {
 
         void Set(const std::string &name, const Ref<TextureCube> &texture) { Set(name, (const Ref<Texture> &)texture); }
 
-        void Bind() const;
+        void Bind();
 
         uint32_t GetFlags() const { return m_Material->m_MaterialFlags; }
         bool GetFlag(MaterialFlag flag) const { return (uint32_t)flag & m_Material->m_MaterialFlags; }

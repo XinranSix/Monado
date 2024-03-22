@@ -11,6 +11,7 @@
 #include "monado/renderer/shader.h"
 #include "monado/renderer/mesh.h"
 #include "monado/editor/sceneHierarchyPanel.h"
+#include "monado/core/math/ray.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -57,6 +58,14 @@ namespace Monado {
         std::pair<float, float> GetMouseViewportSpace();
         std::pair<glm::vec3, glm::vec3> CastRay(float mx, float my);
 
+        struct SelectedSubmesh {
+            Monado::Entity Entity;
+            Submesh *Mesh;
+            float Distance;
+        };
+        void OnSelected(const SelectedSubmesh &selectionContext);
+        Ray CastMouseRay();
+
     private:
         Scope<SceneHierarchyPanel> m_SceneHierarchyPanel;
 
@@ -64,17 +73,15 @@ namespace Monado {
         Ref<Scene> m_SphereScene;
         Ref<Scene> m_ActiveScene;
 
-        Entity *m_MeshEntity = nullptr;
+        Entity m_MeshEntity;
+        Entity m_CameraEntity;
 
         Ref<Shader> m_BrushShader;
-        Ref<Mesh> m_PlaneMesh;
         Ref<Material> m_SphereBaseMaterial;
 
         Ref<Material> m_MeshMaterial;
         std::vector<Ref<MaterialInstance>> m_MetalSphereMaterialInstances;
         std::vector<Ref<MaterialInstance>> m_DielectricSphereMaterialInstances;
-
-        float m_GridScale = 16.025f, m_GridSize = 0.025f;
 
         struct AlbedoInput {
             glm::vec3 Color = {
@@ -126,11 +133,11 @@ namespace Monado {
         bool m_UIShowBoundingBoxes = false;
         bool m_UIShowBoundingBoxesOnTop = false;
 
-        struct SelectedSubmesh {
-            Submesh *Mesh;
-            float Distance;
-        };
-        std::vector<SelectedSubmesh> m_SelectedSubmeshes;
+        enum class SelectionMode { None = 0, Entity = 1, SubMesh = 2 };
+
+        SelectionMode m_SelectionMode = SelectionMode::Entity;
+        std::vector<SelectedSubmesh> m_SelectionContext;
+        glm::mat4 *m_RelativeTransform = nullptr;
         glm::mat4 *m_CurrentlySelectedTransform = nullptr;
     };
 

@@ -3,21 +3,11 @@
 #include "editorLayer.h"
 #include "monado/core/log.h"
 
-class AlvisnutApplication : public Monado::Application
-{
+class AlvisApplication : public Monado::Application {
 public:
-	AlvisnutApplication(const Monado::ApplicationProps& props)
-		: Application(props)
-	{
-	}
+    AlvisApplication(const Monado::ApplicationProps &props) : Application(props) {}
 
-	virtual void OnInit() override
-	{
-		PushLayer(new Monado::EditorLayer());
-	}
+    virtual void OnInit() override { PushLayer(new Monado::EditorLayer()); }
 };
 
-Monado::Application* Monado::CreateApplication()
-{
-	return new AlvisnutApplication({"Monado", 1600, 900});
-}
+Monado::Application *Monado::CreateApplication() { return new AlvisApplication({ "Alvis", 1600, 900 }); }
