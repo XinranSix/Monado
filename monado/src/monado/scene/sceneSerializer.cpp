@@ -243,7 +243,7 @@ namespace Monado {
 
             auto &rigidbody2DComponent = entity.GetComponent<RigidBody2DComponent>();
             out << YAML::Key << "BodyType" << YAML::Value << (int)rigidbody2DComponent.BodyType;
-            out << YAML::Key << "Mass" << YAML::Value << rigidbody2DComponent.Mass;
+            out << YAML::Key << "FixedRotation" << YAML::Value << rigidbody2DComponent.FixedRotation;
 
             out << YAML::EndMap; // RigidBody2DComponent
         }
@@ -255,6 +255,8 @@ namespace Monado {
             auto &boxCollider2DComponent = entity.GetComponent<BoxCollider2DComponent>();
             out << YAML::Key << "Offset" << YAML::Value << boxCollider2DComponent.Offset;
             out << YAML::Key << "Size" << YAML::Value << boxCollider2DComponent.Size;
+            out << YAML::Key << "Density" << YAML::Value << boxCollider2DComponent.Density;
+            out << YAML::Key << "Friction" << YAML::Value << boxCollider2DComponent.Friction;
 
             out << YAML::EndMap; // BoxCollider2DComponent
         }
@@ -266,6 +268,8 @@ namespace Monado {
             auto &circleCollider2DComponent = entity.GetComponent<CircleCollider2DComponent>();
             out << YAML::Key << "Offset" << YAML::Value << circleCollider2DComponent.Offset;
             out << YAML::Key << "Radius" << YAML::Value << circleCollider2DComponent.Radius;
+            out << YAML::Key << "Density" << YAML::Value << circleCollider2DComponent.Density;
+            out << YAML::Key << "Friction" << YAML::Value << circleCollider2DComponent.Friction;
 
             out << YAML::EndMap; // CircleCollider2DComponent
         }
@@ -459,7 +463,9 @@ namespace Monado {
                 if (rigidBody2DComponent) {
                     auto &component = deserializedEntity.AddComponent<RigidBody2DComponent>();
                     component.BodyType = (RigidBody2DComponent::Type)rigidBody2DComponent["BodyType"].as<int>();
-                    component.Mass = rigidBody2DComponent["Mass"].as<float>();
+                    component.FixedRotation = rigidBody2DComponent["FixedRotation"]
+                                                  ? rigidBody2DComponent["FixedRotation"].as<bool>()
+                                                  : false;
                 }
 
                 auto boxCollider2DComponent = entity["BoxCollider2DComponent"];
@@ -467,6 +473,10 @@ namespace Monado {
                     auto &component = deserializedEntity.AddComponent<BoxCollider2DComponent>();
                     component.Offset = boxCollider2DComponent["Offset"].as<glm::vec2>();
                     component.Size = boxCollider2DComponent["Size"].as<glm::vec2>();
+                    component.Density =
+                        boxCollider2DComponent["Density"] ? boxCollider2DComponent["Density"].as<float>() : 1.0f;
+                    component.Friction =
+                        boxCollider2DComponent["Friction"] ? boxCollider2DComponent["Friction"].as<float>() : 1.0f;
                 }
 
                 auto circleCollider2DComponent = entity["CircleCollider2DComponent"];
@@ -474,6 +484,11 @@ namespace Monado {
                     auto &component = deserializedEntity.AddComponent<CircleCollider2DComponent>();
                     component.Offset = circleCollider2DComponent["Offset"].as<glm::vec2>();
                     component.Radius = circleCollider2DComponent["Radius"].as<float>();
+                    component.Density =
+                        circleCollider2DComponent["Density"] ? circleCollider2DComponent["Density"].as<float>() : 1.0f;
+                    component.Friction = circleCollider2DComponent["Friction"]
+                                             ? circleCollider2DComponent["Friction"].as<float>()
+                                             : 1.0f;
                 }
             }
         }

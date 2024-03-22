@@ -27,6 +27,10 @@ namespace Monado {
     static std::string s_AssemblyPath;
     static Ref<Scene> s_SceneContext;
 
+    // Assembly images
+    MonoImage *s_AppAssemblyImage = nullptr;
+    MonoImage *s_CoreAssemblyImage = nullptr;
+
     static EntityInstanceMap s_EntityInstanceMap;
 
     static MonoMethod *GetMethod(MonoImage *image, const std::string &methodDesc);
@@ -41,9 +45,17 @@ namespace Monado {
         MonoMethod *OnDestroyMethod = nullptr;
         MonoMethod *OnUpdateMethod = nullptr;
 
+        // Physics
+        MonoMethod *OnCollision2DBeginMethod = nullptr;
+        MonoMethod *OnCollision2DEndMethod = nullptr;
+
         void InitClassMethods(MonoImage *image) {
             OnCreateMethod = GetMethod(image, FullName + ":OnCreate()");
             OnUpdateMethod = GetMethod(image, FullName + ":OnUpdate(single)");
+
+            // Physics (Entity class)
+            OnCollision2DBeginMethod = GetMethod(s_CoreAssemblyImage, "Monado.Entity:OnCollision2DBegin(single)");
+            OnCollision2DEndMethod = GetMethod(s_CoreAssemblyImage, "Monado.Entity:OnCollision2DEnd(single)");
         }
     };
 
@@ -193,8 +205,6 @@ namespace Monado {
 
     static MonoAssembly *s_AppAssembly = nullptr;
     static MonoAssembly *s_CoreAssembly = nullptr;
-    MonoImage *s_AppAssemblyImage = nullptr;
-    MonoImage *s_CoreAssemblyImage = nullptr;
 
     static MonoString *GetName() { return mono_string_new(s_MonoDomain, "Hello!"); }
 
@@ -304,6 +314,32 @@ namespace Monado {
         }
     }
 
+    void ScriptEngine::OnCollision2DBegin(Entity entity) {
+        OnCollision2DBegin(entity.m_Scene->GetUUID(), entity.GetComponent<IDComponent>().ID);
+    }
+
+    void ScriptEngine::OnCollision2DBegin(UUID sceneID, UUID entityID) {
+        EntityInstance &entityInstance = GetEntityInstanceData(sceneID, entityID).Instance;
+        if (entityInstance.ScriptClass->OnCollision2DBeginMethod) {
+            float value = 5.0f;
+            void *args[] = { &value };
+            CallMethod(entityInstance.GetInstance(), entityInstance.ScriptClass->OnCollision2DBeginMethod, args);
+        }
+    }
+
+    void ScriptEngine::OnCollision2DEnd(Entity entity) {
+        OnCollision2DEnd(entity.m_Scene->GetUUID(), entity.GetComponent<IDComponent>().ID);
+    }
+
+    void ScriptEngine::OnCollision2DEnd(UUID sceneID, UUID entityID) {
+        EntityInstance &entityInstance = GetEntityInstanceData(sceneID, entityID).Instance;
+        if (entityInstance.ScriptClass->OnCollision2DEndMethod) {
+            float value = 5.0f;
+            void *args[] = { &value };
+            CallMethod(entityInstance.GetInstance(), entityInstance.ScriptClass->OnCollision2DEndMethod, args);
+        }
+    }
+
     void ScriptEngine::OnScriptComponentDestroyed(UUID sceneID, UUID entityID) {
         MND_CORE_ASSERT(s_EntityInstanceMap.find(sceneID) != s_EntityInstanceMap.end());
         auto &entityMap = s_EntityInstanceMap.at(sceneID);
@@ -405,7 +441,7 @@ namespace Monado {
                     continue;
 
                 MonoType *fieldType = mono_field_get_type(iter);
-                FieldType MonadoFieldType = GetMonadoFieldType(fieldType);
+                FieldType hazelFieldType = GetMonadoFieldType(fieldType);
 
                 // TODO: Attributes
                 MonoCustomAttrInfo *attr = mono_custom_attrs_from_field(scriptClass.Class, iter);
@@ -413,7 +449,7 @@ namespace Monado {
                 if (oldFields.find(name) != oldFields.end()) {
                     fieldMap.emplace(name, std::move(oldFields.at(name)));
                 } else {
-                    PublicField field = { name, MonadoFieldType };
+                    PublicField field = { name, hazelFieldType };
                     field.m_EntityInstance = &entityInstance;
                     field.m_MonoClassField = iter;
                     fieldMap.emplace(name, std::move(field));

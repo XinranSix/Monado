@@ -58,12 +58,17 @@ namespace Monado {
         mono_add_internal_call("Monado.Entity::SetTransform_Native", Monado::Script::Monado_Entity_SetTransform);
         mono_add_internal_call("Monado.Entity::CreateComponent_Native", Monado::Script::Monado_Entity_CreateComponent);
         mono_add_internal_call("Monado.Entity::HasComponent_Native", Monado::Script::Monado_Entity_HasComponent);
+        mono_add_internal_call("Monado.Entity::FindEntityByTag_Native", Monado::Script::Monado_Entity_FindEntityByTag);
 
         mono_add_internal_call("Monado.MeshComponent::GetMesh_Native", Monado::Script::Monado_MeshComponent_GetMesh);
         mono_add_internal_call("Monado.MeshComponent::SetMesh_Native", Monado::Script::Monado_MeshComponent_SetMesh);
 
         mono_add_internal_call("Monado.RigidBody2DComponent::ApplyLinearImpulse_Native",
                                Monado::Script::Monado_RigidBody2DComponent_ApplyLinearImpulse);
+        mono_add_internal_call("Monado.RigidBody2DComponent::GetLinearVelocity_Native",
+                               Monado::Script::Monado_RigidBody2DComponent_GetLinearVelocity);
+        mono_add_internal_call("Monado.RigidBody2DComponent::SetLinearVelocity_Native",
+                               Monado::Script::Monado_RigidBody2DComponent_SetLinearVelocity);
 
         mono_add_internal_call("Monado.Input::IsKeyPressed_Native", Monado::Script::Monado_Input_IsKeyPressed);
 

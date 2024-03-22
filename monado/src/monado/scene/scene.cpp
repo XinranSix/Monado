@@ -14,6 +14,7 @@
 
 // Box2D
 #include "box2d/box2d.h"
+#include "box2d/b2_body.h"
 
 // TEMP
 #include "monado/core/input.h"
@@ -28,11 +29,73 @@ namespace Monado {
         UUID SceneID;
     };
 
+    // TODO: MOVE TO PHYSICS FILE!
+    class ContactListener : public b2ContactListener {
+    public:
+        virtual void BeginContact(b2Contact *contact) override {
+            // TODO: 这里不太对
+            Entity &a = *(Entity *)contact->GetFixtureA()->GetBody()->GetUserData().pointer;
+            Entity &b = *(Entity *)contact->GetFixtureB()->GetBody()->GetUserData().pointer;
+
+            // TODO: improve these if checks
+            if (a.HasComponent<ScriptComponent>() &&
+                ScriptEngine::ModuleExists(a.GetComponent<ScriptComponent>().ModuleName))
+                ScriptEngine::OnCollision2DBegin(a);
+
+            if (b.HasComponent<ScriptComponent>() &&
+                ScriptEngine::ModuleExists(b.GetComponent<ScriptComponent>().ModuleName))
+                ScriptEngine::OnCollision2DBegin(b);
+        }
+
+        /// Called when two fixtures cease to touch.
+        virtual void EndContact(b2Contact *contact) override {
+            Entity &a = *(Entity *)contact->GetFixtureA()->GetBody()->GetUserData().pointer;
+            Entity &b = *(Entity *)contact->GetFixtureB()->GetBody()->GetUserData().pointer;
+
+            // TODO: improve these if checks
+            if (a.HasComponent<ScriptComponent>() &&
+                ScriptEngine::ModuleExists(a.GetComponent<ScriptComponent>().ModuleName))
+                ScriptEngine::OnCollision2DEnd(a);
+
+            if (b.HasComponent<ScriptComponent>() &&
+                ScriptEngine::ModuleExists(b.GetComponent<ScriptComponent>().ModuleName))
+                ScriptEngine::OnCollision2DEnd(b);
+        }
+
+        /// This is called after a contact is updated. This allows you to inspect a
+        /// contact before it goes to the solver. If you are careful, you can modify the
+        /// contact manifold (e.g. disable contact).
+        /// A copy of the old manifold is provided so that you can detect changes.
+        /// Note: this is called only for awake bodies.
+        /// Note: this is called even when the number of contact points is zero.
+        /// Note: this is not called for sensors.
+        /// Note: if you set the number of contact points to zero, you will not
+        /// get an EndContact callback. However, you may get a BeginContact callback
+        /// the next step.
+        virtual void PreSolve(b2Contact *contact, const b2Manifold *oldManifold) override {
+            B2_NOT_USED(contact);
+            B2_NOT_USED(oldManifold);
+        }
+
+        /// This lets you inspect a contact after the solver is finished. This is useful
+        /// for inspecting impulses.
+        /// Note: the contact manifold does not include time of impact impulses, which can be
+        /// arbitrarily large if the sub-step is small. Hence the impulse is provided explicitly
+        /// in a separate data structure.
+        /// Note: this is only called for contacts that are touching, solid, and awake.
+        virtual void PostSolve(b2Contact *contact, const b2ContactImpulse *impulse) override {
+            B2_NOT_USED(contact);
+            B2_NOT_USED(impulse);
+        }
+    };
+
+    static ContactListener s_Box2DContactListener;
+
     struct Box2DWorldComponent {
         std::unique_ptr<b2World> World;
     };
 
-    void OnScriptComponentConstruct(entt::registry &registry, entt::entity entity) {
+    static void OnScriptComponentConstruct(entt::registry &registry, entt::entity entity) {
         auto sceneView = registry.view<SceneComponent>();
         UUID sceneID = registry.get<SceneComponent>(sceneView.front()).SceneID;
 
@@ -43,14 +106,27 @@ namespace Monado {
         ScriptEngine::InitScriptEntity(scene->m_EntityIDMap.at(entityID));
     }
 
+    static void OnScriptComponentDestroy(entt::registry &registry, entt::entity entity) {
+        auto sceneView = registry.view<SceneComponent>();
+        UUID sceneID = registry.get<SceneComponent>(sceneView.front()).SceneID;
+
+        Scene *scene = s_ActiveScenes[sceneID];
+
+        auto entityID = registry.get<IDComponent>(entity).ID;
+        ScriptEngine::OnScriptComponentDestroyed(sceneID, entityID);
+    }
+
     Scene::Scene(const std::string &debugName) : m_DebugName(debugName) {
         m_Registry.on_construct<ScriptComponent>().connect<&OnScriptComponentConstruct>();
+        m_Registry.on_destroy<ScriptComponent>().connect<&OnScriptComponentDestroy>();
 
         m_SceneEntity = m_Registry.create();
         m_Registry.emplace<SceneComponent>(m_SceneEntity, m_SceneID);
 
         // TODO: Obviously not necessary in all cases
-        m_Registry.emplace<Box2DWorldComponent>(m_SceneEntity, std::make_unique<b2World>(b2Vec2 { 0.0f, -9.8f }));
+        Box2DWorldComponent &b2dWorld =
+            m_Registry.emplace<Box2DWorldComponent>(m_SceneEntity, std::make_unique<b2World>(b2Vec2 { 0.0f, -9.8f }));
+        b2dWorld.World->SetContactListener(&s_Box2DContactListener);
 
         s_ActiveScenes[m_SceneID] = this;
 
@@ -58,6 +134,8 @@ namespace Monado {
     }
 
     Scene::~Scene() {
+        m_Registry.on_destroy<ScriptComponent>().disconnect();
+
         m_Registry.clear();
         s_ActiveScenes.erase(m_SceneID);
         ScriptEngine::OnSceneDestruct(m_SceneID);
@@ -174,7 +252,7 @@ namespace Monado {
         auto group = m_Registry.group<MeshComponent>(entt::get<TransformComponent>);
         SceneRenderer::BeginScene(this, { editorCamera, editorCamera.GetViewMatrix() });
         for (auto entity : group) {
-            auto [transformComponent, meshComponent] = group.get<TransformComponent, MeshComponent>(entity);
+            auto [meshComponent, transformComponent] = group.get<MeshComponent, TransformComponent>(entity);
             if (meshComponent.Mesh) {
                 meshComponent.Mesh->OnUpdate(ts);
 
@@ -183,7 +261,7 @@ namespace Monado {
                 if (m_SelectedEntity == entity)
                     SceneRenderer::SubmitSelectedMesh(meshComponent, transformComponent);
                 else
-                    SceneRenderer::SubmitMesh(meshComponent, transformComponent, nullptr);
+                    SceneRenderer::SubmitMesh(meshComponent, transformComponent);
             }
         }
         SceneRenderer::EndScene();
@@ -225,10 +303,14 @@ namespace Monado {
         // Box2D physics
         auto sceneView = m_Registry.view<Box2DWorldComponent>();
         auto &world = m_Registry.get<Box2DWorldComponent>(sceneView.front()).World;
+
         {
             auto view = m_Registry.view<RigidBody2DComponent>();
+            m_PhysicsBodyEntityBuffer = new Entity[view.size()];
+            uint32_t physicsBodyEntityBufferIndex = 0;
             for (auto entity : view) {
                 Entity e = { entity, this };
+                UUID entityID = e.GetComponent<IDComponent>().ID;
                 auto &transform = e.Transform();
                 auto &rigidBody2D = m_Registry.get<RigidBody2DComponent>(entity);
 
@@ -244,7 +326,14 @@ namespace Monado {
                 auto [translation, rotationQuat, scale] = GetTransformDecomposition(transform);
                 glm::vec3 rotation = glm::eulerAngles(rotationQuat);
                 bodyDef.angle = rotation.z;
-                rigidBody2D.RuntimeBody = world->CreateBody(&bodyDef);
+
+                b2Body *body = world->CreateBody(&bodyDef);
+                body->SetFixedRotation(rigidBody2D.FixedRotation);
+                Entity *entityStorage = &m_PhysicsBodyEntityBuffer[physicsBodyEntityBufferIndex++];
+                *entityStorage = e;
+                // body->SetUserData((void *)entityStorage);
+                body->GetUserData().pointer = reinterpret_cast<uintptr_t>(entityStorage);
+                rigidBody2D.RuntimeBody = body;
             }
         }
 
@@ -263,11 +352,10 @@ namespace Monado {
                     b2PolygonShape polygonShape;
                     polygonShape.SetAsBox(boxCollider2D.Size.x, boxCollider2D.Size.y);
 
-                    // TODO:
                     b2FixtureDef fixtureDef;
                     fixtureDef.shape = &polygonShape;
-                    fixtureDef.density = 1.0f;
-                    fixtureDef.friction = 1.0f;
+                    fixtureDef.density = boxCollider2D.Density;
+                    fixtureDef.friction = boxCollider2D.Friction;
                     body->CreateFixture(&fixtureDef);
                 }
             }
@@ -288,11 +376,10 @@ namespace Monado {
                     b2CircleShape circleShape;
                     circleShape.m_radius = circleCollider2D.Radius;
 
-                    // TODO:
                     b2FixtureDef fixtureDef;
                     fixtureDef.shape = &circleShape;
-                    fixtureDef.density = 1.0f;
-                    fixtureDef.friction = 1.0f;
+                    fixtureDef.density = circleCollider2D.Density;
+                    fixtureDef.friction = circleCollider2D.Friction;
                     body->CreateFixture(&fixtureDef);
                 }
             }
@@ -301,7 +388,10 @@ namespace Monado {
         m_IsPlaying = true;
     }
 
-    void Scene::OnRuntimeStop() { m_IsPlaying = false; }
+    void Scene::OnRuntimeStop() {
+        delete[] m_PhysicsBodyEntityBuffer;
+        m_IsPlaying = false;
+    }
 
     void Scene::SetViewportSize(uint32_t width, uint32_t height) {
         m_ViewportWidth = width;
@@ -397,6 +487,18 @@ namespace Monado {
         CopyComponentIfExists<RigidBody2DComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
         CopyComponentIfExists<BoxCollider2DComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
         CopyComponentIfExists<CircleCollider2DComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
+    }
+
+    Entity Scene::FindEntityByTag(const std::string &tag) {
+        // TODO: If this becomes used often, consider indexing by tag
+        auto view = m_Registry.view<TagComponent>();
+        for (auto entity : view) {
+            const auto &canditate = view.get<TagComponent>(entity).Tag;
+            if (canditate == tag)
+                return Entity(entity, this);
+        }
+
+        return Entity {};
     }
 
     // Copy to runtime
