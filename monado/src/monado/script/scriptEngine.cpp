@@ -6,6 +6,11 @@
 #include <mono/metadata/assembly.h>
 #include <mono/metadata/debug-helpers.h>
 #include <mono/metadata/attrdefs.h>
+#include <mono/metadata/object.h>
+#include <mono/metadata/image.h>
+#include <mono/metadata/appdomain.h>
+#include <mono/metadata/class.h>
+#include <mono/metadata/reflection.h>
 
 #include <iostream>
 #include <chrono>
@@ -97,7 +102,7 @@ namespace Monado {
     }
 
     static void InitMono() {
-        mono_set_assemblies_path("mono/lib");
+        mono_set_assemblies_path("monado/mono/lib");
         // mono_jit_set_trace_options("--verbose");
         auto domain = mono_jit_init("Monado");
 
@@ -204,8 +209,7 @@ namespace Monado {
             char *name = (char *)"MonadoRuntime";
             s_MonoDomain = mono_domain_create_appdomain(name, nullptr);
         }
-
-        s_CoreAssembly = LoadAssembly("assets/scripts/Monado-ScriptCore.dll");
+        s_CoreAssembly = LoadAssembly("monadoScriptCore/MonadoScriptCore.dll");
         s_CoreAssemblyImage = GetAssemblyImage(s_CoreAssembly);
 
         s_AppAssembly = LoadAssembly(path);
@@ -306,12 +310,12 @@ namespace Monado {
                     continue;
 
                 MonoType *fieldType = mono_field_get_type(iter);
-                FieldType hazelFieldType = GetMonadoFieldType(fieldType);
+                FieldType monadoFieldType = GetMonadoFieldType(fieldType);
 
                 // TODO: Attributes
                 MonoCustomAttrInfo *attr = mono_custom_attrs_from_field(scriptClass.Class, iter);
 
-                auto &publicField = s_PublicFields[script.ModuleName].emplace_back(name, hazelFieldType);
+                auto &publicField = s_PublicFields[script.ModuleName].emplace_back(name, monadoFieldType);
                 publicField.m_EntityInstance = &entityInstance;
                 publicField.m_MonoClassField = iter;
                 // mono_field_set_value(entityInstance.Instance, iter, )

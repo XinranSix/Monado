@@ -40,7 +40,7 @@ namespace Monado {
         colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.5f);
         colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
         colors[ImGuiCol_FrameBg] = ImVec4(0.3f, 0.3f, 0.3f, 0.5f); // Widget backgrounds
-        colors[ImGuiCol_FrameBgHovered] = ImVec4(0.4f, 0.4f, 0.4f, 0.4f);
+    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.4f, 0.4f, 0.4f, 0.4f);
         colors[ImGuiCol_FrameBgActive] = ImVec4(0.4f, 0.4f, 0.4f, 0.6f);
         colors[ImGuiCol_TitleBg] = ImVec4(0.04f, 0.04f, 0.04f, 1.0f);
         colors[ImGuiCol_TitleBgActive] = ImVec4(0.29f, 0.29f, 0.29f, 1.0f);
@@ -77,7 +77,7 @@ namespace Monado {
 
         using namespace glm;
 
-        auto environment = Environment::Load("assets/env/birchwood_4k.hdr");
+        auto environment = Environment::Load("alvis/assets/env/birchwood_4k.hdr");
 
         // Model Scene
         {
@@ -90,7 +90,7 @@ namespace Monado {
 
             m_MeshEntity = m_Scene->CreateEntity("Test Entity");
 
-            auto mesh = Ref<Mesh>::Create("assets/meshes/TestScene.fbx");
+            auto mesh = Ref<Mesh>::Create("alvis/assets/meshes/TestScene.fbx");
             m_MeshEntity.AddComponent<MeshComponent>(mesh);
 
             m_MeshMaterial = mesh->GetMaterial();
@@ -116,7 +116,7 @@ namespace Monado {
 
             m_SphereScene->SetEnvironment(environment);
 
-            auto sphereMesh = Ref<Mesh>::Create("assets/models/Sphere1m.fbx");
+            auto sphereMesh = Ref<Mesh>::Create("alvis/assets/models/Sphere1m.fbx");
             m_SphereBaseMaterial = sphereMesh->GetMaterial();
 
             float x = -4.0f;
@@ -158,7 +158,7 @@ namespace Monado {
         m_SceneHierarchyPanel = CreateScope<SceneHierarchyPanel>(m_ActiveScene);
 
         // Editor
-        m_CheckerboardTex = Texture2D::Create("assets/editor/Checkerboard.tga");
+        m_CheckerboardTex = Texture2D::Create("alvis/assets/editor/Checkerboard.tga");
 
         // Set lights
         auto &light = m_Scene->GetLight();

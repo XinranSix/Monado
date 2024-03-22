@@ -64,7 +64,7 @@ target("monado")
 target("sandbox")
     set_kind("binary")
     add_files("sandbox/**.cpp")
-    add_links("libs/win/ComDlg32", "./libs/mono/coreclr.import.lib")
+    add_links("libs/win/ComDlg32")
     add_deps("monado")
     add_packages("opengl", "glfw", "glad", "stb", "glm", "stb", "spdlog", "entt", "box2d")
     after_build(function (target)
@@ -75,9 +75,21 @@ target("alvis")
     set_kind("binary")
     add_files("alvis/**.cpp")
     add_links("libs/win/ComDlg32")
+    if is_mode("debug") then
+        add_links("./libs/mono/lib/Debug/mono-2.0-sgen.lib")
+    else
+        add_links("./libs/mono/lib/Release/mono-2.0-sgen.lib")
+    end
     add_deps("monado")
     add_packages("opengl", "glfw", "glad", "stb", "glm", "stb", "spdlog", "entt", "box2d")
     after_build(function (target)
         os.cp("alvis/assets", target:targetdir() .. "/alvis")
+        os.cp("monado/assets", target:targetdir() .. "/monado")
+        if is_mode("debug") then
+            os.cp("./libs/mono/bin/Debug/**.*", target:targetdir())
+        else
+            os.cp("./libs/mono/bin/Release/**.*", target:targetdir())
+        end
+        os.runv("buildScript.bat", {target:targetdir()})
     end)
 

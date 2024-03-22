@@ -4,6 +4,15 @@
 
 #include <mono/jit/jit.h>
 #include <mono/metadata/assembly.h>
+#include <mono/metadata/debug-helpers.h>
+#include <mono/metadata/attrdefs.h>
+#include <mono/metadata/object.h>
+#include <mono/metadata/image.h>
+#include <mono/metadata/appdomain.h>
+#include <mono/metadata/class.h>
+#include <mono/metadata/reflection.h>
+
+#include <iostream>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -19,7 +28,7 @@ namespace Monado {
 
 #define Component_RegisterType(Type)                                                                                   \
     {                                                                                                                  \
-        MonoType *type = mono_reflection_type_from_name((char *)("Monado." #Type), s_CoreAssemblyImage);                         \
+        MonoType *type = mono_reflection_type_from_name((char *)("Monado." #Type), s_CoreAssemblyImage);               \
         if (type) {                                                                                                    \
             uint32_t id = mono_type_get_type(type);                                                                    \
             s_HasComponentFuncs[type] = [](Entity &entity) { return entity.HasComponent<Type>(); };                    \

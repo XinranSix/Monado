@@ -7,7 +7,16 @@
 
 #include "entt/entt.hpp"
 #include "glm/gtc/type_ptr.hpp"
-#include "mono/jit/jit.h"
+
+#include <mono/jit/jit.h>
+#include <mono/metadata/assembly.h>
+#include <mono/metadata/debug-helpers.h>
+#include <mono/metadata/attrdefs.h>
+#include <mono/metadata/object.h>
+#include <mono/metadata/image.h>
+#include <mono/metadata/appdomain.h>
+#include <mono/metadata/class.h>
+#include <mono/metadata/reflection.h>
 
 namespace Monado {
     extern std::unordered_map<uint32_t, Scene *> s_ActiveScenes;
