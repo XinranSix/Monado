@@ -4,13 +4,17 @@
 #include "monado/renderer/sceneRenderer.h"
 #include "monado/renderer/framebuffer.h"
 #include "monado/renderer/renderer2D.h"
+#include "monado/scene/sceneSerializer.h"
 #include "monado/core/log.h"
 #include "monado/core/input.h"
+#include "monado/script/scriptEngine.h"
 #include "monado/core/math/ray.h"
 
 #include "editorLayer.h"
 
 #include "ImGuizmo.h"
+
+#include "EditorLayer.h"
 
 namespace Monado {
 
@@ -25,7 +29,9 @@ namespace Monado {
         }
     }
 
-    EditorLayer::EditorLayer() : m_SceneType(SceneType::Model) {}
+    EditorLayer::EditorLayer()
+        : m_SceneType(SceneType::Model),
+          m_EditorCamera(glm::perspectiveFov(glm::radians(45.0f), 1280.0f, 720.0f, 0.1f, 10000.0f)) {}
 
     EditorLayer::~EditorLayer() {}
 
@@ -40,7 +46,7 @@ namespace Monado {
         colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.5f);
         colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
         colors[ImGuiCol_FrameBg] = ImVec4(0.3f, 0.3f, 0.3f, 0.5f); // Widget backgrounds
-    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.4f, 0.4f, 0.4f, 0.4f);
+        colors[ImGuiCol_FrameBgHovered] = ImVec4(0.4f, 0.4f, 0.4f, 0.4f);
         colors[ImGuiCol_FrameBgActive] = ImVec4(0.4f, 0.4f, 0.4f, 0.6f);
         colors[ImGuiCol_TitleBg] = ImVec4(0.04f, 0.04f, 0.04f, 1.0f);
         colors[ImGuiCol_TitleBgActive] = ImVec4(0.29f, 0.29f, 0.29f, 1.0f);
@@ -77,162 +83,99 @@ namespace Monado {
 
         using namespace glm;
 
-        auto environment = Environment::Load("alvis/assets/env/birchwood_4k.hdr");
-
-        // Model Scene
-        {
-            m_Scene = Ref<Scene>::Create("Model Scene");
-            m_CameraEntity = m_Scene->CreateEntity("Camera");
-            m_CameraEntity.AddComponent<CameraComponent>(
-                Camera(glm::perspectiveFov(glm::radians(45.0f), 1280.0f, 720.0f, 0.1f, 10000.0f)));
-
-            m_Scene->SetEnvironment(environment);
-
-            m_MeshEntity = m_Scene->CreateEntity("Test Entity");
-
-            auto mesh = Ref<Mesh>::Create("alvis/assets/meshes/TestScene.fbx");
-            m_MeshEntity.AddComponent<MeshComponent>(mesh);
-
-            m_MeshMaterial = mesh->GetMaterial();
-
-            m_MeshEntity.AddComponent<ScriptComponent>("Example.Script");
-
-            // Test Sandbox
-            auto mapGenerator = m_Scene->CreateEntity("Map Generator");
-            mapGenerator.AddComponent<ScriptComponent>("Example.MapGenerator");
-
-            // auto secondEntity = m_Scene->CreateEntity("Gun Entity");
-            // secondEntity->Transform() = glm::translate(glm::mat4(1.0f), { 5, 5, 5 }) * glm::scale(glm::mat4(1.0f),
-            // {10, 10, 10}); mesh = CreateRef<Mesh>("assets/models/m1911/M1911Materials.fbx");
-            // secondEntity->SetMesh(mesh);
-        }
-
-        // Sphere Scene
-        {
-            m_SphereScene = Ref<Scene>::Create("PBR Sphere Scene");
-            auto cameraEntity = m_SphereScene->CreateEntity("Camera");
-            cameraEntity.AddComponent<CameraComponent>(
-                Camera(glm::perspectiveFov(glm::radians(45.0f), 1280.0f, 720.0f, 0.1f, 10000.0f)));
-
-            m_SphereScene->SetEnvironment(environment);
-
-            auto sphereMesh = Ref<Mesh>::Create("alvis/assets/models/Sphere1m.fbx");
-            m_SphereBaseMaterial = sphereMesh->GetMaterial();
-
-            float x = -4.0f;
-            float roughness = 0.0f;
-            for (int i = 0; i < 8; i++) {
-                auto sphereEntity = m_SphereScene->CreateEntity();
-
-                Ref<MaterialInstance> mi = Ref<MaterialInstance>::Create(m_SphereBaseMaterial);
-                mi->Set("u_Metalness", 1.0f);
-                mi->Set("u_Roughness", roughness);
-                x += 1.1f;
-                roughness += 0.15f;
-                m_MetalSphereMaterialInstances.push_back(mi);
-
-                // sphereEntity->SetMesh(sphereMesh);
-                // sphereEntity->SetMaterial(mi);
-                // sphereEntity->Transform() = translate(mat4(1.0f), vec3(x, 0.0f, 0.0f));
-            }
-
-            x = -4.0f;
-            roughness = 0.0f;
-            for (int i = 0; i < 8; i++) {
-                auto sphereEntity = m_SphereScene->CreateEntity();
-
-                Ref<MaterialInstance> mi(new MaterialInstance(m_SphereBaseMaterial));
-                mi->Set("u_Metalness", 0.0f);
-                mi->Set("u_Roughness", roughness);
-                x += 1.1f;
-                roughness += 0.15f;
-                m_DielectricSphereMaterialInstances.push_back(mi);
-
-                // sphereEntity->SetMesh(sphereMesh);
-                // sphereEntity->SetMaterial(mi);
-                // sphereEntity->Transform() = translate(mat4(1.0f), vec3(x, 1.2f, 0.0f));
-            }
-        }
-
-        m_ActiveScene = m_Scene;
-        m_SceneHierarchyPanel = CreateScope<SceneHierarchyPanel>(m_ActiveScene);
-
         // Editor
         m_CheckerboardTex = Texture2D::Create("alvis/assets/editor/Checkerboard.tga");
+        m_PlayButtonTex = Texture2D::Create("alvis/assets/editor/PlayButton.png");
 
-        // Set lights
-        auto &light = m_Scene->GetLight();
-        light.Direction = { -0.5f, -0.5f, 1.0f };
-        light.Radiance = { 1.0f, 1.0f, 1.0f };
-
-        m_CurrentlySelectedTransform = &m_MeshEntity.Transform();
+        m_EditorScene = Ref<Scene>::Create();
+        ScriptEngine::SetSceneContext(m_EditorScene);
+        m_SceneHierarchyPanel = CreateScope<SceneHierarchyPanel>(m_EditorScene);
+        m_SceneHierarchyPanel->SetSelectionChangedCallback(
+            std::bind(&EditorLayer::SelectEntity, this, std::placeholders::_1));
+        m_SceneHierarchyPanel->SetEntityDeletedCallback(
+            std::bind(&EditorLayer::OnEntityDeleted, this, std::placeholders::_1));
+        // SceneSerializer serializer(m_ActiveScene);
+        // serializer.Deserialize("Scene.yaml");
     }
 
     void EditorLayer::OnDetach() {}
 
+    void EditorLayer::OnScenePlay() {
+        m_SelectionContext.clear();
+
+        m_SceneState = SceneState::Play;
+
+        m_RuntimeScene = Ref<Scene>::Create();
+        m_EditorScene->CopyTo(m_RuntimeScene);
+
+        m_RuntimeScene->OnRuntimeStart();
+        m_SceneHierarchyPanel->SetContext(m_RuntimeScene);
+    }
+
+    void EditorLayer::OnSceneStop() {
+        m_RuntimeScene->OnRuntimeStop();
+        m_SceneState = SceneState::Edit;
+
+        // Unload runtime scene
+        m_RuntimeScene = nullptr;
+
+        m_SelectionContext.clear();
+        ScriptEngine::SetSceneContext(m_EditorScene);
+        m_SceneHierarchyPanel->SetContext(m_EditorScene);
+    }
+
     void EditorLayer::OnUpdate(Timestep ts) {
-        // THINGS TO LOOK AT:
-        // - BRDF LUT
-        // - Tonemapping and proper HDR pipeline
-        using namespace Monado;
-        using namespace glm;
+        switch (m_SceneState) {
+        case SceneState::Edit: {
+            if (m_ViewportPanelFocused)
+                m_EditorCamera.OnUpdate(ts);
 
-        m_MeshMaterial->Set("u_AlbedoColor", m_AlbedoInput.Color);
-        m_MeshMaterial->Set("u_Metalness", m_MetalnessInput.Value);
-        m_MeshMaterial->Set("u_Roughness", m_RoughnessInput.Value);
-        m_MeshMaterial->Set("u_AlbedoTexToggle", m_AlbedoInput.UseTexture ? 1.0f : 0.0f);
-        m_MeshMaterial->Set("u_NormalTexToggle", m_NormalInput.UseTexture ? 1.0f : 0.0f);
-        m_MeshMaterial->Set("u_MetalnessTexToggle", m_MetalnessInput.UseTexture ? 1.0f : 0.0f);
-        m_MeshMaterial->Set("u_RoughnessTexToggle", m_RoughnessInput.UseTexture ? 1.0f : 0.0f);
-        m_MeshMaterial->Set("u_EnvMapRotation", m_EnvMapRotation);
+            m_EditorScene->OnRenderEditor(ts, m_EditorCamera);
 
-        m_SphereBaseMaterial->Set("u_AlbedoColor", m_AlbedoInput.Color);
-        m_SphereBaseMaterial->Set("lights", m_Scene->GetLight());
-        m_SphereBaseMaterial->Set("u_RadiancePrefilter", m_RadiancePrefilter ? 1.0f : 0.0f);
-        m_SphereBaseMaterial->Set("u_AlbedoTexToggle", m_AlbedoInput.UseTexture ? 1.0f : 0.0f);
-        m_SphereBaseMaterial->Set("u_NormalTexToggle", m_NormalInput.UseTexture ? 1.0f : 0.0f);
-        m_SphereBaseMaterial->Set("u_MetalnessTexToggle", m_MetalnessInput.UseTexture ? 1.0f : 0.0f);
-        m_SphereBaseMaterial->Set("u_RoughnessTexToggle", m_RoughnessInput.UseTexture ? 1.0f : 0.0f);
-        m_SphereBaseMaterial->Set("u_EnvMapRotation", m_EnvMapRotation);
+            if (m_DrawOnTopBoundingBoxes) {
+                Renderer::BeginRenderPass(SceneRenderer::GetFinalRenderPass(), false);
+                auto viewProj = m_EditorCamera.GetViewProjection();
+                Renderer2D::BeginScene(viewProj, false);
+                // TODO: Renderer::DrawAABB(m_MeshEntity.GetComponent<MeshComponent>(),
+                // m_MeshEntity.GetComponent<TransformComponent>());
+                Renderer2D::EndScene();
+                Renderer::EndRenderPass();
+            }
 
-        if (m_AlbedoInput.TextureMap)
-            m_MeshMaterial->Set("u_AlbedoTexture", m_AlbedoInput.TextureMap);
-        if (m_NormalInput.TextureMap)
-            m_MeshMaterial->Set("u_NormalTexture", m_NormalInput.TextureMap);
-        if (m_MetalnessInput.TextureMap)
-            m_MeshMaterial->Set("u_MetalnessTexture", m_MetalnessInput.TextureMap);
-        if (m_RoughnessInput.TextureMap)
-            m_MeshMaterial->Set("u_RoughnessTexture", m_RoughnessInput.TextureMap);
+            if (m_SelectionContext.size() && false) {
+                auto &selection = m_SelectionContext[0];
 
-        // if (m_AllowViewportCameraEvents)
-        // 	m_Scene->GetCamera().OnUpdate(ts);
-
-        m_ActiveScene->OnUpdate(ts);
-
-        if (m_DrawOnTopBoundingBoxes) {
-            Monado::Renderer::BeginRenderPass(Monado::SceneRenderer::GetFinalRenderPass(), false);
-            auto viewProj = m_CameraEntity.GetComponent<CameraComponent>().Camera.GetViewProjection();
-            Monado::Renderer2D::BeginScene(viewProj, false);
-            Renderer::DrawAABB(m_MeshEntity.GetComponent<MeshComponent>(),
-                               m_MeshEntity.GetComponent<TransformComponent>());
-            Monado::Renderer2D::EndScene();
-            Monado::Renderer::EndRenderPass();
+                if (selection.Mesh && selection.Entity.HasComponent<MeshComponent>()) {
+                    Renderer::BeginRenderPass(SceneRenderer::GetFinalRenderPass(), false);
+                    auto viewProj = m_EditorCamera.GetViewProjection();
+                    Renderer2D::BeginScene(viewProj, false);
+                    glm::vec4 color = (m_SelectionMode == SelectionMode::Entity) ? glm::vec4 { 1.0f, 1.0f, 1.0f, 1.0f }
+                                                                                 : glm::vec4 { 0.2f, 0.9f, 0.2f, 1.0f };
+                    Renderer::DrawAABB(selection.Mesh->BoundingBox,
+                                       selection.Entity.GetComponent<TransformComponent>().Transform *
+                                           selection.Mesh->Transform,
+                                       color);
+                    Renderer2D::EndScene();
+                    Renderer::EndRenderPass();
+                }
+            }
+            break;
         }
+        case SceneState::Play: {
+            if (m_ViewportPanelFocused)
+                m_EditorCamera.OnUpdate(ts);
 
-        if (m_SelectionContext.size()) {
-            auto &selection = m_SelectionContext[0];
+            m_RuntimeScene->OnUpdate(ts);
+            m_RuntimeScene->OnRenderRuntime(ts);
+            break;
+        }
+        case SceneState::Pause: {
+            if (m_ViewportPanelFocused)
+                m_EditorCamera.OnUpdate(ts);
 
-            Monado::Renderer::BeginRenderPass(Monado::SceneRenderer::GetFinalRenderPass(), false);
-            auto viewProj = m_CameraEntity.GetComponent<CameraComponent>().Camera.GetViewProjection();
-            Monado::Renderer2D::BeginScene(viewProj, false);
-            glm::vec4 color = (m_SelectionMode == SelectionMode::Entity) ? glm::vec4 { 1.0f, 1.0f, 1.0f, 1.0f }
-                                                                         : glm::vec4 { 0.2f, 0.9f, 0.2f, 1.0f };
-            Renderer::DrawAABB(
-                selection.Mesh->BoundingBox,
-                selection.Entity.GetComponent<TransformComponent>().Transform * selection.Mesh->Transform, color);
-
-            Monado::Renderer2D::EndScene();
-            Monado::Renderer::EndRenderPass();
+            m_RuntimeScene->OnRenderRuntime(ts);
+            break;
+        }
         }
     }
 
@@ -325,6 +268,18 @@ namespace Monado {
         m_DrawOnTopBoundingBoxes = show && onTop;
     }
 
+    void EditorLayer::SelectEntity(Entity entity) {
+        SelectedSubmesh selection;
+        if (entity.HasComponent<MeshComponent>()) {
+            selection.Mesh = &entity.GetComponent<MeshComponent>().Mesh->GetSubmeshes()[0];
+        }
+        selection.Entity = entity;
+        m_SelectionContext.clear();
+        m_SelectionContext.push_back(selection);
+
+        m_EditorScene->SetSelectedEntity(entity);
+    }
+
     void EditorLayer::OnImGuiRender() {
         static bool p_open = true;
 
@@ -368,30 +323,25 @@ namespace Monado {
 
         // Editor Panel ------------------------------------------------------------------------------
         ImGui::Begin("Model");
-        if (ImGui::RadioButton("Spheres", (int *)&m_SceneType, (int)SceneType::Spheres))
-            m_ActiveScene = m_SphereScene;
-        ImGui::SameLine();
-        if (ImGui::RadioButton("Model", (int *)&m_SceneType, (int)SceneType::Model))
-            m_ActiveScene = m_Scene;
-
         ImGui::Begin("Environment");
 
         if (ImGui::Button("Load Environment Map")) {
             std::string filename = Application::Get().OpenFile("*.hdr");
             if (filename != "")
-                m_ActiveScene->SetEnvironment(Environment::Load(filename));
+                m_EditorScene->SetEnvironment(Environment::Load(filename));
         }
 
-        ImGui::SliderFloat("Skybox LOD", &m_Scene->GetSkyboxLod(), 0.0f, 11.0f);
+        ImGui::SliderFloat("Skybox LOD", &m_EditorScene->GetSkyboxLod(), 0.0f, 11.0f);
 
         ImGui::Columns(2);
         ImGui::AlignTextToFramePadding();
 
-        auto &light = m_Scene->GetLight();
+        auto &light = m_EditorScene->GetLight();
         Property("Light Direction", light.Direction);
         Property("Light Radiance", light.Radiance, PropertyFlag::ColorProperty);
         Property("Light Multiplier", light.Multiplier, 0.0f, 5.0f);
-        Property("Exposure", m_CameraEntity.GetComponent<CameraComponent>().Camera.GetExposure(), 0.0f, 5.0f);
+
+        Property("Exposure", m_EditorCamera.GetExposure(), 0.0f, 5.0f);
 
         Property("Radiance Prefiltering", m_RadiancePrefilter);
         Property("Env Map Rotation", m_EnvMapRotation, -360.0f, 360.0f);
@@ -413,21 +363,22 @@ namespace Monado {
         ImGui::Separator();
         {
             ImGui::Text("Mesh");
-            auto meshComponent = m_MeshEntity.GetComponent<MeshComponent>();
+            /*auto meshComponent = m_MeshEntity.GetComponent<MeshComponent>();
             std::string fullpath = meshComponent.Mesh ? meshComponent.Mesh->GetFilePath() : "None";
             size_t found = fullpath.find_last_of("/\\");
             std::string path = found != std::string::npos ? fullpath.substr(found + 1) : fullpath;
-            ImGui::Text(path.c_str());
-            ImGui::SameLine();
-            if (ImGui::Button("...##Mesh")) {
-                std::string filename = Application::Get().OpenFile("");
-                if (filename != "") {
-                    auto newMesh = Ref<Mesh>::Create(filename);
-                    // m_MeshMaterial.reset(new MaterialInstance(newMesh->GetMaterial()));
-                    // m_MeshEntity->SetMaterial(m_MeshMaterial);
-                    meshComponent.Mesh = newMesh;
-                }
-            }
+            ImGui::Text(path.c_str()); ImGui::SameLine();
+            if (ImGui::Button("...##Mesh"))
+            {
+                    std::string filename = Application::Get().OpenFile("");
+                    if (filename != "")
+                    {
+                            auto newMesh = Ref<Mesh>::Create(filename);
+                            // m_MeshMaterial.reset(new MaterialInstance(newMesh->GetMaterial()));
+                            // m_MeshEntity->SetMaterial(m_MeshMaterial);
+                            meshComponent.Mesh = newMesh;
+                    }
+            }*/
         }
         ImGui::Separator();
 
@@ -571,16 +522,54 @@ namespace Monado {
 
         ImGui::End();
 
+        // ImGui::ShowDemoWindow();
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12, 0));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(12, 4));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.8f, 0.8f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
+        ImGui::Begin("Toolbar");
+        if (m_SceneState == SceneState::Edit) {
+            if (ImGui::ImageButton((ImTextureID)(m_PlayButtonTex->GetRendererID()), ImVec2(32, 32), ImVec2(0, 0),
+                                   ImVec2(1, 1), -1, ImVec4(0, 0, 0, 0), ImVec4(0.9f, 0.9f, 0.9f, 1.0f))) {
+                OnScenePlay();
+            }
+        } else if (m_SceneState == SceneState::Play) {
+            if (ImGui::ImageButton((ImTextureID)(m_PlayButtonTex->GetRendererID()), ImVec2(32, 32), ImVec2(0, 0),
+                                   ImVec2(1, 1), -1, ImVec4(1.0f, 1.0f, 1.0f, 0.2f))) {
+                OnSceneStop();
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::ImageButton((ImTextureID)(m_PlayButtonTex->GetRendererID()), ImVec2(32, 32), ImVec2(0, 0),
+                               ImVec2(1, 1), -1, ImVec4(0, 0, 0, 0), ImVec4(1.0f, 1.0f, 1.0f, 0.6f))) {
+            MND_CORE_INFO("PLAY!");
+        }
+        ImGui::End();
+        ImGui::PopStyleColor();
+        ImGui::PopStyleColor();
+        ImGui::PopStyleColor();
+        ImGui::PopStyleVar();
+        ImGui::PopStyleVar();
+        ImGui::PopStyleVar();
+
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::Begin("Viewport");
+
+        m_ViewportPanelMouseOver = ImGui::IsWindowHovered();
+        m_ViewportPanelFocused = ImGui::IsWindowFocused();
 
         auto viewportOffset = ImGui::GetCursorPos(); // includes tab bar
         auto viewportSize = ImGui::GetContentRegionAvail();
         SceneRenderer::SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
-        m_CameraEntity.GetComponent<CameraComponent>().Camera.SetProjectionMatrix(
+        m_EditorScene->SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+        if (m_RuntimeScene)
+            m_RuntimeScene->SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+        m_EditorCamera.SetProjectionMatrix(
             glm::perspectiveFov(glm::radians(45.0f), viewportSize.x, viewportSize.y, 0.1f, 10000.0f));
-        m_CameraEntity.GetComponent<CameraComponent>().Camera.SetViewportSize((uint32_t)viewportSize.x,
-                                                                              (uint32_t)viewportSize.y);
+        m_EditorCamera.SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
         ImGui::Image((void *)SceneRenderer::GetFinalColorBufferRendererID(), viewportSize, { 0, 1 }, { 1, 0 });
 
         static int counter = 0;
@@ -604,22 +593,21 @@ namespace Monado {
             ImGuizmo::SetDrawlist();
             ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, rw, rh);
 
-            auto &camera = m_CameraEntity.GetComponent<CameraComponent>().Camera;
             bool snap = Input::IsKeyPressed(MND_KEY_LEFT_CONTROL);
 
             auto &entityTransform = selection.Entity.Transform();
             float snapValue[3] = { m_SnapValue, m_SnapValue, m_SnapValue };
             if (m_SelectionMode == SelectionMode::Entity) {
-                ImGuizmo::Manipulate(glm::value_ptr(camera.GetViewMatrix()),
-                                     glm::value_ptr(camera.GetProjectionMatrix()), (ImGuizmo::OPERATION)m_GizmoType,
-                                     ImGuizmo::LOCAL, glm::value_ptr(entityTransform), nullptr,
-                                     snap ? snapValue : nullptr);
+                ImGuizmo::Manipulate(glm::value_ptr(m_EditorCamera.GetViewMatrix()),
+                                     glm::value_ptr(m_EditorCamera.GetProjectionMatrix()),
+                                     (ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(entityTransform),
+                                     nullptr, snap ? snapValue : nullptr);
             } else {
                 glm::mat4 transformBase = entityTransform * selection.Mesh->Transform;
-                ImGuizmo::Manipulate(glm::value_ptr(camera.GetViewMatrix()),
-                                     glm::value_ptr(camera.GetProjectionMatrix()), (ImGuizmo::OPERATION)m_GizmoType,
-                                     ImGuizmo::LOCAL, glm::value_ptr(transformBase), nullptr,
-                                     snap ? snapValue : nullptr);
+                ImGuizmo::Manipulate(glm::value_ptr(m_EditorCamera.GetViewMatrix()),
+                                     glm::value_ptr(m_EditorCamera.GetProjectionMatrix()),
+                                     (ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(transformBase),
+                                     nullptr, snap ? snapValue : nullptr);
 
                 selection.Mesh->Transform = glm::inverse(entityTransform) * transformBase;
             }
@@ -629,59 +617,57 @@ namespace Monado {
         ImGui::PopStyleVar();
 
         if (ImGui::BeginMenuBar()) {
-            if (ImGui::BeginMenu("Docking")) {
-                // Disabling fullscreen would allow the window to be moved to the front of other windows,
-                // which we can't undo at the moment without finer window depth/z control.
-                // ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen_persistant);
+            if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("New Scene")) {
+                }
+                if (ImGui::MenuItem("Open Scene...")) {
+                    auto &app = Application::Get();
+                    std::string filepath = app.OpenFile("Monado Scene (*.msc)\0*.msc\0");
+                    if (!filepath.empty()) {
+                        Ref<Scene> newScene = Ref<Scene>::Create();
+                        SceneSerializer serializer(newScene);
+                        serializer.Deserialize(filepath);
+                        m_EditorScene = newScene;
+                        m_SceneHierarchyPanel->SetContext(m_EditorScene);
+                        ScriptEngine::SetSceneContext(m_EditorScene);
 
-                if (ImGui::MenuItem("Flag: NoSplit", "", (opt_flags & ImGuiDockNodeFlags_NoSplit) != 0))
-                    opt_flags ^= ImGuiDockNodeFlags_NoSplit;
-                if (ImGui::MenuItem("Flag: NoDockingInCentralNode", "",
-                                    (opt_flags & ImGuiDockNodeFlags_NoDockingInCentralNode) != 0))
-                    opt_flags ^= ImGuiDockNodeFlags_NoDockingInCentralNode;
-                if (ImGui::MenuItem("Flag: NoResize", "", (opt_flags & ImGuiDockNodeFlags_NoResize) != 0))
-                    opt_flags ^= ImGuiDockNodeFlags_NoResize;
-                // if (ImGui::MenuItem("Flag: PassthruDockspace", "", (opt_flags & ImGuiDockNodeFlags_PassthruDockspace)
-                // != 0))       opt_flags ^= ImGuiDockNodeFlags_PassthruDockspace;
-                if (ImGui::MenuItem("Flag: AutoHideTabBar", "", (opt_flags & ImGuiDockNodeFlags_AutoHideTabBar) != 0))
-                    opt_flags ^= ImGuiDockNodeFlags_AutoHideTabBar;
+                        m_EditorScene->SetSelectedEntity({});
+                        m_SelectionContext.clear();
+                    }
+                }
+                if (ImGui::MenuItem("Save Scene...")) {
+                    auto &app = Application::Get();
+                    std::string filepath = app.SaveFile("Monado Scene (*.msc)\0*.msc\0");
+                    SceneSerializer serializer(m_EditorScene);
+                    serializer.Serialize(filepath);
+                }
                 ImGui::Separator();
-                if (ImGui::MenuItem("Close DockSpace", NULL, false, p_open != NULL))
+                if (ImGui::MenuItem("Reload C# Assembly"))
+                    ScriptEngine::ReloadAssembly("ExampleApp.dll");
+                ImGui::Separator();
+                if (ImGui::MenuItem("Exit"))
                     p_open = false;
                 ImGui::EndMenu();
             }
-            ImGuiShowHelpMarker(
-                "You can _always_ dock _any_ window into another by holding the SHIFT key while moving a window. Try "
-                "it now!"
-                "\n"
-                "This demo app has nothing to do with it!"
-                "\n\n"
-                "This demo app only demonstrate the use of ImGui::DockSpace() which allows you to manually create a "
-                "docking node _within_ another window. This is useful so you can decorate your main application window "
-                "(e.g. with a menu bar)."
-                "\n\n"
-                "ImGui::DockSpace() comes with one hard constraint: it needs to be submitted _before_ any window which "
-                "may be docked into it. Therefore, if you use a dock spot as the central point of your application, "
-                "you'll probably want it to be part of the very first window you are submitting to imgui every frame."
-                "\n\n"
-                "(NB: because of this constraint, the implicit \"Debug\" window can not be docked into an explicit "
-                "DockSpace() node, because that window is submitted as part of the NewFrame() call. An easy workaround "
-                "is that you can create your own implicit \"Debug##2\" window after calling DockSpace() and leave it "
-                "in the window stack for anyone to use.)");
-
             ImGui::EndMenuBar();
         }
 
         m_SceneHierarchyPanel->OnImGuiRender();
 
+        ScriptEngine::OnImGuiRender();
+
         ImGui::End();
     }
 
     void EditorLayer::OnEvent(Event &e) {
-        // if (m_AllowViewportCameraEvents)
-        // 	m_CameraEntity.GetComponent<CameraComponent>().OnEvent(e);
+        if (m_SceneState == SceneState::Edit) {
+            if (m_ViewportPanelMouseOver)
+                m_EditorCamera.OnEvent(e);
 
-        m_Scene->OnEvent(e);
+            m_EditorScene->OnEvent(e);
+        } else if (m_SceneState == SceneState::Play) {
+            m_RuntimeScene->OnEvent(e);
+        }
 
         EventDispatcher dispatcher(e);
         dispatcher.Dispatch<KeyPressedEvent>(MND_BIND_EVENT_FN(EditorLayer::OnKeyPressedEvent));
@@ -689,24 +675,44 @@ namespace Monado {
     }
 
     bool EditorLayer::OnKeyPressedEvent(KeyPressedEvent &e) {
-        switch (e.GetKeyCode()) {
-        case KeyCode::Q: m_GizmoType = -1; break;
-        case KeyCode::W: m_GizmoType = ImGuizmo::OPERATION::TRANSLATE; break;
-        case KeyCode::E: m_GizmoType = ImGuizmo::OPERATION::ROTATE; break;
-        case KeyCode::R: m_GizmoType = ImGuizmo::OPERATION::SCALE; break;
-        case KeyCode::G:
-            // Toggle grid
-            if (Monado::Input::IsKeyPressed(MND_KEY_LEFT_CONTROL))
+        if (m_ViewportPanelFocused) {
+            switch (e.GetKeyCode()) {
+            case KeyCode::Q: m_GizmoType = -1; break;
+            case KeyCode::W: m_GizmoType = ImGuizmo::OPERATION::TRANSLATE; break;
+            case KeyCode::E: m_GizmoType = ImGuizmo::OPERATION::ROTATE; break;
+            case KeyCode::R: m_GizmoType = ImGuizmo::OPERATION::SCALE; break;
+            case KeyCode::Delete:
+                if (m_SelectionContext.size()) {
+                    Entity selectedEntity = m_SelectionContext[0].Entity;
+                    m_EditorScene->DestroyEntity(selectedEntity);
+                    m_SelectionContext.clear();
+                    m_EditorScene->SetSelectedEntity({});
+                    m_SceneHierarchyPanel->SetSelected({});
+                }
+                break;
+            }
+        }
+
+        if (Input::IsKeyPressed(MND_KEY_LEFT_CONTROL)) {
+            switch (e.GetKeyCode()) {
+            case KeyCode::G:
+                // Toggle grid
                 SceneRenderer::GetOptions().ShowGrid = !SceneRenderer::GetOptions().ShowGrid;
-            break;
-        case KeyCode::B:
-            // Toggle bounding boxes
-            if (Monado::Input::IsKeyPressed(MND_KEY_LEFT_CONTROL)) {
+                break;
+            case KeyCode::B:
+                // Toggle bounding boxes
                 m_UIShowBoundingBoxes = !m_UIShowBoundingBoxes;
                 ShowBoundingBoxes(m_UIShowBoundingBoxes, m_UIShowBoundingBoxesOnTop);
+                break;
+            case KeyCode::D:
+                if (m_SelectionContext.size()) {
+                    Entity selectedEntity = m_SelectionContext[0].Entity;
+                    m_EditorScene->DuplicateEntity(selectedEntity);
+                }
+                break;
             }
-            break;
         }
+
         return false;
     }
 
@@ -719,9 +725,10 @@ namespace Monado {
                 auto [origin, direction] = CastRay(mouseX, mouseY);
 
                 m_SelectionContext.clear();
-                auto meshEntities = m_Scene->GetAllEntitiesWith<MeshComponent>();
+                m_EditorScene->SetSelectedEntity({});
+                auto meshEntities = m_EditorScene->GetAllEntitiesWith<MeshComponent>();
                 for (auto e : meshEntities) {
-                    Entity entity = { e, m_Scene.Raw() };
+                    Entity entity = { e, m_EditorScene.Raw() };
                     auto mesh = entity.GetComponent<MeshComponent>().Mesh;
                     if (!mesh)
                         continue;
@@ -759,7 +766,7 @@ namespace Monado {
     }
 
     std::pair<float, float> EditorLayer::GetMouseViewportSpace() {
-        auto [mx, my] = ImGui::GetMousePos(); // Input::GetMousePosition();
+        auto [mx, my] = ImGui::GetMousePos();
         mx -= m_ViewportBounds[0].x;
         my -= m_ViewportBounds[0].y;
         auto viewportWidth = m_ViewportBounds[1].x - m_ViewportBounds[0].x;
@@ -771,12 +778,11 @@ namespace Monado {
     std::pair<glm::vec3, glm::vec3> EditorLayer::CastRay(float mx, float my) {
         glm::vec4 mouseClipPos = { mx, my, -1.0f, 1.0f };
 
-        auto inverseProj = glm::inverse(m_CameraEntity.GetComponent<CameraComponent>().Camera.GetProjectionMatrix());
-        auto inverseView =
-            glm::inverse(glm::mat3(m_CameraEntity.GetComponent<CameraComponent>().Camera.GetViewMatrix()));
+        auto inverseProj = glm::inverse(m_EditorCamera.GetProjectionMatrix());
+        auto inverseView = glm::inverse(glm::mat3(m_EditorCamera.GetViewMatrix()));
 
         glm::vec4 ray = inverseProj * mouseClipPos;
-        glm::vec3 rayPos = m_CameraEntity.GetComponent<CameraComponent>().Camera.GetPosition();
+        glm::vec3 rayPos = m_EditorCamera.GetPosition();
         glm::vec3 rayDir = inverseView * glm::vec3(ray);
 
         return { rayPos, rayDir };
@@ -784,6 +790,14 @@ namespace Monado {
 
     void EditorLayer::OnSelected(const SelectedSubmesh &selectionContext) {
         m_SceneHierarchyPanel->SetSelected(selectionContext.Entity);
+        m_EditorScene->SetSelectedEntity(selectionContext.Entity);
+    }
+
+    void EditorLayer::OnEntityDeleted(Entity e) {
+        if (m_SelectionContext[0].Entity == e) {
+            m_SelectionContext.clear();
+            m_EditorScene->SetSelectedEntity({});
+        }
     }
 
     Ray EditorLayer::CastMouseRay() {

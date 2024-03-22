@@ -109,7 +109,7 @@ namespace Monado {
 
     void Renderer::EndRenderPass() {
         MND_CORE_ASSERT(s_Data.m_ActiveRenderPass,
-                       "No active render pass! Have you called Renderer::EndRenderPass twice?");
+                        "No active render pass! Have you called Renderer::EndRenderPass twice?");
         s_Data.m_ActiveRenderPass->GetSpecification().TargetFramebuffer->Unbind();
         s_Data.m_ActiveRenderPass = nullptr;
     }
@@ -148,7 +148,7 @@ namespace Monado {
         auto materials = mesh->GetMaterials();
         for (Submesh &submesh : mesh->m_Submeshes) {
             // Material
-            auto material = materials[submesh.MaterialIndex];
+            auto material = overrideMaterial ? overrideMaterial : materials[submesh.MaterialIndex];
             auto shader = material->GetShader();
             material->Bind();
 

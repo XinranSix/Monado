@@ -33,7 +33,8 @@ namespace Monado {
     }
 
     OpenGLVertexArray::~OpenGLVertexArray() {
-        Renderer::Submit([this]() { glDeleteVertexArrays(1, &m_RendererID); });
+        GLuint rendererID = m_RendererID;
+        Renderer::Submit([rendererID]() { glDeleteVertexArrays(1, &rendererID); });
     }
 
     void OpenGLVertexArray::Bind() const {

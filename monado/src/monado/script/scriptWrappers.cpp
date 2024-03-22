@@ -19,7 +19,6 @@
 #include <mono/metadata/reflection.h>
 
 namespace Monado {
-    extern std::unordered_map<uint32_t, Scene *> s_ActiveScenes;
     extern std::unordered_map<MonoType *, std::function<bool(Entity &)>> s_HasComponentFuncs;
     extern std::unordered_map<MonoType *, std::function<void(Entity &)>> s_CreateComponentFuncs;
 } // namespace Monado
@@ -49,57 +48,75 @@ namespace Monado {
         // Entity //////////////////////////////////////////////////////
         ////////////////////////////////////////////////////////////////
 
-        void Monado_Entity_GetTransform(uint32_t sceneID, uint32_t entityID, glm::mat4 *outTransform) {
-            MND_CORE_ASSERT(s_ActiveScenes.find(sceneID) != s_ActiveScenes.end(), "Invalid Scene ID!");
+        void Monado_Entity_GetTransform(uint64_t entityID, glm::mat4 *outTransform) {
+            Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
+            MND_CORE_ASSERT(scene, "No active scene!");
+            const auto &entityMap = scene->GetEntityMap();
+            MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
+                            "Invalid entity ID or entity doesn't exist in scene!");
 
-            Scene *scene = s_ActiveScenes[sceneID];
-            Entity entity((entt::entity)entityID, scene);
+            Entity entity = entityMap.at(entityID);
             auto &transformComponent = entity.GetComponent<TransformComponent>();
             memcpy(outTransform, glm::value_ptr(transformComponent.Transform), sizeof(glm::mat4));
         }
 
-        void Monado_Entity_SetTransform(uint32_t sceneID, uint32_t entityID, glm::mat4 *inTransform) {
-            MND_CORE_ASSERT(s_ActiveScenes.find(sceneID) != s_ActiveScenes.end(), "Invalid Scene ID!");
+        void Monado_Entity_SetTransform(uint64_t entityID, glm::mat4 *inTransform) {
+            Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
+            MND_CORE_ASSERT(scene, "No active scene!");
+            const auto &entityMap = scene->GetEntityMap();
+            MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
+                            "Invalid entity ID or entity doesn't exist in scene!");
 
-            Scene *scene = s_ActiveScenes[sceneID];
-            Entity entity((entt::entity)entityID, scene);
+            Entity entity = entityMap.at(entityID);
             auto &transformComponent = entity.GetComponent<TransformComponent>();
             memcpy(glm::value_ptr(transformComponent.Transform), inTransform, sizeof(glm::mat4));
         }
 
-        void Monado_Entity_CreateComponent(uint32_t sceneID, uint32_t entityID, void *type) {
-            MND_CORE_ASSERT(s_ActiveScenes.find(sceneID) != s_ActiveScenes.end(), "Invalid Scene ID!");
-            MonoType *monoType = mono_reflection_type_get_type((MonoReflectionType *)type);
+        void Monado_Entity_CreateComponent(uint64_t entityID, void *type) {
+            Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
+            MND_CORE_ASSERT(scene, "No active scene!");
+            const auto &entityMap = scene->GetEntityMap();
+            MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
+                            "Invalid entity ID or entity doesn't exist in scene!");
 
-            Scene *scene = s_ActiveScenes[sceneID];
-            Entity entity((entt::entity)entityID, scene);
+            Entity entity = entityMap.at(entityID);
+            MonoType *monoType = mono_reflection_type_get_type((MonoReflectionType *)type);
             s_CreateComponentFuncs[monoType](entity);
         }
 
-        bool Monado_Entity_HasComponent(uint32_t sceneID, uint32_t entityID, void *type) {
-            MND_CORE_ASSERT(s_ActiveScenes.find(sceneID) != s_ActiveScenes.end(), "Invalid Scene ID!");
-            MonoType *monoType = mono_reflection_type_get_type((MonoReflectionType *)type);
+        bool Monado_Entity_HasComponent(uint64_t entityID, void *type) {
+            Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
+            MND_CORE_ASSERT(scene, "No active scene!");
+            const auto &entityMap = scene->GetEntityMap();
+            MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
+                            "Invalid entity ID or entity doesn't exist in scene!");
 
-            Scene *scene = s_ActiveScenes[sceneID];
-            Entity entity((entt::entity)entityID, scene);
+            Entity entity = entityMap.at(entityID);
+            MonoType *monoType = mono_reflection_type_get_type((MonoReflectionType *)type);
             bool result = s_HasComponentFuncs[monoType](entity);
             return result;
         }
 
-        void *Monado_MeshComponent_GetMesh(uint32_t sceneID, uint32_t entityID) {
-            MND_CORE_ASSERT(s_ActiveScenes.find(sceneID) != s_ActiveScenes.end(), "Invalid Scene ID!");
+        void *Monado_MeshComponent_GetMesh(uint64_t entityID) {
+            Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
+            MND_CORE_ASSERT(scene, "No active scene!");
+            const auto &entityMap = scene->GetEntityMap();
+            MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
+                            "Invalid entity ID or entity doesn't exist in scene!");
 
-            Scene *scene = s_ActiveScenes[sceneID];
-            Entity entity((entt::entity)entityID, scene);
+            Entity entity = entityMap.at(entityID);
             auto &meshComponent = entity.GetComponent<MeshComponent>();
             return new Ref<Mesh>(meshComponent.Mesh);
         }
 
-        void Monado_MeshComponent_SetMesh(uint32_t sceneID, uint32_t entityID, Ref<Mesh> *inMesh) {
-            MND_CORE_ASSERT(s_ActiveScenes.find(sceneID) != s_ActiveScenes.end(), "Invalid Scene ID!");
+        void Monado_MeshComponent_SetMesh(uint64_t entityID, Ref<Mesh> *inMesh) {
+            Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
+            MND_CORE_ASSERT(scene, "No active scene!");
+            const auto &entityMap = scene->GetEntityMap();
+            MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
+                            "Invalid entity ID or entity doesn't exist in scene!");
 
-            Scene *scene = s_ActiveScenes[sceneID];
-            Entity entity((entt::entity)entityID, scene);
+            Entity entity = entityMap.at(entityID);
             auto &meshComponent = entity.GetComponent<MeshComponent>();
             meshComponent.Mesh = inMesh ? *inMesh : nullptr;
         }

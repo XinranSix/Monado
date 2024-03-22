@@ -78,7 +78,7 @@ target("alvis")
     set_kind("binary")
     add_files("alvis/**.cpp")
     add_links("libs/win/ComDlg32")
-    if is_mode("debug") then
+    if is_mode("debug") then 
         add_links("./libs/mono/lib/Debug/mono-2.0-sgen.lib")
     else
         add_links("./libs/mono/lib/Release/mono-2.0-sgen.lib")

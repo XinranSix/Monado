@@ -38,7 +38,7 @@ namespace Monado {
         Renderer::WaitAndRender();
     }
 
-    Application::~Application() {}
+    Application::~Application() { ScriptEngine::Shutdown(); }
 
     void Application::PushLayer(Layer *layer) {
         m_LayerStack.PushLayer(layer);
@@ -115,13 +115,13 @@ namespace Monado {
 
         return false;
     }
-    
+
     bool Application::OnWindowClose(WindowCloseEvent &e) {
         m_Running = false;
         return true;
     }
 
-    std::string Application::OpenFile(const std::string &filter) const {
+    std::string Application::OpenFile(const char *filter) const {
         OPENFILENAMEA ofn;        // common dialog box structure
         CHAR szFile[260] = { 0 }; // if using TCHAR macros
 
@@ -131,12 +131,9 @@ namespace Monado {
         ofn.hwndOwner = glfwGetWin32Window((GLFWwindow *)m_Window->GetNativeWindow());
         ofn.lpstrFile = szFile;
         ofn.nMaxFile = sizeof(szFile);
-        ofn.lpstrFilter = "All\0*.*\0";
+        ofn.lpstrFilter = filter;
         ofn.nFilterIndex = 1;
-        ofn.lpstrFileTitle = NULL;
-        ofn.nMaxFileTitle = 0;
-        ofn.lpstrInitialDir = NULL;
-        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 
         if (GetOpenFileNameA(&ofn) == TRUE) {
             return ofn.lpstrFile;
@@ -144,6 +141,29 @@ namespace Monado {
         return std::string();
     }
 
-    float Application::GetTime() const { return (float)glfwGetTime(); }
+    std::string Application::SaveFile(const char *filter) const {
+        OPENFILENAMEA ofn;        // common dialog box structure
+        CHAR szFile[260] = { 0 }; // if using TCHAR macros
+
+        // Initialize OPENFILENAME
+        ZeroMemory(&ofn, sizeof(OPENFILENAME));
+        ofn.lStructSize = sizeof(OPENFILENAME);
+        ofn.hwndOwner = glfwGetWin32Window((GLFWwindow *)m_Window->GetNativeWindow());
+        ofn.lpstrFile = szFile;
+        ofn.nMaxFile = sizeof(szFile);
+        ofn.lpstrFilter = filter;
+        ofn.nFilterIndex = 1;
+        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
+        if (GetSaveFileNameA(&ofn) == TRUE) {
+            return ofn.lpstrFile;
+        }
+        return std::string();
+    }
+
+    float Application::GetTime() const {
+        // TODO: 封装一下
+        return (float)glfwGetTime();
+    }
 
 } // namespace Monado

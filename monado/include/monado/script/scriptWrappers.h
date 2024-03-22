@@ -20,13 +20,13 @@ namespace Monado {
         bool Monado_Input_IsKeyPressed(KeyCode key);
 
         // Entity
-        void Monado_Entity_GetTransform(uint32_t sceneID, uint32_t entityID, glm::mat4 *outTransform);
-        void Monado_Entity_SetTransform(uint32_t sceneID, uint32_t entityID, glm::mat4 *inTransform);
-        void Monado_Entity_CreateComponent(uint32_t sceneID, uint32_t entityID, void *type);
-        bool Monado_Entity_HasComponent(uint32_t sceneID, uint32_t entityID, void *type);
+        void Monado_Entity_GetTransform(uint64_t entityID, glm::mat4 *outTransform);
+        void Monado_Entity_SetTransform(uint64_t entityID, glm::mat4 *inTransform);
+        void Monado_Entity_CreateComponent(uint64_t entityID, void *type);
+        bool Monado_Entity_HasComponent(uint64_t entityID, void *type);
 
-        void *Monado_MeshComponent_GetMesh(uint32_t sceneID, uint32_t entityID);
-        void Monado_MeshComponent_SetMesh(uint32_t sceneID, uint32_t entityID, Ref<Mesh> *inMesh);
+        void *Monado_MeshComponent_GetMesh(uint64_t entityID);
+        void Monado_MeshComponent_SetMesh(uint64_t entityID, Ref<Mesh> *inMesh);
 
         // Renderer
         // Texture2D
@@ -43,7 +43,7 @@ namespace Monado {
         void Monado_MaterialInstance_SetFloat(Ref<MaterialInstance> *_this, MonoString *uniform, float value);
         void Monado_MaterialInstance_SetVector3(Ref<MaterialInstance> *_this, MonoString *uniform, glm::vec3 *value);
         void Monado_MaterialInstance_SetTexture(Ref<MaterialInstance> *_this, MonoString *uniform,
-                                               Ref<Texture2D> *texture);
+                                                Ref<Texture2D> *texture);
 
         // Mesh
         Ref<Mesh> *Monado_Mesh_Constructor(MonoString *filepath);
