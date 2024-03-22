@@ -102,7 +102,7 @@ namespace Monado {
     }
 
     static void InitMono() {
-        mono_set_assemblies_path("monado/mono/lib");
+        mono_set_assemblies_path("monado/assets/mono/lib");
         // mono_jit_set_trace_options("--verbose");
         auto domain = mono_jit_init("Monado");
 
@@ -209,7 +209,7 @@ namespace Monado {
             char *name = (char *)"MonadoRuntime";
             s_MonoDomain = mono_domain_create_appdomain(name, nullptr);
         }
-        s_CoreAssembly = LoadAssembly("monadoScriptCore/MonadoScriptCore.dll");
+        s_CoreAssembly = LoadAssembly("MonadoScriptCore.dll");
         s_CoreAssemblyImage = GetAssemblyImage(s_CoreAssembly);
 
         s_AppAssembly = LoadAssembly(path);
