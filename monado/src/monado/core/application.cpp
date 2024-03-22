@@ -166,4 +166,24 @@ namespace Monado {
         return (float)glfwGetTime();
     }
 
+    const char *Application::GetConfigurationName() {
+#if defined(MND_DEBUG)
+        return "Debug";
+#elif defined(MND_RELEASE)
+        return "Release";
+#elif defined(MND_DIST)
+        return "Dist";
+#else
+    #error Undefined configuration?
+#endif
+    }
+
+    const char *Application::GetPlatformName() {
+#if defined(MND_PLATFORM_WINDOWS)
+        return "Windows x64";
+#else
+    #error Undefined platform?
+#endif
+    }
+
 } // namespace Monado
