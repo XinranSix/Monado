@@ -274,6 +274,50 @@ namespace Monado {
             out << YAML::EndMap; // CircleCollider2DComponent
         }
 
+        if (entity.HasComponent<RigidBodyComponent>()) {
+            out << YAML::Key << "RigidBodyComponent";
+            out << YAML::BeginMap; // RigidBodyComponent
+
+            auto &rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
+            out << YAML::Key << "BodyType" << YAML::Value << (int)rigidbodyComponent.BodyType;
+            out << YAML::Key << "Mass" << YAML::Value << rigidbodyComponent.Mass;
+
+            out << YAML::EndMap; // RigidBodyComponent
+        }
+
+        if (entity.HasComponent<PhysicsMaterialComponent>()) {
+            out << YAML::Key << "PhysicsMaterialComponent";
+            out << YAML::BeginMap; // PhysicsMaterialComponent
+
+            auto &physicsMaterial = entity.GetComponent<PhysicsMaterialComponent>();
+            out << YAML::Key << "StaticFriction" << YAML::Value << physicsMaterial.StaticFriction;
+            out << YAML::Key << "DynamicFriction" << YAML::Value << physicsMaterial.DynamicFriction;
+            out << YAML::Key << "Bounciness" << YAML::Value << physicsMaterial.Bounciness;
+
+            out << YAML::EndMap;
+        }
+
+        if (entity.HasComponent<BoxColliderComponent>()) {
+            out << YAML::Key << "BoxColliderComponent";
+            out << YAML::BeginMap; // BoxColliderComponent
+
+            auto &boxColliderComponent = entity.GetComponent<BoxColliderComponent>();
+            out << YAML::Key << "Offset" << YAML::Value << boxColliderComponent.Offset;
+            out << YAML::Key << "Size" << YAML::Value << boxColliderComponent.Size;
+
+            out << YAML::EndMap; // BoxColliderComponent
+        }
+
+        if (entity.HasComponent<SphereColliderComponent>()) {
+            out << YAML::Key << "SphereColliderComponent";
+            out << YAML::BeginMap; // SphereColliderComponent
+
+            auto &sphereColliderComponent = entity.GetComponent<SphereColliderComponent>();
+            out << YAML::Key << "Radius" << YAML::Value << sphereColliderComponent.Radius;
+
+            out << YAML::EndMap; // SphereColliderComponent
+        }
+
         out << YAML::EndMap; // Entity
     }
 
@@ -489,6 +533,34 @@ namespace Monado {
                     component.Friction = circleCollider2DComponent["Friction"]
                                              ? circleCollider2DComponent["Friction"].as<float>()
                                              : 1.0f;
+                }
+
+                auto rigidBodyComponent = entity["RigidBodyComponent"];
+                if (rigidBodyComponent) {
+                    auto &component = deserializedEntity.AddComponent<RigidBodyComponent>();
+                    component.BodyType = (RigidBodyComponent::Type)rigidBodyComponent["BodyType"].as<int>();
+                    component.Mass = rigidBodyComponent["Mass"].as<float>();
+                }
+
+                auto physicsMaterialComponent = entity["PhysicsMaterialComponent"];
+                if (physicsMaterialComponent) {
+                    auto &component = deserializedEntity.AddComponent<PhysicsMaterialComponent>();
+                    component.StaticFriction = physicsMaterialComponent["StaticFriction"].as<float>();
+                    component.DynamicFriction = physicsMaterialComponent["DynamicFriction"].as<float>();
+                    component.Bounciness = physicsMaterialComponent["Bounciness"].as<float>();
+                }
+
+                auto boxColliderComponent = entity["BoxColliderComponent"];
+                if (boxColliderComponent) {
+                    auto &component = deserializedEntity.AddComponent<BoxColliderComponent>();
+                    component.Offset = boxColliderComponent["Offset"].as<glm::vec3>();
+                    component.Size = boxColliderComponent["Size"].as<glm::vec3>();
+                }
+
+                auto sphereColliderComponent = entity["SphereColliderComponent"];
+                if (sphereColliderComponent) {
+                    auto &component = deserializedEntity.AddComponent<SphereColliderComponent>();
+                    component.Radius = sphereColliderComponent["Radius"].as<float>();
                 }
             }
         }

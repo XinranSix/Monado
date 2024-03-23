@@ -3,6 +3,7 @@
 #include "monado/core/log.h"
 #include "monado/renderer/framebuffer.h"
 #include "monado/script/scriptEngine.h"
+#include "monado/physics/physics3D.h"
 
 // clang-format off
 #include "glad/glad.h"
@@ -33,12 +34,19 @@ namespace Monado {
         PushOverlay(m_ImGuiLayer);
 
         ScriptEngine::Init("ExampleApp.dll");
+        Physics3D::Init();
 
         Renderer::Init();
         Renderer::WaitAndRender();
     }
 
-    Application::~Application() { ScriptEngine::Shutdown(); }
+    Application::~Application() {
+        for (Layer *layer : m_LayerStack)
+            layer->OnDetach();
+
+        Physics3D::Shutdown();
+        ScriptEngine::Shutdown();
+    }
 
     void Application::PushLayer(Layer *layer) {
         m_LayerStack.PushLayer(layer);

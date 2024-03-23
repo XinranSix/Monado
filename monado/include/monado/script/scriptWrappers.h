@@ -2,6 +2,7 @@
 
 #include "monado/script/scriptEngine.h"
 #include "monado/core/keyCodes.h"
+#include "monado/physics/physics3D.h"
 
 #include "glm/glm.hpp"
 
@@ -12,7 +13,6 @@ typedef struct _MonoArray MonoArray;
 
 namespace Monado {
     namespace Script {
-
         // Math
         float Monado_Noise_PerlinNoise(float x, float y);
 
@@ -22,6 +22,9 @@ namespace Monado {
         // Entity
         void Monado_Entity_GetTransform(uint64_t entityID, glm::mat4 *outTransform);
         void Monado_Entity_SetTransform(uint64_t entityID, glm::mat4 *inTransform);
+        void Monado_Entity_GetForwardDirection(uint64_t entityID, glm::vec3 *outForward);
+        void Monado_Entity_GetRightDirection(uint64_t entityID, glm::vec3 *outRight);
+        void Monado_Entity_GetUpDirection(uint64_t entityID, glm::vec3 *outUp);
         void Monado_Entity_CreateComponent(uint64_t entityID, void *type);
         bool Monado_Entity_HasComponent(uint64_t entityID, void *type);
         uint64_t Monado_Entity_FindEntityByTag(MonoString *tag);
@@ -33,6 +36,11 @@ namespace Monado {
                                                             bool wake);
         void Monado_RigidBody2DComponent_GetLinearVelocity(uint64_t entityID, glm::vec2 *outVelocity);
         void Monado_RigidBody2DComponent_SetLinearVelocity(uint64_t entityID, glm::vec2 *velocity);
+
+        void Monado_RigidBodyComponent_AddForce(uint64_t entityID, glm::vec3 *force, ForceMode foceMode);
+        void Monado_RigidBodyComponent_AddTorque(uint64_t entityID, glm::vec3 *torque, ForceMode forceMode);
+        void Monado_RigidBodyComponent_GetLinearVelocity(uint64_t entityID, glm::vec3 *outVelocity);
+        void Monado_RigidBodyComponent_SetLinearVelocity(uint64_t entityID, glm::vec3 *velocity);
 
         // Renderer
         // Texture2D

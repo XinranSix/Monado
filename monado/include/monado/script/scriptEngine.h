@@ -113,6 +113,10 @@ namespace Monado {
         static void OnCollision2DBegin(UUID sceneID, UUID entityID);
         static void OnCollision2DEnd(Entity entity);
         static void OnCollision2DEnd(UUID sceneID, UUID entityID);
+        static void OnCollisionBegin(Entity entity);
+        static void OnCollisionBegin(UUID sceneID, UUID entityID);
+        static void OnCollisionEnd(Entity entity);
+        static void OnCollisionEnd(UUID sceneID, UUID entityID);
 
         static void OnScriptComponentDestroyed(UUID sceneID, UUID entityID);
 

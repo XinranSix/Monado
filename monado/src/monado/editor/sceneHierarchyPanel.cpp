@@ -103,6 +103,30 @@ namespace Monado {
                             ImGui::CloseCurrentPopup();
                         }
                     }
+                    if (!m_SelectionContext.HasComponent<RigidBodyComponent>()) {
+                        if (ImGui::Button("Rigidbody")) {
+                            m_SelectionContext.AddComponent<RigidBodyComponent>();
+                            ImGui::CloseCurrentPopup();
+                        }
+                    }
+                    if (!m_SelectionContext.HasComponent<PhysicsMaterialComponent>()) {
+                        if (ImGui::Button("Physics Material")) {
+                            m_SelectionContext.AddComponent<PhysicsMaterialComponent>();
+                            ImGui::CloseCurrentPopup();
+                        }
+                    }
+                    if (!m_SelectionContext.HasComponent<BoxColliderComponent>()) {
+                        if (ImGui::Button("Box Collider")) {
+                            m_SelectionContext.AddComponent<BoxColliderComponent>();
+                            ImGui::CloseCurrentPopup();
+                        }
+                    }
+                    if (!m_SelectionContext.HasComponent<SphereColliderComponent>()) {
+                        if (ImGui::Button("Sphere Collider")) {
+                            m_SelectionContext.AddComponent<SphereColliderComponent>();
+                            ImGui::CloseCurrentPopup();
+                        }
+                    }
                     ImGui::EndPopup();
                 }
             }
@@ -727,6 +751,57 @@ namespace Monado {
             Property("Radius", cc2dc.Radius);
             Property("Density", cc2dc.Density);
             Property("Friction", cc2dc.Friction);
+
+            EndPropertyGrid();
+        });
+
+        DrawComponent<RigidBodyComponent>("Rigidbody", entity, [](RigidBodyComponent &rbc) {
+            // Rigidbody Type
+            const char *rbTypeStrings[] = { "Static", "Dynamic", "Kinematic" };
+            const char *currentType = rbTypeStrings[(int)rbc.BodyType];
+            if (ImGui::BeginCombo("Type", currentType)) {
+                for (int type = 0; type < 3; type++) {
+                    bool is_selected = (currentType == rbTypeStrings[type]);
+                    if (ImGui::Selectable(rbTypeStrings[type], is_selected)) {
+                        currentType = rbTypeStrings[type];
+                        rbc.BodyType = (RigidBodyComponent::Type)type;
+                    }
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+
+            if (rbc.BodyType == RigidBodyComponent::Type::Dynamic) {
+                BeginPropertyGrid();
+                Property("Mass", rbc.Mass);
+                EndPropertyGrid();
+            }
+        });
+
+        DrawComponent<PhysicsMaterialComponent>("Physics Material", entity, [](PhysicsMaterialComponent &pmc) {
+            BeginPropertyGrid();
+
+            Property("Static Friction", pmc.StaticFriction);
+            Property("Dynamic Friction", pmc.DynamicFriction);
+            Property("Bounciness", pmc.Bounciness);
+
+            EndPropertyGrid();
+        });
+
+        DrawComponent<BoxColliderComponent>("Box Collider", entity, [](BoxColliderComponent &bcc) {
+            BeginPropertyGrid();
+
+            Property("Size", bcc.Size);
+            // Property("Offset", bcc.Offset);
+
+            EndPropertyGrid();
+        });
+
+        DrawComponent<SphereColliderComponent>("Sphere Collider", entity, [](SphereColliderComponent &scc) {
+            BeginPropertyGrid();
+
+            Property("Radius", scc.Radius);
 
             EndPropertyGrid();
         });

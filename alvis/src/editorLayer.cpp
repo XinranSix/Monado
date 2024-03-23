@@ -111,12 +111,12 @@ namespace Monado {
             std::bind(&EditorLayer::OnEntityDeleted, this, std::placeholders::_1));
 
         SceneSerializer serializer(m_EditorScene);
-        // serializer.Deserialize("alvis/assets/scenes/Physics2DTest.msc");
-        serializer.Deserialize("alvis/assets/scenes/levels/Physics2D-Game.msc");
+        // serializer.Deserialize("alvis/assets/scenes/levels/Physics2D-Game.msc");
+        serializer.Deserialize("assets/assets/scenes/Physics3DTest.msc");
     }
 
-    void EditorLayer::OnDetach() {}
-
+    void EditorLayer::OnDetach() { m_EditorScene->OnShutdown(); }
+    
     void EditorLayer::OnScenePlay() {
         m_SelectionContext.clear();
 
@@ -476,7 +476,7 @@ namespace Monado {
         if (m_UIShowBoundingBoxes && Property("On Top", m_UIShowBoundingBoxesOnTop))
             ShowBoundingBoxes(m_UIShowBoundingBoxes, m_UIShowBoundingBoxesOnTop);
 
-       const char *label = m_SelectionMode == SelectionMode::Entity ? "Entity" : "Mesh";
+        const char *label = m_SelectionMode == SelectionMode::Entity ? "Entity" : "Mesh";
         if (ImGui::Button(label)) {
             m_SelectionMode = m_SelectionMode == SelectionMode::Entity ? SelectionMode::SubMesh : SelectionMode::Entity;
         }

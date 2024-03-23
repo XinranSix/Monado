@@ -47,6 +47,9 @@ namespace Monado {
         Component_RegisterType(SpriteRendererComponent);
         Component_RegisterType(RigidBody2DComponent);
         Component_RegisterType(BoxCollider2DComponent);
+        Component_RegisterType(RigidBodyComponent);
+        Component_RegisterType(BoxColliderComponent);
+        Component_RegisterType(SphereColliderComponent);
     }
 
     void ScriptEngineRegistry::RegisterAll() {
@@ -56,6 +59,11 @@ namespace Monado {
 
         mono_add_internal_call("Monado.Entity::GetTransform_Native", Monado::Script::Monado_Entity_GetTransform);
         mono_add_internal_call("Monado.Entity::SetTransform_Native", Monado::Script::Monado_Entity_SetTransform);
+        mono_add_internal_call("Monado.Entity::GetForwardDirection_Native",
+                               Monado::Script::Monado_Entity_GetForwardDirection);
+        mono_add_internal_call("Monado.Entity::GetRightDirection_Native",
+                               Monado::Script::Monado_Entity_GetRightDirection);
+        mono_add_internal_call("Monado.Entity::GetUpDirection_Native", Monado::Script::Monado_Entity_GetUpDirection);
         mono_add_internal_call("Monado.Entity::CreateComponent_Native", Monado::Script::Monado_Entity_CreateComponent);
         mono_add_internal_call("Monado.Entity::HasComponent_Native", Monado::Script::Monado_Entity_HasComponent);
         mono_add_internal_call("Monado.Entity::FindEntityByTag_Native", Monado::Script::Monado_Entity_FindEntityByTag);
@@ -69,6 +77,15 @@ namespace Monado {
                                Monado::Script::Monado_RigidBody2DComponent_GetLinearVelocity);
         mono_add_internal_call("Monado.RigidBody2DComponent::SetLinearVelocity_Native",
                                Monado::Script::Monado_RigidBody2DComponent_SetLinearVelocity);
+
+        mono_add_internal_call("Monado.RigidBodyComponent::AddForce_Native",
+                               Monado::Script::Monado_RigidBodyComponent_AddForce);
+        mono_add_internal_call("Monado.RigidBodyComponent::AddTorque_Native",
+                               Monado::Script::Monado_RigidBodyComponent_AddTorque);
+        mono_add_internal_call("Monado.RigidBodyComponent::GetLinearVelocity_Native",
+                               Monado::Script::Monado_RigidBodyComponent_GetLinearVelocity);
+        mono_add_internal_call("Monado.RigidBodyComponent::SetLinearVelocity_Native",
+                               Monado::Script::Monado_RigidBodyComponent_SetLinearVelocity);
 
         mono_add_internal_call("Monado.Input::IsKeyPressed_Native", Monado::Script::Monado_Input_IsKeyPressed);
 
