@@ -111,7 +111,8 @@ namespace Monado {
             std::bind(&EditorLayer::OnEntityDeleted, this, std::placeholders::_1));
 
         SceneSerializer serializer(m_EditorScene);
-        serializer.Deserialize("alvis/assets/scenes/Physics2DTest.msc");
+        // serializer.Deserialize("alvis/assets/scenes/Physics2DTest.msc");
+        serializer.Deserialize("alvis/assets/scenes/levels/Physics2D-Game.msc");
     }
 
     void EditorLayer::OnDetach() {}

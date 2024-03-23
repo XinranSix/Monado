@@ -53,7 +53,7 @@ namespace Monado {
         geoFramebufferSpec.ClearColor = { 0.1f, 0.1f, 0.1f, 1.0f };
 
         RenderPassSpecification geoRenderPassSpec;
-        geoRenderPassSpec.TargetFramebuffer = Monado::Framebuffer::Create(geoFramebufferSpec);
+        geoRenderPassSpec.TargetFramebuffer = Framebuffer::Create(geoFramebufferSpec);
         s_Data.GeoPass = RenderPass::Create(geoRenderPassSpec);
 
         FramebufferSpecification compFramebufferSpec;
@@ -63,7 +63,7 @@ namespace Monado {
         compFramebufferSpec.ClearColor = { 0.5f, 0.1f, 0.1f, 1.0f };
 
         RenderPassSpecification compRenderPassSpec;
-        compRenderPassSpec.TargetFramebuffer = Monado::Framebuffer::Create(compFramebufferSpec);
+        compRenderPassSpec.TargetFramebuffer = Framebuffer::Create(compFramebufferSpec);
         s_Data.CompositePass = RenderPass::Create(compRenderPassSpec);
 
         s_Data.CompositeShader = Shader::Create("alvis/assets/shaders/SceneComposite.glsl");

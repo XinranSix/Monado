@@ -6,11 +6,14 @@
 
 #include "glm/glm.hpp"
 
-#include "monado/renderer/vertexArray.h"
 #include "monado/core/timeStep.h"
 #include "monado/core/log.h"
 #include "monado/core/math/aabb.h"
 #include "monado/renderer/material.h"
+#include "monado/renderer/pipeline.h"
+#include "monado/Renderer/indexBuffer.h"
+#include "monado/renderer/vertexBuffer.h"
+#include "monado/renderer/shader.h"
 
 struct aiNode;
 struct aiAnimation;
@@ -154,7 +157,9 @@ namespace Monado {
         uint32_t m_BoneCount = 0;
         std::vector<BoneInfo> m_BoneInfo;
 
-        Ref<VertexArray> m_VertexArray;
+        Ref<Pipeline> m_Pipeline;
+        Ref<VertexBuffer> m_VertexBuffer;
+        Ref<IndexBuffer> m_IndexBuffer;
 
         std::vector<Vertex> m_StaticVertices;
         std::vector<AnimatedVertex> m_AnimatedVertices;
@@ -184,5 +189,4 @@ namespace Monado {
         friend class Renderer;
         friend class SceneHierarchyPanel;
     };
-
 } // namespace Monado

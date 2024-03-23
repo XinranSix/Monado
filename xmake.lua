@@ -83,7 +83,7 @@ target("alvis")
     else
         add_links("./libs/mono/lib/Release/mono-2.0-sgen.lib")
     end
-    add_deps("monado")
+    add_deps("monado") 
     add_packages("opengl", "glfw", "glad", "stb", "glm", "stb", "spdlog", "entt", "box2d")
     after_build(function (target)
         os.cp("alvis/assets", target:targetdir() .. "/alvis/assets")

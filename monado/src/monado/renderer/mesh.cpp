@@ -1,6 +1,7 @@
 #include "monado/renderer/mesh.h"
 #include "monado/core/log.h"
 #include "monado/renderer/renderer.h"
+#include "monado/renderer/vertexBuffer.h"
 
 #include "imgui.h"
 
@@ -88,7 +89,7 @@ namespace Monado {
         m_Scene = scene;
 
         m_IsAnimated = scene->mAnimations != nullptr;
-        m_MeshShader = m_IsAnimated ? Renderer::GetShaderLibrary()->Get("MonadoPBR_Anim")
+        m_MeshShader = m_IsAnimated ? Renderer::GetShaderLibrary()->Get("MonadolPBR_Anim")
                                     : Renderer::GetShaderLibrary()->Get("MonadoPBR_Static");
         m_BaseMaterial = Ref<Material>::Create(m_MeshShader);
         // m_MaterialInstance = Ref<MaterialInstance>::Create(m_BaseMaterial);
@@ -239,7 +240,7 @@ namespace Monado {
                 MND_MESH_LOG("    ROUGHNESS = {0}", roughness);
                 bool hasAlbedoMap = aiMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiTexPath) == AI_SUCCESS;
                 if (hasAlbedoMap) {
-                    // TODO: Temp - this should be handled by Monado's filesystem
+                    // TODO: Temp - this should be handled by Hazel's filesystem
                     std::filesystem::path path = filename;
                     auto parentPath = path.parent_path();
                     parentPath /= std::string(aiTexPath.data);
@@ -263,7 +264,7 @@ namespace Monado {
                 // Normal maps
                 mi->Set("u_NormalTexToggle", 0.0f);
                 if (aiMaterial->GetTexture(aiTextureType_NORMALS, 0, &aiTexPath) == AI_SUCCESS) {
-                    // TODO: Temp - this should be handled by Monado's filesystem
+                    // TODO: Temp - this should be handled by Hazel's filesystem
                     std::filesystem::path path = filename;
                     auto parentPath = path.parent_path();
                     parentPath /= std::string(aiTexPath.data);
@@ -284,7 +285,7 @@ namespace Monado {
                 // mi->Set("u_Roughness", 1.0f);
                 // mi->Set("u_RoughnessTexToggle", 0.0f);
                 if (aiMaterial->GetTexture(aiTextureType_SHININESS, 0, &aiTexPath) == AI_SUCCESS) {
-                    // TODO: Temp - this should be handled by Monado's filesystem
+                    // TODO: Temp - this should be handled by Hazel's filesystem
                     std::filesystem::path path = filename;
                     auto parentPath = path.parent_path();
                     parentPath /= std::string(aiTexPath.data);
@@ -306,7 +307,7 @@ namespace Monado {
 				// Metalness map (or is it??)
 				if (aiMaterial->Get("$raw.ReflectionFactor|file", aiPTI_String, 0, aiTexPath) == AI_SUCCESS)
 				{
-					// TODO: Temp - this should be handled by Monado's filesystem
+					// TODO: Temp - this should be handled by Hazel's filesystem
 					std::filesystem::path path = filename;
 					auto parentPath = path.parent_path();
 					parentPath /= std::string(aiTexPath.data);
@@ -368,7 +369,7 @@ namespace Monado {
                         if (key == "$raw.ReflectionFactor|file") {
                             metalnessTextureFound = true;
 
-                            // TODO: Temp - this should be handled by Monado's filesystem
+                            // TODO: Temp - this should be handled by Hazel's filesystem
                             std::filesystem::path path = filename;
                             auto parentPath = path.parent_path();
                             parentPath /= str;
@@ -398,34 +399,30 @@ namespace Monado {
             MND_MESH_LOG("------------------------");
         }
 
-        m_VertexArray = VertexArray::Create();
+        VertexBufferLayout vertexLayout;
         if (m_IsAnimated) {
-            auto vb =
+            m_VertexBuffer =
                 VertexBuffer::Create(m_AnimatedVertices.data(), m_AnimatedVertices.size() * sizeof(AnimatedVertex));
-            vb->SetLayout({
-                { ShaderDataType::Float3, "a_Position" },
-                { ShaderDataType::Float3, "a_Normal" },
-                { ShaderDataType::Float3, "a_Tangent" },
-                { ShaderDataType::Float3, "a_Binormal" },
-                { ShaderDataType::Float2, "a_TexCoord" },
-                { ShaderDataType::Int4, "a_BoneIDs" },
+            vertexLayout = {
+                { ShaderDataType::Float3, "a_Position" },    { ShaderDataType::Float3, "a_Normal" },
+                { ShaderDataType::Float3, "a_Tangent" },     { ShaderDataType::Float3, "a_Binormal" },
+                { ShaderDataType::Float2, "a_TexCoord" },    { ShaderDataType::Int4, "a_BoneIDs" },
                 { ShaderDataType::Float4, "a_BoneWeights" },
-            });
-            m_VertexArray->AddVertexBuffer(vb);
+            };
         } else {
-            auto vb = VertexBuffer::Create(m_StaticVertices.data(), m_StaticVertices.size() * sizeof(Vertex));
-            vb->SetLayout({
-                { ShaderDataType::Float3, "a_Position" },
-                { ShaderDataType::Float3, "a_Normal" },
-                { ShaderDataType::Float3, "a_Tangent" },
-                { ShaderDataType::Float3, "a_Binormal" },
+            m_VertexBuffer = VertexBuffer::Create(m_StaticVertices.data(), m_StaticVertices.size() * sizeof(Vertex));
+            vertexLayout = {
+                { ShaderDataType::Float3, "a_Position" }, { ShaderDataType::Float3, "a_Normal" },
+                { ShaderDataType::Float3, "a_Tangent" },  { ShaderDataType::Float3, "a_Binormal" },
                 { ShaderDataType::Float2, "a_TexCoord" },
-            });
-            m_VertexArray->AddVertexBuffer(vb);
+            };
         }
 
-        auto ib = IndexBuffer::Create(m_Indices.data(), m_Indices.size() * sizeof(Index));
-        m_VertexArray->SetIndexBuffer(ib);
+        m_IndexBuffer = IndexBuffer::Create(m_Indices.data(), m_Indices.size() * sizeof(Index));
+
+        PipelineSpecification pipelineSpecification;
+        pipelineSpecification.Layout = vertexLayout;
+        m_Pipeline = Pipeline::Create(pipelineSpecification);
     }
 
     Mesh::~Mesh() {}
