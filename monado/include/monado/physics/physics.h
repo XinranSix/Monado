@@ -22,10 +22,16 @@ namespace Monado {
         // TODO: GPU?
     };
 
+    enum class FrictionType { Patch, OneDirectional, TwoDirectional };
+
     struct PhysicsSettings {
         float FixedTimestep = 0.02F;
         glm::vec3 Gravity = { 0.0F, -9.81F, 0.0F };
         BroadphaseType BroadphaseAlgorithm = BroadphaseType::AutomaticBoxPrune;
+        glm::vec3 WorldBoundsMin = glm::vec3(0.0F);
+        glm::vec3 WorldBoundsMax = glm::vec3(1.0F);
+        uint32_t WorldBoundsSubdivisions = 2;
+        FrictionType FrictionModel = FrictionType::Patch;
     };
 
     struct RaycastHit {

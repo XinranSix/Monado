@@ -133,6 +133,16 @@ namespace Monado {
         return physx::PxBroadPhaseType::eABP;
     }
 
+    static physx::PxFrictionType::Enum MonadoToPhysXFrictionType(FrictionType type) {
+        switch (type) {
+        case Monado::FrictionType::Patch: return physx::PxFrictionType::ePATCH;
+        case Monado::FrictionType::OneDirectional: return physx::PxFrictionType::eONE_DIRECTIONAL;
+        case Monado::FrictionType::TwoDirectional: return physx::PxFrictionType::eTWO_DIRECTIONAL;
+        }
+
+        return physx::PxFrictionType::ePATCH;
+    }
+
     physx::PxScene *PXPhysicsWrappers::CreateScene() {
         physx::PxSceneDesc sceneDesc(s_Physics->getTolerancesScale());
 
@@ -143,6 +153,7 @@ namespace Monado {
         sceneDesc.cpuDispatcher = physx::PxDefaultCpuDispatcherCreate(1);
         sceneDesc.filterShader = MonadoFilterShader;
         sceneDesc.simulationEventCallback = &s_ContactListener;
+        sceneDesc.frictionType = MonadoToPhysXFrictionType(settings.FrictionModel);
 
         MND_CORE_ASSERT(sceneDesc.isValid());
         return s_Physics->createScene(sceneDesc);

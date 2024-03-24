@@ -6,6 +6,8 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
+#include "glm/gtc/type_ptr.hpp"
+
 namespace Monado {
 
     static int32_t s_SelectedLayer = -1;
@@ -41,23 +43,18 @@ namespace Monado {
         Property("Fixed Timestep (Default: 0.02)", settings.FixedTimestep);
         Property("Gravity (Default: -9.81)", settings.Gravity.y);
 
-        // Broadphase Type
-        const char *broadphaseTypeStrings[] = { "Sweep And Prune", "Multi Box Pruning", "Automatic Box Pruning" };
-        const char *currentType = broadphaseTypeStrings[(int)settings.BroadphaseAlgorithm];
-        ImGui::TextUnformatted("Broadphase Type");
-        ImGui::SameLine();
-        if (ImGui::BeginCombo("##BroadphaseTypeSelection", currentType)) {
-            for (int type = 0; type < 3; type++) {
-                bool is_selected = (currentType == broadphaseTypeStrings[type]);
-                if (ImGui::Selectable(broadphaseTypeStrings[type], is_selected)) {
-                    currentType = broadphaseTypeStrings[type];
-                    settings.BroadphaseAlgorithm = (BroadphaseType)type;
-                }
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
+        static const char *broadphaseTypeStrings[] = { "Sweep And Prune", "Multi Box Pruning",
+                                                       "Automatic Box Pruning" };
+        Property("Broadphase Type", broadphaseTypeStrings, 3, (int *)&settings.BroadphaseAlgorithm);
+
+        if (settings.BroadphaseAlgorithm != BroadphaseType::AutomaticBoxPrune) {
+            Property("World Bounds (Min)", settings.WorldBoundsMin);
+            Property("World Bounds (Max)", settings.WorldBoundsMax);
+            Property("Grid Subdivisions", settings.WorldBoundsSubdivisions, 1.0F, 10000.0F);
         }
+
+        static const char *frictionTypeStrings[] = { "Patch", "One Directional", "Two Directional" };
+        Property("Friction Model", frictionTypeStrings, 3, (int *)&settings.FrictionModel);
     }
 
     void PhysicsSettingsWindow::RenderLayerList() {
@@ -134,7 +131,65 @@ namespace Monado {
         ImGui::PushItemWidth(-1);
 
         std::string id = "##" + std::string(label);
-        bool changed = ImGui::SliderFloat(id.c_str(), &value, min, max);
+        bool changed = ImGui::DragFloat(id.c_str(), &value, 1.0F, min, max);
+
+        ImGui::PopItemWidth();
+        ImGui::NextColumn();
+
+        return changed;
+    }
+
+    bool PhysicsSettingsWindow::Property(const char *label, uint32_t &value, uint32_t min, uint32_t max) {
+        ImGui::Text(label);
+        ImGui::NextColumn();
+        ImGui::PushItemWidth(-1);
+
+        std::string id = "##" + std::string(label);
+        bool changed = ImGui::DragInt(id.c_str(), (int *)&value, 1.0F, min, max);
+
+        ImGui::PopItemWidth();
+        ImGui::NextColumn();
+
+        return changed;
+    }
+
+    bool PhysicsSettingsWindow::Property(const char *label, glm::vec3 &value, float min, float max) {
+        ImGui::Text(label);
+        ImGui::NextColumn();
+        ImGui::PushItemWidth(-1);
+
+        std::string id = "##" + std::string(label);
+        bool changed = ImGui::DragFloat3(id.c_str(), glm::value_ptr(value), 1.0F, min, max);
+
+        ImGui::PopItemWidth();
+        ImGui::NextColumn();
+
+        return changed;
+    }
+
+    bool PhysicsSettingsWindow::Property(const char *label, const char **options, int32_t optionCount,
+                                         int32_t *selected) {
+        const char *current = options[*selected];
+        ImGui::Text(label);
+        ImGui::NextColumn();
+        ImGui::PushItemWidth(-1);
+
+        bool changed = false;
+
+        std::string id = "##" + std::string(label);
+        if (ImGui::BeginCombo(id.c_str(), current)) {
+            for (int i = 0; i < optionCount; i++) {
+                bool is_selected = (current == options[i]);
+                if (ImGui::Selectable(options[i], is_selected)) {
+                    current = options[i];
+                    *selected = i;
+                    changed = true;
+                }
+                if (is_selected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
 
         ImGui::PopItemWidth();
         ImGui::NextColumn();

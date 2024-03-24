@@ -1,5 +1,9 @@
 #pragma once
 
+#include <cstdint>
+
+#include "glm/glm.hpp"
+
 namespace Monado {
 
     class PhysicsSettingsWindow {
@@ -12,7 +16,10 @@ namespace Monado {
         static void RenderSelectedLayer();
 
     private:
+        static bool Property(const char *label, const char **options, int32_t optionCount, int32_t *selected);
         static bool Property(const char *label, float &value, float min = -1.0F, float max = 1.0F);
+        static bool Property(const char *label, uint32_t &value, uint32_t min = 0.0F, uint32_t max = 1.0F);
+        static bool Property(const char *label, glm::vec3 &value, float min = 0.0F, float max = 0.0F);
     };
 
 } // namespace Monado
