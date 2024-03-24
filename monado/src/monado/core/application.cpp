@@ -1,5 +1,6 @@
 #include "monado/core/application.h"
 #include "monado/renderer/renderer.h"
+#include "monado/core/input.h"
 #include "monado/core/log.h"
 #include "monado/renderer/framebuffer.h"
 #include "monado/script/scriptEngine.h"

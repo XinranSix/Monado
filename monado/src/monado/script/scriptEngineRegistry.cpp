@@ -69,6 +69,10 @@ namespace Monado {
                                Monado::Script::Monado_Entity_SetTransform);
         mono_add_internal_call("Monado.TransformComponent::GetRelativeDirection_Native",
                                Monado::Script::Monado_TransformComponent_GetRelativeDirection);
+        mono_add_internal_call("Monado.TransformComponent::GetRotation_Native",
+                               Monado::Script::Monado_TransformComponent_GetRotation);
+        mono_add_internal_call("Monado.TransformComponent::SetRotation_Native",
+                               Monado::Script::Monado_TransformComponent_SetRotation);
 
         mono_add_internal_call("Monado.MeshComponent::GetMesh_Native", Monado::Script::Monado_MeshComponent_GetMesh);
         mono_add_internal_call("Monado.MeshComponent::SetMesh_Native", Monado::Script::Monado_MeshComponent_SetMesh);
@@ -88,8 +92,13 @@ namespace Monado {
                                Monado::Script::Monado_RigidBodyComponent_GetLinearVelocity);
         mono_add_internal_call("Monado.RigidBodyComponent::SetLinearVelocity_Native",
                                Monado::Script::Monado_RigidBodyComponent_SetLinearVelocity);
+        mono_add_internal_call("Monado.RigidBodyComponent::Rotate_Native",
+                               Monado::Script::Monado_RigidBodyComponent_Rotate);
 
         mono_add_internal_call("Monado.Input::IsKeyPressed_Native", Monado::Script::Monado_Input_IsKeyPressed);
+        mono_add_internal_call("Monado.Input::GetMousePosition_Native", Monado::Script::Monado_Input_GetMousePosition);
+        mono_add_internal_call("Monado.Input::SetCursorMode_Native", Monado::Script::Monado_Input_SetCursorMode);
+        mono_add_internal_call("Monado.Input::GetCursorMode_Native", Monado::Script::Monado_Input_GetCursorMode);
 
         mono_add_internal_call("Monado.Texture2D::Constructor_Native", Monado::Script::Monado_Texture2D_Constructor);
         mono_add_internal_call("Monado.Texture2D::Destructor_Native", Monado::Script::Monado_Texture2D_Destructor);

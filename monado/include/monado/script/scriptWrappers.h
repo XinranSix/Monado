@@ -1,7 +1,7 @@
 #pragma once
 
 #include "monado/script/scriptEngine.h"
-#include "monado/core/keyCodes.h"
+#include "monado/core/input.h"
 #include "monado/physics/physics.h"
 
 #include "glm/glm.hpp"
@@ -19,6 +19,9 @@ namespace Monado {
 
         // Input
         bool Monado_Input_IsKeyPressed(KeyCode key);
+        void Monado_Input_GetMousePosition(glm::vec2 *outPosition);
+        void Monado_Input_SetCursorMode(CursorMode mode);
+        CursorMode Monado_Input_GetCursorMode();
 
         // Entity
         void Monado_Entity_GetTransform(uint64_t entityID, glm::mat4 *outTransform);
@@ -29,6 +32,8 @@ namespace Monado {
 
         void Monado_TransformComponent_GetRelativeDirection(uint64_t entityID, glm::vec3 *outDirection,
                                                             glm::vec3 *inAbsoluteDirection);
+        void Monado_TransformComponent_GetRotation(uint64_t entityID, glm::vec3 *outRotation);
+        void Monado_TransformComponent_SetRotation(uint64_t entityID, glm::vec3 *inRotation);
 
         void *Monado_MeshComponent_GetMesh(uint64_t entityID);
         void Monado_MeshComponent_SetMesh(uint64_t entityID, Ref<Mesh> *inMesh);
@@ -42,6 +47,7 @@ namespace Monado {
         void Monado_RigidBodyComponent_AddTorque(uint64_t entityID, glm::vec3 *torque, ForceMode forceMode);
         void Monado_RigidBodyComponent_GetLinearVelocity(uint64_t entityID, glm::vec3 *outVelocity);
         void Monado_RigidBodyComponent_SetLinearVelocity(uint64_t entityID, glm::vec3 *velocity);
+        void Monado_RigidBodyComponent_Rotate(uint64_t entityID, glm::vec3 *rotation);
 
         // Renderer
         // Texture2D
@@ -69,5 +75,6 @@ namespace Monado {
         int Monado_Mesh_GetMaterialCount(Ref<Mesh> *inMesh);
 
         void *Monado_MeshFactory_CreatePlane(float width, float height);
+
     } // namespace Script
 } // namespace Monado

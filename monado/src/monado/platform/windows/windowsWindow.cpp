@@ -115,7 +115,6 @@ namespace Monado {
 
         glfwSetCursorPosCallback(m_Window, [](GLFWwindow *window, double x, double y) {
             auto &data = *((WindowData *)glfwGetWindowUserPointer(window));
-
             MouseMovedEvent event((float)x, (float)y);
             data.EventCallback(event);
         });

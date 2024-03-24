@@ -25,6 +25,9 @@ Entities:
         - Name: JumpForce
           Type: 1
           Data: 50
+        - Name: MouseSensitivity
+          Type: 1
+          Data: 10
     MeshComponent:
       AssetPath: alvis\assets\meshes\Capsule.fbx
     RigidBodyComponent:
@@ -39,8 +42,8 @@ Entities:
         LockRotationY: false
         LockRotationZ: true
     PhysicsMaterialComponent:
-      StaticFriction: 0.100000001
-      DynamicFriction: 0.100000001
+      StaticFriction: 0.400000006
+      DynamicFriction: 0.400000006
       Bounciness: 0.100000001
     MeshColliderComponent:
       AssetPath: alvis\assets\meshes\Capsule.fbx
