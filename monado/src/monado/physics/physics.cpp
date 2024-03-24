@@ -124,6 +124,8 @@ namespace Monado {
         s_Scene = nullptr;
     }
 
+    void *Physics::GetPhysicsScene() { return s_Scene; }
+
     void Physics::ConnectVisualDebugger() { PXPhysicsWrappers::ConnectVisualDebugger(); }
 
     void Physics::DisconnectVisualDebugger() { PXPhysicsWrappers::DisconnectVisualDebugger(); }

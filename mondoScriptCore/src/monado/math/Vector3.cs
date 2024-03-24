@@ -54,7 +54,29 @@ namespace Monado
 			Z = Mathf.Clamp(Z, min.Z, max.Z);
 		}
 
-		public static Vector3 operator *(Vector3 left, float scalar)
+        public float Length()
+        {
+            return (float)Math.Sqrt(X * X + Y * Y + Z * Z);
+        }
+
+        public Vector3 Normalized()
+        {
+            float length = Length();
+            float x = X / length;
+            float y = Y / length;
+            float z = Z / length;
+            return new Vector3(x, y, z);
+        }
+
+        public void Normalize()
+        {
+            float length = Length();
+            X = X / length;
+            Y = Y / length;
+            Z = Z / length;
+        }
+
+        public static Vector3 operator *(Vector3 left, float scalar)
 		{
 			return new Vector3(left.X * scalar, left.Y * scalar, left.Z * scalar);
 		}
@@ -69,7 +91,12 @@ namespace Monado
 			return new Vector3(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
 		}
 
-		public static Vector3 operator -(Vector3 left, Vector3 right)
+        public static Vector3 operator +(Vector3 left, float right)
+        {
+            return new Vector3(left.X + right, left.Y + right, left.Z + right);
+        }
+
+        public static Vector3 operator -(Vector3 left, Vector3 right)
 		{
 			return new Vector3(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
 		}

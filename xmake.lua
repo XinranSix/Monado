@@ -13,10 +13,11 @@ end
 if is_mode("debug") then
     -- add_defines("MND_DEBUG", "MND_PROFILE")
     add_defines("MND_DEBUG")
+elseif is_mode("release") then
+    add_defines("MND_RELEASE")
 end
 
 add_defines("STB_IMAGE_IMPLEMENTATION", "PX_PHYSX_STATIC_LIB", "NDEBUG")
-
 
 add_includedirs("imgui/include")
 add_includedirs("monado/include")

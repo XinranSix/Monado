@@ -6,6 +6,9 @@
 
 namespace Monado {
 
+    struct SceneParams;
+    struct RaycastHit;
+
     class PXPhysicsWrappers {
     public:
         static physx::PxScene *CreateScene(const SceneParams &sceneParams);
@@ -23,8 +26,9 @@ namespace Monado {
                                     MeshColliderComponent &collider, const glm::vec3 &size = glm::vec3(0.0F));
 
         static physx::PxConvexMesh *CreateConvexMesh(MeshColliderComponent &collider);
-
         static physx::PxMaterial *CreateMaterial(const PhysicsMaterialComponent &material);
+
+        static bool Raycast(const glm::vec3 &origin, const glm::vec3 &direction, float maxDistance, RaycastHit *hit);
 
     private:
         static void Initialize();

@@ -57,6 +57,8 @@ namespace Monado {
 
         mono_add_internal_call("Monado.Noise::PerlinNoise_Native", Monado::Script::Monado_Noise_PerlinNoise);
 
+        mono_add_internal_call("Monado.Physics::Raycast_Native", Monado::Script::Monado_Physics_Raycast);
+
         mono_add_internal_call("Monado.Entity::GetTransform_Native", Monado::Script::Monado_Entity_GetTransform);
         mono_add_internal_call("Monado.Entity::SetTransform_Native", Monado::Script::Monado_Entity_SetTransform);
         mono_add_internal_call("Monado.Entity::CreateComponent_Native", Monado::Script::Monado_Entity_CreateComponent);
@@ -96,6 +98,8 @@ namespace Monado {
                                Monado::Script::Monado_RigidBodyComponent_Rotate);
 
         mono_add_internal_call("Monado.Input::IsKeyPressed_Native", Monado::Script::Monado_Input_IsKeyPressed);
+        mono_add_internal_call("Monado.Input::IsMouseButtonPressed_Native",
+                               Monado::Script::Monado_Input_IsMouseButtonPressed);
         mono_add_internal_call("Monado.Input::GetMousePosition_Native", Monado::Script::Monado_Input_GetMousePosition);
         mono_add_internal_call("Monado.Input::SetCursorMode_Native", Monado::Script::Monado_Input_SetCursorMode);
         mono_add_internal_call("Monado.Input::GetCursorMode_Native", Monado::Script::Monado_Input_GetCursorMode);
@@ -128,13 +132,6 @@ namespace Monado {
 
         mono_add_internal_call("Monado.MeshFactory::CreatePlane_Native",
                                Monado::Script::Monado_MeshFactory_CreatePlane);
-
-        // static bool IsKeyPressed(KeyCode key) { return s_Instance->IsKeyPressedImpl(key); }
-        //
-        // static bool IsMouseButtonPressed(MouseCode button) { return s_Instance->IsMouseButtonPressedImpl(button); }
-        // static std::pair<float, float> GetMousePosition() { return s_Instance->GetMousePositionImpl(); }
-        // static float GetMouseX() { return s_Instance->GetMouseXImpl(); }
-        // static float GetMouseY() { return s_Instance->GetMouseYImpl(); }
     }
 
 } // namespace Monado

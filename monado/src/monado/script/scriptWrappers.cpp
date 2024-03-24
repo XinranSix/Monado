@@ -5,6 +5,7 @@
 #include "monado/scene/components.h"
 #include "monado/core/input.h"
 #include "monado/physics/physicsUtil.h"
+#include "monado/physics/pxPhysicsWrappers.h"
 
 #include "box2d/box2d.h"
 #define GLM_ENABLE_EXPERIMENTAL
@@ -57,6 +58,8 @@ namespace Monado {
 
         bool Monado_Input_IsKeyPressed(KeyCode key) { return Input::IsKeyPressed(key); }
 
+        bool Monado_Input_IsMouseButtonPressed(MouseButton button) { return Input::IsMouseButtonPressed(button); }
+
         void Monado_Input_GetMousePosition(glm::vec2 *outPosition) {
             auto [x, y] = Input::GetMousePosition();
             *outPosition = { x, y };
@@ -65,6 +68,10 @@ namespace Monado {
         void Monado_Input_SetCursorMode(CursorMode mode) { Input::SetCursorMode(mode); }
 
         CursorMode Monado_Input_GetCursorMode() { return Input::GetCursorMode(); }
+
+        bool Monado_Physics_Raycast(glm::vec3 *origin, glm::vec3 *direction, float maxDistance, RaycastHit *hit) {
+            return PXPhysicsWrappers::Raycast(*origin, *direction, maxDistance, hit);
+        }
 
         ////////////////////////////////////////////////////////////////
 
