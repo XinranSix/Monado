@@ -2,6 +2,7 @@
 #include "monado/physics/physics.h"
 #include "monado/physics/pXPhysicsWrappers.h"
 #include "monado/scene/scene.h"
+#include <cstdint>
 
 namespace Monado {
 
@@ -14,189 +15,6 @@ namespace Monado {
         return { translation, orientation, scale };
     }
 
-    static std::vector<std::string> s_LayerNames;
-
-    uint32_t PhysicsLayerManager::AddLayer(const std::string &name, bool setCollisions) {
-        uint32_t layerId = GetNextLayerID();
-        PhysicsLayer layer = { layerId, name, (uint32_t)BIT(layerId) };
-        s_Layers.push_back(layer);
-
-        s_LayerCollisions[layerId] = std::vector<PhysicsLayer>();
-        s_LayerCollisions[layerId].reserve(1);
-
-        if (setCollisions) {
-            for (const auto &layer2 : s_Layers) {
-                SetLayerCollision(layer.LayerID, layer2.LayerID, true);
-            }
-        }
-
-        s_LayerNames.push_back(name);
-        return layer.LayerID;
-    }
-
-    void PhysicsLayerManager::RemoveLayer(uint32_t layerId) {
-        if (!IsLayerValid(layerId))
-            return;
-
-        // TODO: Cleanup this code
-
-        std::vector<std::string>::iterator it = s_LayerNames.begin();
-        for (; it != s_LayerNames.end();) {
-            if (*it == GetLayerInfo(layerId).Name) {
-                s_LayerNames.erase(it);
-                break;
-            } else {
-                ++it;
-            }
-        }
-
-        for (auto &kv : s_LayerCollisions) {
-            if (kv.first == layerId)
-                continue;
-
-            std::vector<PhysicsLayer>::iterator layerIt = kv.second.begin();
-            for (; layerIt != kv.second.end();) {
-                if (layerIt->LayerID == layerId) {
-                    GetLayerInfo(kv.first).CollidesWith &= ~GetLayerInfo(layerId).BitValue;
-                    kv.second.erase(layerIt);
-                    break;
-                } else {
-                    ++layerIt;
-                }
-            }
-        }
-
-        s_LayerCollisions.erase(layerId);
-
-        std::vector<PhysicsLayer>::iterator layerIt = s_Layers.begin();
-        for (; layerIt != s_Layers.end();) {
-            if (layerIt->LayerID == layerId) {
-                s_Layers.erase(layerIt);
-                break;
-            } else {
-                ++layerIt;
-            }
-        }
-    }
-
-    void PhysicsLayerManager::SetLayerCollision(uint32_t layerId, uint32_t otherLayer, bool collides) {
-        if (ShouldCollide(layerId, otherLayer) && collides)
-            return;
-
-        PhysicsLayer &layerInfo = GetLayerInfo(layerId);
-        PhysicsLayer &otherLayerInfo = GetLayerInfo(otherLayer);
-
-        // TODO: Cleanup this code
-
-        if (collides) {
-            s_LayerCollisions[layerId].push_back(otherLayerInfo);
-            layerInfo.CollidesWith |= otherLayerInfo.BitValue;
-
-            if (layerId != otherLayer) {
-                s_LayerCollisions[otherLayer].push_back(layerInfo);
-                otherLayerInfo.CollidesWith |= layerInfo.BitValue;
-            }
-        } else {
-            std::vector<PhysicsLayer>::iterator it = s_LayerCollisions[layerId].begin();
-            for (; it != s_LayerCollisions[layerId].end();) {
-                if (it->LayerID == otherLayer) {
-                    s_LayerCollisions[layerId].erase(it);
-                    layerInfo.CollidesWith &= ~otherLayerInfo.BitValue;
-                    break;
-                } else {
-                    ++it;
-                }
-            }
-
-            it = s_LayerCollisions[otherLayer].begin();
-            for (; it != s_LayerCollisions[otherLayer].end();) {
-                if (it->LayerID == layerId) {
-                    s_LayerCollisions[otherLayer].erase(it);
-                    otherLayerInfo.CollidesWith &= ~layerInfo.BitValue;
-                    break;
-                } else {
-                    ++it;
-                }
-            }
-        }
-    }
-
-    const std::vector<Monado::PhysicsLayer> &PhysicsLayerManager::GetLayerCollisions(uint32_t layerId) {
-        MND_CORE_ASSERT(s_LayerCollisions.find(layerId) != s_LayerCollisions.end());
-        return s_LayerCollisions[layerId];
-    }
-
-    PhysicsLayer &PhysicsLayerManager::GetLayerInfo(uint32_t layerId) {
-        // MND_CORE_ASSERT(s_Layers.find(layerId) != s_Layers.end());
-        for (auto &layer : s_Layers) {
-            if (layer.LayerID == layerId) {
-                return layer;
-            }
-        }
-
-        return s_NullLayer;
-    }
-
-    Monado::PhysicsLayer &PhysicsLayerManager::GetLayerInfo(const std::string &layerName) {
-        for (auto &layer : s_Layers) {
-            if (layer.Name == layerName) {
-                return layer;
-            }
-        }
-
-        return s_NullLayer;
-    }
-
-    bool PhysicsLayerManager::ShouldCollide(uint32_t layer1, uint32_t layer2) {
-        for (const auto &collidingLayer : s_LayerCollisions[layer1]) {
-            if (collidingLayer.LayerID == layer2)
-                return true;
-        }
-
-        return false;
-    }
-
-    bool PhysicsLayerManager::IsLayerValid(uint32_t layerId) {
-        for (const auto &layer : s_Layers) {
-            if (layer.LayerID == layerId)
-                return true;
-        }
-
-        return false;
-    }
-
-    const std::vector<std::string> &PhysicsLayerManager::GetLayerNames() { return s_LayerNames; }
-
-    void PhysicsLayerManager::ClearLayers() {
-        s_Layers.clear();
-        s_LayerCollisions.clear();
-        s_LayerNames.clear();
-    }
-
-    void PhysicsLayerManager::Init() { AddLayer("Default"); }
-
-    void PhysicsLayerManager::Shutdown() {}
-
-    uint32_t PhysicsLayerManager::GetNextLayerID() {
-        int32_t lastId = -1;
-
-        for (const auto &layer : s_Layers) {
-            if (lastId != -1) {
-                if (layer.LayerID != lastId + 1) {
-                    return lastId + 1;
-                }
-            }
-
-            lastId = layer.LayerID;
-        }
-
-        return s_Layers.size();
-    }
-
-    std::vector<PhysicsLayer> PhysicsLayerManager::s_Layers;
-    std::unordered_map<uint32_t, std::vector<PhysicsLayer>> PhysicsLayerManager::s_LayerCollisions;
-    PhysicsLayer PhysicsLayerManager::s_NullLayer = { 0, "NULL", 0, -1 };
-
     static physx::PxScene *s_Scene;
     static std::vector<Entity> s_SimulatedEntities;
     static Entity *s_EntityStorageBuffer;
@@ -205,14 +23,10 @@ namespace Monado {
 
     void Physics::Init() {
         PXPhysicsWrappers::Initialize();
-        PhysicsLayerManager::Init();
-        ;
+        PhysicsLayerManager::AddLayer("Default");
     }
 
-    void Physics::Shutdown() {
-        PhysicsLayerManager::Shutdown();
-        PXPhysicsWrappers::Shutdown();
-    }
+    void Physics::Shutdown() { PXPhysicsWrappers::Shutdown(); }
 
     void Physics::CreateScene(const SceneParams &params) {
         MND_CORE_ASSERT(s_Scene == nullptr, "Scene already has a Physics Scene!");
@@ -235,7 +49,6 @@ namespace Monado {
         if (s_EntityStorageBuffer == nullptr)
             s_EntityStorageBuffer = new Entity[entityCount];
 
-        // Create Actor Body
         physx::PxRigidActor *actor = PXPhysicsWrappers::CreateActor(rigidbody, e.Transform());
         s_SimulatedEntities.push_back(e);
         Entity *entityStorage = &s_EntityStorageBuffer[s_EntityStorageBufferPosition++];
@@ -243,10 +56,7 @@ namespace Monado {
         actor->userData = (void *)entityStorage;
         rigidbody.RuntimeActor = actor;
 
-        // Physics Material
         physx::PxMaterial *material = PXPhysicsWrappers::CreateMaterial(e.GetComponent<PhysicsMaterialComponent>());
-
-        // Add all colliders
 
         const auto &transform = e.Transform();
         auto [translation, rotation, scale] = GetTransformDecomposition(transform);
@@ -271,7 +81,6 @@ namespace Monado {
             PXPhysicsWrappers::AddMeshCollider(*actor, *material, collider, scale);
         }
 
-        // Set collision filters
         PXPhysicsWrappers::SetCollisionFilters(*actor, rigidbody.Layer);
 
         s_Scene->addActor(*actor);
@@ -315,5 +124,152 @@ namespace Monado {
     void Physics::ConnectVisualDebugger() { PXPhysicsWrappers::ConnectVisualDebugger(); }
 
     void Physics::DisconnectVisualDebugger() { PXPhysicsWrappers::DisconnectVisualDebugger(); }
+
+    //////////////////////// Physics Layers ////////////////////////
+
+    template <typename T, typename ConditionFunction>
+    static bool RemoveIfExists(std::vector<T> &vector, ConditionFunction condition) {
+        for (typename std::vector<T>::iterator it = vector.begin(); it != vector.end(); ++it) {
+            if (condition(*it)) {
+                vector.erase(it);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    uint32_t PhysicsLayerManager::AddLayer(const std::string &name, bool setCollisions) {
+        uint32_t layerId = GetNextLayerID();
+        PhysicsLayer layer = { layerId, name, (uint32_t)BIT(layerId) };
+        s_Layers.push_back(layer);
+
+        s_LayerCollisions[layerId] = std::vector<PhysicsLayer>();
+        s_LayerCollisions[layerId].reserve(1);
+
+        if (setCollisions) {
+            for (const auto &layer2 : s_Layers) {
+                SetLayerCollision(layer.LayerID, layer2.LayerID, true);
+            }
+        }
+
+        return layer.LayerID;
+    }
+
+    void PhysicsLayerManager::RemoveLayer(uint32_t layerId) {
+        if (!IsLayerValid(layerId))
+            return;
+
+        PhysicsLayer &layerInfo = GetLayer(layerId);
+
+        for (auto &kv : s_LayerCollisions) {
+            if (kv.first == layerId)
+                continue;
+
+            if (RemoveIfExists<PhysicsLayer>(kv.second,
+                                             [&](const PhysicsLayer &layer) { return layer.LayerID == layerId; })) {
+                GetLayer(kv.first).CollidesWith &= ~layerInfo.BitValue;
+            }
+        }
+
+        s_LayerCollisions.erase(layerId);
+
+        RemoveIfExists<PhysicsLayer>(s_Layers, [&](const PhysicsLayer &layer) { return layer.LayerID == layerId; });
+    }
+
+    void PhysicsLayerManager::SetLayerCollision(uint32_t layerId, uint32_t otherLayer, bool collides) {
+        if (ShouldCollide(layerId, otherLayer) && collides)
+            return;
+
+        PhysicsLayer &layerInfo = GetLayer(layerId);
+        PhysicsLayer &otherLayerInfo = GetLayer(otherLayer);
+
+        if (collides) {
+            s_LayerCollisions[layerId].push_back(otherLayerInfo);
+            layerInfo.CollidesWith |= otherLayerInfo.BitValue;
+
+            if (layerId == otherLayer)
+                return;
+
+            s_LayerCollisions[otherLayer].push_back(layerInfo);
+            otherLayerInfo.CollidesWith |= layerInfo.BitValue;
+        } else {
+            RemoveIfExists(s_LayerCollisions[layerId],
+                           [&](const PhysicsLayer &layer) { return layer.LayerID == otherLayer; });
+            layerInfo.CollidesWith &= ~otherLayerInfo.BitValue;
+
+            RemoveIfExists(s_LayerCollisions[otherLayer],
+                           [&](const PhysicsLayer &layer) { return layer.LayerID == layerId; });
+            otherLayerInfo.CollidesWith &= ~layerInfo.BitValue;
+        }
+    }
+
+    const std::vector<PhysicsLayer> &PhysicsLayerManager::GetLayerCollisions(uint32_t layerId) {
+        MND_CORE_ASSERT(s_LayerCollisions.find(layerId) != s_LayerCollisions.end());
+        return s_LayerCollisions[layerId];
+    }
+
+    PhysicsLayer &PhysicsLayerManager::GetLayer(uint32_t layerId) {
+        for (auto &layer : s_Layers) {
+            if (layer.LayerID == layerId) {
+                return layer;
+            }
+        }
+
+        return s_NullLayer;
+    }
+
+    PhysicsLayer &PhysicsLayerManager::GetLayer(const std::string &layerName) {
+        for (auto &layer : s_Layers) {
+            if (layer.Name == layerName) {
+                return layer;
+            }
+        }
+
+        return s_NullLayer;
+    }
+
+    bool PhysicsLayerManager::ShouldCollide(uint32_t layer1, uint32_t layer2) {
+        for (const auto &collidingLayer : s_LayerCollisions[layer1]) {
+            if (collidingLayer.LayerID == layer2)
+                return true;
+        }
+
+        return false;
+    }
+
+    bool PhysicsLayerManager::IsLayerValid(uint32_t layerId) {
+        for (const auto &layer : s_Layers) {
+            if (layer.LayerID == layerId)
+                return true;
+        }
+
+        return false;
+    }
+
+    void PhysicsLayerManager::ClearLayers() {
+        s_Layers.clear();
+        s_LayerCollisions.clear();
+    }
+
+    uint32_t PhysicsLayerManager::GetNextLayerID() {
+        int32_t lastId = -1;
+
+        for (const auto &layer : s_Layers) {
+            if (lastId != -1) {
+                if (layer.LayerID != lastId + 1) {
+                    return lastId + 1;
+                }
+            }
+
+            lastId = layer.LayerID;
+        }
+
+        return s_Layers.size();
+    }
+
+    std::vector<PhysicsLayer> PhysicsLayerManager::s_Layers;
+    std::unordered_map<uint32_t, std::vector<PhysicsLayer>> PhysicsLayerManager::s_LayerCollisions;
+    PhysicsLayer PhysicsLayerManager::s_NullLayer = { 0, "NULL", 0, -1 };
 
 } // namespace Monado

@@ -61,13 +61,13 @@ namespace Monado {
         if (s_SelectedLayer == -1)
             return;
 
-        const PhysicsLayer &layerInfo = PhysicsLayerManager::GetLayerInfo(s_SelectedLayer);
+        const PhysicsLayer &layerInfo = PhysicsLayerManager::GetLayer(s_SelectedLayer);
 
         for (const auto &layer : PhysicsLayerManager::GetLayers()) {
             if (layer.LayerID == s_SelectedLayer)
                 continue;
 
-            const PhysicsLayer &otherLayerInfo = PhysicsLayerManager::GetLayerInfo(layer.LayerID);
+            const PhysicsLayer &otherLayerInfo = PhysicsLayerManager::GetLayer(layer.LayerID);
             bool shouldCollide;
 
             if (layerInfo.CollidesWith == 0 || otherLayerInfo.CollidesWith == 0) {

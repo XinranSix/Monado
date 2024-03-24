@@ -794,7 +794,7 @@ namespace Monado {
                 rbc.Layer = 0;
 
             uint32_t currentLayer = rbc.Layer;
-            const PhysicsLayer &layerInfo = PhysicsLayerManager::GetLayerInfo(currentLayer);
+            const PhysicsLayer &layerInfo = PhysicsLayerManager::GetLayer(currentLayer);
             ImGui::TextUnformatted("Layer");
             ImGui::SameLine();
             if (ImGui::BeginCombo("##LayerSelection", layerInfo.Name.c_str())) {

@@ -19,6 +19,7 @@ Entities:
       BodyType: 0
       Mass: 1
       IsKinematic: false
+      Layer: 2
       Constraints:
         LockPositionX: false
         LockPositionY: false
@@ -57,6 +58,7 @@ Entities:
       BodyType: 1
       Mass: 1
       IsKinematic: false
+      Layer: 0
       Constraints:
         LockPositionX: false
         LockPositionY: false
@@ -84,6 +86,7 @@ Entities:
       BodyType: 1
       Mass: 0.5
       IsKinematic: false
+      Layer: 0
       Constraints:
         LockPositionX: false
         LockPositionY: false
@@ -112,6 +115,7 @@ Entities:
       BodyType: 1
       Mass: 0.100000001
       IsKinematic: false
+      Layer: 0
       Constraints:
         LockPositionX: false
         LockPositionY: false
@@ -154,6 +158,7 @@ Entities:
       BodyType: 1
       Mass: 1
       IsKinematic: false
+      Layer: 1
       Constraints:
         LockPositionX: false
         LockPositionY: false
@@ -168,3 +173,17 @@ Entities:
     MeshColliderComponent:
       AssetPath: alvis\assets\meshes\Capsule.fbx
       IsTrigger: false
+PhysicsLayers:
+  - Name: Default
+    CollidesWith:
+      - Name: Default
+      - Name: Ground
+  - Name: Player
+    CollidesWith:
+      - Name: Player
+      - Name: Ground
+  - Name: Ground
+    CollidesWith:
+      - Name: Default
+      - Name: Player
+      - Name: Ground

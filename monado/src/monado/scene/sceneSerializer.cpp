@@ -398,7 +398,7 @@ namespace Monado {
         out << YAML::Key << "PhysicsLayers";
         out << YAML::Value << YAML::BeginSeq;
         for (uint32_t i = 0; i < PhysicsLayerManager::GetLayerCount(); i++) {
-            const PhysicsLayer &layer = PhysicsLayerManager::GetLayerInfo(i);
+            const PhysicsLayer &layer = PhysicsLayerManager::GetLayer(i);
 
             out << YAML::BeginMap;
             out << YAML::Key << "Name" << YAML::Value << layer.Name;
@@ -675,13 +675,13 @@ namespace Monado {
             }
 
             for (auto layer : physicsLayers) {
-                const PhysicsLayer &layerInfo = PhysicsLayerManager::GetLayerInfo(layer["Name"].as<std::string>());
+                const PhysicsLayer &layerInfo = PhysicsLayerManager::GetLayer(layer["Name"].as<std::string>());
 
                 auto collidesWith = layer["CollidesWith"];
                 if (collidesWith) {
                     for (auto collisionLayer : collidesWith) {
                         const auto &otherLayer =
-                            PhysicsLayerManager::GetLayerInfo(collisionLayer["Name"].as<std::string>());
+                            PhysicsLayerManager::GetLayer(collisionLayer["Name"].as<std::string>());
                         PhysicsLayerManager::SetLayerCollision(layerInfo.LayerID, otherLayer.LayerID, true);
                     }
                 }

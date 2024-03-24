@@ -33,10 +33,11 @@ namespace Monado {
 
     glm::quat FromPhysXQuat(const physx::PxQuat &quat) { return glm::quat(quat.w, quat.x, quat.y, quat.z); }
 
-    physx::PxFilterFlags MonadoFilterShader(physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
-                                           physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
-                                           physx::PxPairFlags &pairFlags, const void *constantBlock,
-                                           physx::PxU32 constantBlockSize) {
+    physx::PxFilterFlags MonadoFilterShader(physx::PxFilterObjectAttributes attributes0,
+                                            physx::PxFilterData filterData0,
+                                            physx::PxFilterObjectAttributes attributes1,
+                                            physx::PxFilterData filterData1, physx::PxPairFlags &pairFlags,
+                                            const void *constantBlock, physx::PxU32 constantBlockSize) {
         if (physx::PxFilterObjectIsTrigger(attributes0) || physx::PxFilterObjectIsTrigger(attributes1)) {
             pairFlags = physx::PxPairFlag::eTRIGGER_DEFAULT;
             return physx::PxFilterFlag::eDEFAULT;
@@ -47,11 +48,10 @@ namespace Monado {
         if ((filterData0.word0 & filterData1.word1) || (filterData1.word0 & filterData0.word1)) {
             pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
             pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_LOST;
-            // return physx::PxFilterFlag::eDEFAULT;
+            return physx::PxFilterFlag::eDEFAULT;
         }
 
-        // return physx::PxFilterFlag::eSUPPRESS;
-        return physx::PxFilterFlag::eDEFAULT;
+        return physx::PxFilterFlag::eSUPPRESS;
     }
 
     void ContactListener::onConstraintBreak(physx::PxConstraintInfo *constraints, physx::PxU32 count) {
