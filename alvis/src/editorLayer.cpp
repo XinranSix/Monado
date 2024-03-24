@@ -191,7 +191,7 @@ namespace Monado {
                     glm::vec4 color = (m_SelectionMode == SelectionMode::Entity) ? glm::vec4 { 1.0f, 1.0f, 1.0f, 1.0f }
                                                                                  : glm::vec4 { 0.2f, 0.9f, 0.2f, 1.0f };
                     Renderer::DrawAABB(selection.Mesh->BoundingBox,
-                                       selection.Entity.GetComponent<TransformComponent>().Transform *
+                                       selection.Entity.GetComponent<TransformComponent>().Transformation.GetMatrix() *
                                            selection.Mesh->Transform,
                                        color);
                     Renderer2D::EndScene();
@@ -204,14 +204,14 @@ namespace Monado {
 
                 if (selection.Entity.HasComponent<BoxCollider2DComponent>()) {
                     const auto &size = selection.Entity.GetComponent<BoxCollider2DComponent>().Size;
-                    auto [translation, rotationQuat, scale] =
-                        GetTransformDecomposition(selection.Entity.GetComponent<TransformComponent>().Transform);
-                    glm::vec3 rotation = glm::eulerAngles(rotationQuat);
+                    const Transform &transform = selection.Entity.GetComponent<TransformComponent>();
+                    glm::vec3 translation = transform.GetTranslation();
+                    glm::vec3 rotation = transform.GetRotation();
 
                     Renderer::BeginRenderPass(SceneRenderer::GetFinalRenderPass(), false);
                     auto viewProj = m_EditorCamera.GetViewProjection();
                     Renderer2D::BeginScene(viewProj, false);
-                    Renderer2D::DrawRotatedQuad({ translation.x, translation.y }, size * 2.0f, glm::degrees(rotation.z),
+                    Renderer2D::DrawRotatedQuad({ translation.x, translation.y }, size * 2.0f, rotation.z,
                                                 { 1.0f, 0.0f, 1.0f, 1.0f });
                     Renderer2D::EndScene();
                     Renderer::EndRenderPass();
@@ -603,22 +603,28 @@ namespace Monado {
 
             bool snap = Input::IsKeyPressed(MND_KEY_LEFT_CONTROL);
 
-            auto &entityTransform = selection.Entity.Transform();
+            Transform &entityTransform = selection.Entity.Transformation();
             float snapValue = GetSnapValue();
             float snapValues[3] = { snapValue, snapValue, snapValue };
             if (m_SelectionMode == SelectionMode::Entity) {
+                glm::mat4 transform = entityTransform.GetMatrix();
                 ImGuizmo::Manipulate(glm::value_ptr(m_EditorCamera.GetViewMatrix()),
                                      glm::value_ptr(m_EditorCamera.GetProjectionMatrix()),
-                                     (ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(entityTransform),
+                                     (ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform),
                                      nullptr, snap ? snapValues : nullptr);
+
+                auto [translation, rotation, scale] = GetTransformDecomposition(transform);
+                entityTransform.SetTranslation(translation);
+                entityTransform.SetRotation(rotation);
+                entityTransform.SetScale(scale);
             } else {
-                glm::mat4 transformBase = entityTransform * selection.Mesh->Transform;
+                glm::mat4 transformBase = entityTransform.GetMatrix() * selection.Mesh->Transform;
                 ImGuizmo::Manipulate(glm::value_ptr(m_EditorCamera.GetViewMatrix()),
                                      glm::value_ptr(m_EditorCamera.GetProjectionMatrix()),
                                      (ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(transformBase),
                                      nullptr, snap ? snapValues : nullptr);
 
-                selection.Mesh->Transform = glm::inverse(entityTransform) * transformBase;
+                selection.Mesh->Transform = glm::inverse(entityTransform.GetMatrix()) * transformBase;
             }
         }
 
@@ -944,8 +950,10 @@ namespace Monado {
                     float lastT = std::numeric_limits<float>::max();
                     for (uint32_t i = 0; i < submeshes.size(); i++) {
                         auto &submesh = submeshes[i];
-                        Ray ray = { glm::inverse(entity.Transform() * submesh.Transform) * glm::vec4(origin, 1.0f),
-                                    glm::inverse(glm::mat3(entity.Transform()) * glm::mat3(submesh.Transform)) *
+                        Ray ray = { glm::inverse(entity.Transformation().GetMatrix() * submesh.Transform) *
+                                        glm::vec4(origin, 1.0f),
+                                    glm::inverse(glm::mat3(entity.Transformation().GetMatrix()) *
+                                                 glm::mat3(submesh.Transform)) *
                                         direction };
 
                         float t;

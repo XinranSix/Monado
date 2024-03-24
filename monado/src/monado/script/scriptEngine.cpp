@@ -120,7 +120,7 @@ namespace Monado {
     }
 
     static void InitMono() {
-        mono_set_assemblies_path("monado/assets/assets/mono/lib");
+        mono_set_assemblies_path("./monado/assets/mono/lib");
         // mono_jit_set_trace_options("--verbose");
         auto domain = mono_jit_init("Monado");
 

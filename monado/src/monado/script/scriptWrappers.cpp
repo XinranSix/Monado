@@ -31,14 +31,6 @@ namespace Monado {
 
 namespace Monado {
     namespace Script {
-        static std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(const glm::mat4 &transform) {
-            glm::vec3 scale, translation, skew;
-            glm::vec4 perspective;
-            glm::quat orientation;
-            glm::decompose(transform, scale, orientation, translation, skew, perspective);
-
-            return { translation, orientation, scale };
-        }
 
         ////////////////////////////////////////////////////////////////
         // Math ////////////////////////////////////////////////////////
@@ -180,11 +172,10 @@ namespace Monado {
         }
 
         int32_t Monado_Physics_OverlapCapsuleNonAlloc(glm::vec3 *origin, float radius, float halfHeight,
-                                                     MonoArray *outColliders) {
+                                                      MonoArray *outColliders) {
             memset(s_OverlapBuffer.data(), 0, OVERLAP_MAX_COLLIDERS * sizeof(physx::PxOverlapHit));
 
             uint64_t arrayLength = mono_array_length(outColliders);
-
             uint32_t count;
             if (PXPhysicsWrappers::OverlapCapsule(*origin, radius, halfHeight, s_OverlapBuffer, &count)) {
                 if (count > arrayLength)
@@ -217,30 +208,6 @@ namespace Monado {
         ////////////////////////////////////////////////////////////////
         // Entity //////////////////////////////////////////////////////
         ////////////////////////////////////////////////////////////////
-
-        void Monado_Entity_GetTransform(uint64_t entityID, glm::mat4 *outTransform) {
-            Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
-            MND_CORE_ASSERT(scene, "No active scene!");
-            const auto &entityMap = scene->GetEntityMap();
-            MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
-
-            Entity entity = entityMap.at(entityID);
-            auto &transformComponent = entity.GetComponent<TransformComponent>();
-            memcpy(outTransform, glm::value_ptr(transformComponent.Transform), sizeof(glm::mat4));
-        }
-
-        void Monado_Entity_SetTransform(uint64_t entityID, glm::mat4 *inTransform) {
-            Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
-            MND_CORE_ASSERT(scene, "No active scene!");
-            const auto &entityMap = scene->GetEntityMap();
-            MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
-
-            Entity entity = entityMap.at(entityID);
-            auto &transformComponent = entity.GetComponent<TransformComponent>();
-            memcpy(glm::value_ptr(transformComponent.Transform), inTransform, sizeof(glm::mat4));
-        }
 
         void Monado_Entity_CreateComponent(uint64_t entityID, void *type) {
             Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
@@ -278,8 +245,7 @@ namespace Monado {
             return 0;
         }
 
-        void Monado_TransformComponent_GetRelativeDirection(uint64_t entityID, glm::vec3 *outDirection,
-                                                           glm::vec3 *inAbsoluteDirection) {
+        void Monado_TransformComponent_GetTransform(uint64_t entityID, ScriptTransform *outTransform) {
             Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
@@ -287,13 +253,14 @@ namespace Monado {
                             "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
-            auto &transformComponent = entity.GetComponent<TransformComponent>();
-
-            auto [position, rotation, scale] = GetTransformDecomposition(transformComponent.Transform);
-            *outDirection = glm::rotate(rotation, *inAbsoluteDirection);
+            Transform &transform = entity.GetComponent<TransformComponent>();
+            *outTransform = {
+                transform.GetTranslation(), transform.GetRotation(),       transform.GetScale(),
+                transform.GetUpDirection(), transform.GetRightDirection(), transform.GetForwardDirection()
+            };
         }
 
-        void Monado_TransformComponent_GetRotation(uint64_t entityID, glm::vec3 *outRotation) {
+        void Monado_TransformComponent_SetTransform(uint64_t entityID, ScriptTransform *inTransform) {
             Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
@@ -301,24 +268,10 @@ namespace Monado {
                             "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
-            auto &transformComponent = entity.GetComponent<TransformComponent>();
-            auto [position, rotationQuat, scale] = GetTransformDecomposition(transformComponent.Transform);
-            *outRotation = glm::degrees(glm::eulerAngles(rotationQuat));
-        }
-
-        void Monado_TransformComponent_SetRotation(uint64_t entityID, glm::vec3 *inRotation) {
-            Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
-            MND_CORE_ASSERT(scene, "No active scene!");
-            const auto &entityMap = scene->GetEntityMap();
-            MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
-
-            Entity entity = entityMap.at(entityID);
-            glm::mat4 &transform = entity.Transform();
-
-            auto [translation, rotationQuat, scale] = GetTransformDecomposition(transform);
-            transform = glm::translate(glm::mat4(1.0F), translation) *
-                        glm::toMat4(glm::quat(glm::radians(*inRotation))) * glm::scale(glm::mat4(1.0F), scale);
+            Transform &transform = entity.GetComponent<TransformComponent>();
+            transform.SetTranslation(inTransform->Translation);
+            transform.SetRotation(inTransform->Rotation);
+            transform.SetScale(inTransform->Scale);
         }
 
         void *Monado_MeshComponent_GetMesh(uint64_t entityID) {
@@ -346,7 +299,7 @@ namespace Monado {
         }
 
         void Monado_RigidBody2DComponent_ApplyLinearImpulse(uint64_t entityID, glm::vec2 *impulse, glm::vec2 *offset,
-                                                           bool wake) {
+                                                            bool wake) {
             Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
@@ -689,7 +642,7 @@ namespace Monado {
         }
 
         void Monado_MaterialInstance_SetTexture(Ref<MaterialInstance> *_this, MonoString *uniform,
-                                               Ref<Texture2D> *texture) {
+                                                Ref<Texture2D> *texture) {
             Ref<MaterialInstance> &instance = *(Ref<MaterialInstance> *)_this;
             instance->Set(mono_string_to_utf8(uniform), *texture);
         }

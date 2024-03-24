@@ -160,7 +160,7 @@ namespace Monado {
     }
 
     physx::PxRigidActor *PXPhysicsWrappers::CreateActor(const RigidBodyComponent &rigidbody,
-                                                        const glm::mat4 &transform) {
+                                                        const Transform &transform) {
         physx::PxRigidActor *actor = nullptr;
 
         if (rigidbody.BodyType == RigidBodyComponent::Type::Static) {

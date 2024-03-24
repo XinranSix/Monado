@@ -19,7 +19,7 @@ namespace Monado {
 
     uint32_t PhysicsLayerManager::AddLayer(const std::string &name, bool setCollisions) {
         uint32_t layerId = GetNextLayerID();
-        PhysicsLayer layer = { layerId, name, (uint32_t)BIT(layerId) };
+        PhysicsLayer layer = { layerId, name, (uint32_t)BIT(layerId), BIT(layerId) };
         s_Layers.push_back(layer);
 
         if (setCollisions) {
@@ -65,7 +65,7 @@ namespace Monado {
         }
     }
 
-    const std::vector<PhysicsLayer> &PhysicsLayerManager::GetLayerCollisions(uint32_t layerId) {
+    std::vector<PhysicsLayer> PhysicsLayerManager::GetLayerCollisions(uint32_t layerId) {
         const PhysicsLayer &layer = GetLayer(layerId);
 
         std::vector<PhysicsLayer> layers;
@@ -133,4 +133,5 @@ namespace Monado {
 
     std::vector<PhysicsLayer> PhysicsLayerManager::s_Layers;
     PhysicsLayer PhysicsLayerManager::s_NullLayer = { 0, "NULL", 0, -1 };
+
 } // namespace Monado

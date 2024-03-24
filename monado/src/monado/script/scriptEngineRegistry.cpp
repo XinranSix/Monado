@@ -51,7 +51,6 @@ namespace Monado {
         Component_RegisterType(BoxColliderComponent);
         Component_RegisterType(SphereColliderComponent);
     }
-
     void ScriptEngineRegistry::RegisterAll() {
         InitComponentTypes();
 
@@ -68,22 +67,14 @@ namespace Monado {
         mono_add_internal_call("Monado.Physics::OverlapSphereNonAlloc_Native",
                                Monado::Script::Monado_Physics_OverlapSphereNonAlloc);
 
-        mono_add_internal_call("Monado.Entity::GetTransform_Native", Monado::Script::Monado_Entity_GetTransform);
-        mono_add_internal_call("Monado.Entity::SetTransform_Native", Monado::Script::Monado_Entity_SetTransform);
         mono_add_internal_call("Monado.Entity::CreateComponent_Native", Monado::Script::Monado_Entity_CreateComponent);
         mono_add_internal_call("Monado.Entity::HasComponent_Native", Monado::Script::Monado_Entity_HasComponent);
         mono_add_internal_call("Monado.Entity::FindEntityByTag_Native", Monado::Script::Monado_Entity_FindEntityByTag);
 
         mono_add_internal_call("Monado.TransformComponent::GetTransform_Native",
-                               Monado::Script::Monado_Entity_GetTransform);
+                               Monado::Script::Monado_TransformComponent_GetTransform);
         mono_add_internal_call("Monado.TransformComponent::SetTransform_Native",
-                               Monado::Script::Monado_Entity_SetTransform);
-        mono_add_internal_call("Monado.TransformComponent::GetRelativeDirection_Native",
-                               Monado::Script::Monado_TransformComponent_GetRelativeDirection);
-        mono_add_internal_call("Monado.TransformComponent::GetRotation_Native",
-                               Monado::Script::Monado_TransformComponent_GetRotation);
-        mono_add_internal_call("Monado.TransformComponent::SetRotation_Native",
-                               Monado::Script::Monado_TransformComponent_SetRotation);
+                               Monado::Script::Monado_TransformComponent_SetTransform);
 
         mono_add_internal_call("Monado.MeshComponent::GetMesh_Native", Monado::Script::Monado_MeshComponent_GetMesh);
         mono_add_internal_call("Monado.MeshComponent::SetMesh_Native", Monado::Script::Monado_MeshComponent_SetMesh);

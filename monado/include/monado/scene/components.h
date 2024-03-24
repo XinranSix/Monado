@@ -6,6 +6,7 @@
 #include "monado/renderer/mesh.h"
 #include "sceneCamera.h"
 #include "monado/core/uuid.h"
+#include "monado/core/math/transform.h"
 
 namespace Monado {
 
@@ -25,14 +26,14 @@ namespace Monado {
     };
 
     struct TransformComponent {
-        glm::mat4 Transform;
+        Transform Transformation;
 
         TransformComponent() = default;
         TransformComponent(const TransformComponent &other) = default;
-        TransformComponent(const glm::mat4 &transform) : Transform(transform) {}
+        TransformComponent(const Transform &transform) : Transformation(transform) {}
 
-        operator glm::mat4 &() { return Transform; }
-        operator const glm::mat4 &() const { return Transform; }
+        operator Transform &() { return Transformation; }
+        operator const Transform &() const { return Transformation; }
     };
 
     struct MeshComponent {

@@ -33,6 +33,13 @@ namespace Monado
             Z = z;
         }
 
+        public Vector3(float x, Vector2 yz)
+		{
+            X = x;
+            Y = yz.X;
+			Z = yz.Y;
+		}
+
         public Vector3(Vector2 vector)
         {
             X = vector.X;
