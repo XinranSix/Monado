@@ -9,7 +9,7 @@
 #include "monado/editor/sceneHierarchyPanel.h"
 #include "monado/renderer/mesh.h"
 #include "monado/script/scriptEngine.h"
-#include "monado/physics/physics.h"
+#include "monado/physics/physicsLayer.h"
 #include "monado/core/uuid.h"
 #include "monado/core/application.h"
 #include "monado/physics/pxPhysicsWrappers.h"

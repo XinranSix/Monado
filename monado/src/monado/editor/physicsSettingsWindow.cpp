@@ -1,5 +1,6 @@
 #include "monado/physics/physics.h"
 #include "monado/editor/physicsSettingsWindow.h"
+#include "monado/physics/physicsLayer.h"
 
 #include "imgui.h"
 
@@ -41,6 +42,8 @@ namespace Monado {
             ImGui::EndPopup();
         }
 
+        uint32_t buttonId = 1;
+
         for (const auto &layer : PhysicsLayerManager::GetLayers()) {
             if (ImGui::Button(layer.Name.c_str())) {
                 s_SelectedLayer = layer.LayerID;
@@ -48,9 +51,11 @@ namespace Monado {
 
             if (layer.Name != "Default") {
                 ImGui::SameLine();
+                ImGui::PushID(buttonId++);
                 if (ImGui::Button("X")) {
                     PhysicsLayerManager::RemoveLayer(layer.LayerID);
                 }
+                ImGui::PopID();
             }
         }
     }

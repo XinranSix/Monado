@@ -5,6 +5,7 @@
 #include "monado/physics/pxPhysicsWrappers.h"
 #include "monado/renderer/meshFactory.h"
 #include "monado/physics/physics.h"
+#include "monado/Physics/physicsLayer.h"
 
 #include "yaml-cpp/yaml.h"
 
@@ -106,6 +107,7 @@ namespace YAML {
 } // namespace YAML
 
 namespace Monado {
+
     YAML::Emitter &operator<<(YAML::Emitter &out, const glm::vec2 &v) {
         out << YAML::Flow;
         out << YAML::BeginSeq << v.x << v.y << YAML::EndSeq;

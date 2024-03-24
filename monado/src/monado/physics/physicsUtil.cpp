@@ -1,4 +1,5 @@
 #include "monado/physics/physicsUtil.h"
+#include "monado/physics/physicsLayer.h"
 #include "monado/script/scriptEngine.h"
 
 namespace Monado {
