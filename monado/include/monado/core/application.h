@@ -33,13 +33,18 @@ namespace Monado {
         void PushOverlay(Layer *layer);
         void RenderImGui();
 
-        std::string OpenFile(const std::string &filter) const;
+        std::string OpenFile(const char *filter = "All\0*.*\0") const;
+        std::string SaveFile(const char *filter = "All\0*.*\0") const;
 
         inline Window &GetWindow() { return *m_Window; }
 
         static inline Application &Get() { return *s_Instance; }
 
         float GetTime() const; // TODO: This should be in "Platform"
+
+        static const char *GetConfigurationName();
+        static const char *GetPlatformName();
+
     private:
         bool OnWindowResize(WindowResizeEvent &e);
         bool OnWindowClose(WindowCloseEvent &e);
@@ -58,4 +63,5 @@ namespace Monado {
 
     // Implemented by CLIENT
     Application *CreateApplication();
+
 } // namespace Monado

@@ -15,13 +15,18 @@ if is_mode("debug") then
     add_defines("MND_DEBUG")
 end
 
-add_defines("STB_IMAGE_IMPLEMENTATION")
+add_defines("STB_IMAGE_IMPLEMENTATION", "PX_PHYSX_STATIC_LIB", "NDEBUG")
+
 
 add_includedirs("imgui/include")
 add_includedirs("monado/include")
 add_includedirs("alvis/include")
-add_includedirs("extern/msdf-atlas-gen/msdf-atlas-gen")
-add_includedirs("extern/msdf-atlas-gen/msdfgen")
+add_includedirs("extern/FastNoise")
+add_includedirs("extern/PhysX/include")
+add_includedirs("extern/PxShared/include")
+
+-- add_includedirs("extern/msdf-atlas-gen/msdf-atlas-gen")
+-- add_includedirs("extern/msdf-atlas-gen/msdfgen")
 
 -- msdf-atlas-gen 
 -- package("msdf-atlas-gen")
@@ -45,6 +50,10 @@ add_requires("yaml-cpp")
 -- add_requires("msdf-atlas-gen") 
 add_requires("assimp")
 
+target("FastNoise")
+    add_files("./extern/FastNoise/FastNoise.cpp") 
+    set_kind("static")
+
 target("imgui")
     add_files("./imgui/src/**.cpp") 
     set_kind("static")
@@ -53,8 +62,24 @@ target("imgui")
 target("monado")
     set_kind("static")
     add_files("monado/src/**.cpp")
-    add_deps("imgui")
+    add_deps("imgui", "FastNoise")
+    if is_mode("debug") then 
+        add_links("./libs/mono/lib/Debug/mono-2.0-sgen.lib")
+    else
+        add_links("./libs/mono/lib/Release/mono-2.0-sgen.lib")
+    end
+    add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysX_static_64.lib")
+    add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysXCharacterKinematic_static_64.lib")
+    add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysXCommon_static_64.lib")
+    add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysXCooking_static_64.lib")
+    add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysXExtensions_static_64.lib")
+    add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysXFoundation_static_64.lib")
+    add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysXPvdSDK_static_64.lib")
+    add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysXVehicle_static_64.lib")
     add_packages("opengl", "glfw", "glad", "stb", "glm", "stb", "spdlog", "entt", "box2d", "yaml-cpp", "assimp")
+    after_build(function (target)
+        os.cp("monado/assets", target:targetdir() .. "/monado/assets")
+    end)
 
 target("sandbox")
     set_kind("binary")
@@ -69,10 +94,17 @@ target("sandbox")
 target("alvis")
     set_kind("binary")
     add_files("alvis/**.cpp")
-    add_links("libs/win/ComDlg32")
-    add_deps("monado")
+    add_deps("monado") 
     add_packages("opengl", "glfw", "glad", "stb", "glm", "stb", "spdlog", "entt", "box2d")
+    add_links("libs/win/ComDlg32")
     after_build(function (target)
-        os.cp("alvis/assets", target:targetdir() .. "/alvis")
+        os.cp("alvis/assets", target:targetdir() .. "/alvis/assets")
+        -- os.cp("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PVDRuntime_64.dll", target:targetdir())
+        if is_mode("debug") then
+            os.cp("./libs/mono/bin/Debug/**.*", target:targetdir())
+        else
+            os.cp("./libs/mono/bin/Release/**.*", target:targetdir())
+        end
+        os.runv("buildScript.bat", {target:targetdir()})
     end)
 

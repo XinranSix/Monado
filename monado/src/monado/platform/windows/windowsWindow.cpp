@@ -42,7 +42,6 @@ namespace Monado {
         int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
         MND_CORE_ASSERT(status, "Failed to initialize Glad!");
         glfwSetWindowUserPointer(m_Window, &m_Data);
-        SetVSync(true);
 
         // Set GLFW callbacks
         glfwSetWindowSizeCallback(m_Window, [](GLFWwindow *window, int width, int height) {
@@ -66,17 +65,17 @@ namespace Monado {
 
             switch (action) {
             case GLFW_PRESS: {
-                KeyPressedEvent event(key, 0);
+                KeyPressedEvent event((KeyCode)key, 0);
                 data.EventCallback(event);
                 break;
             }
             case GLFW_RELEASE: {
-                KeyReleasedEvent event(key);
+                KeyReleasedEvent event((KeyCode)key);
                 data.EventCallback(event);
                 break;
             }
             case GLFW_REPEAT: {
-                KeyPressedEvent event(key, 1);
+                KeyPressedEvent event((KeyCode)key, 1);
                 data.EventCallback(event);
                 break;
             }
@@ -86,7 +85,7 @@ namespace Monado {
         glfwSetCharCallback(m_Window, [](GLFWwindow *window, unsigned int codepoint) {
             auto &data = *((WindowData *)glfwGetWindowUserPointer(window));
 
-            KeyTypedEvent event((int)codepoint);
+            KeyTypedEvent event((KeyCode)codepoint);
             data.EventCallback(event);
         });
 
@@ -116,7 +115,6 @@ namespace Monado {
 
         glfwSetCursorPosCallback(m_Window, [](GLFWwindow *window, double x, double y) {
             auto &data = *((WindowData *)glfwGetWindowUserPointer(window));
-
             MouseMovedEvent event((float)x, (float)y);
             data.EventCallback(event);
         });
@@ -174,5 +172,10 @@ namespace Monado {
     }
 
     bool WindowsWindow::IsVSync() const { return m_Data.VSync; }
+
+    void WindowsWindow::SetTitle(const std::string &title) {
+        m_Data.Title = title;
+        glfwSetWindowTitle(m_Window, m_Data.Title.c_str());
+    }
 
 } // namespace Monado

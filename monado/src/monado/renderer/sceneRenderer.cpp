@@ -1,6 +1,7 @@
 #include "monado/renderer/Renderer.h"
 #include "monado/renderer/sceneRenderer.h"
 #include "monado/renderer/renderer2D.h"
+#include "monado/renderer/meshFactory.h"
 
 // clang-format off
 #include "glad/glad.h"
@@ -13,7 +14,7 @@ namespace Monado {
     struct SceneRendererData {
         const Scene *ActiveScene = nullptr;
         struct SceneInfo {
-            Camera SceneCamera;
+            SceneRendererCamera SceneCamera;
 
             // Resources
             Ref<MaterialInstance> SkyboxMaterial;
@@ -33,9 +34,14 @@ namespace Monado {
             glm::mat4 Transform;
         };
         std::vector<DrawCommand> DrawList;
+        std::vector<DrawCommand> SelectedMeshDrawList;
+        std::vector<DrawCommand> ColliderDrawList;
 
         // Grid
         Ref<MaterialInstance> GridMaterial;
+        Ref<MaterialInstance> OutlineMaterial;
+
+        Ref<MaterialInstance> ColliderMaterial;
 
         SceneRendererOptions Options;
     };
@@ -51,7 +57,7 @@ namespace Monado {
         geoFramebufferSpec.ClearColor = { 0.1f, 0.1f, 0.1f, 1.0f };
 
         RenderPassSpecification geoRenderPassSpec;
-        geoRenderPassSpec.TargetFramebuffer = Monado::Framebuffer::Create(geoFramebufferSpec);
+        geoRenderPassSpec.TargetFramebuffer = Framebuffer::Create(geoFramebufferSpec);
         s_Data.GeoPass = RenderPass::Create(geoRenderPassSpec);
 
         FramebufferSpecification compFramebufferSpec;
@@ -61,7 +67,7 @@ namespace Monado {
         compFramebufferSpec.ClearColor = { 0.5f, 0.1f, 0.1f, 1.0f };
 
         RenderPassSpecification compRenderPassSpec;
-        compRenderPassSpec.TargetFramebuffer = Monado::Framebuffer::Create(compFramebufferSpec);
+        compRenderPassSpec.TargetFramebuffer = Framebuffer::Create(compFramebufferSpec);
         s_Data.CompositePass = RenderPass::Create(compRenderPassSpec);
 
         s_Data.CompositeShader = Shader::Create("alvis/assets/shaders/SceneComposite.glsl");
@@ -73,6 +79,15 @@ namespace Monado {
         float gridScale = 16.025f, gridSize = 0.025f;
         s_Data.GridMaterial->Set("u_Scale", gridScale);
         s_Data.GridMaterial->Set("u_Res", gridSize);
+
+        // Outline
+        auto outlineShader = Shader::Create("alvis/assets/shaders/Outline.glsl");
+        s_Data.OutlineMaterial = MaterialInstance::Create(Material::Create(outlineShader));
+        s_Data.OutlineMaterial->SetFlag(MaterialFlag::DepthTest, false);
+
+        auto colliderShader = Shader::Create("alvis/assets/shaders/Collider.glsl");
+        s_Data.ColliderMaterial = MaterialInstance::Create(Material::Create(colliderShader));
+        s_Data.ColliderMaterial->SetFlag(MaterialFlag::DepthTest, false);
     }
 
     void SceneRenderer::SetViewportSize(uint32_t width, uint32_t height) {
@@ -80,12 +95,12 @@ namespace Monado {
         s_Data.CompositePass->GetSpecification().TargetFramebuffer->Resize(width, height);
     }
 
-    void SceneRenderer::BeginScene(const Scene *scene) {
+    void SceneRenderer::BeginScene(const Scene *scene, const SceneRendererCamera &camera) {
         MND_CORE_ASSERT(!s_Data.ActiveScene, "");
 
         s_Data.ActiveScene = scene;
 
-        s_Data.SceneData.SceneCamera = scene->m_Camera;
+        s_Data.SceneData.SceneCamera = camera;
         s_Data.SceneData.SkyboxMaterial = scene->m_SkyboxMaterial;
         s_Data.SceneData.SceneEnvironment = scene->m_Environment;
         s_Data.SceneData.ActiveLight = scene->m_Light;
@@ -99,18 +114,34 @@ namespace Monado {
         FlushDrawList();
     }
 
-    void SceneRenderer::SubmitEntity(Entity *entity) {
+    void SceneRenderer::SubmitMesh(Ref<Mesh> mesh, const glm::mat4 &transform, Ref<MaterialInstance> overrideMaterial) {
         // TODO: Culling, sorting, etc.
+        s_Data.DrawList.push_back({ mesh, overrideMaterial, transform });
+    }
 
-        auto mesh = entity->GetMesh();
-        if (!mesh)
-            return;
+    void SceneRenderer::SubmitSelectedMesh(Ref<Mesh> mesh, const glm::mat4 &transform) {
+        s_Data.SelectedMeshDrawList.push_back({ mesh, nullptr, transform });
+    }
 
-        s_Data.DrawList.push_back({ mesh, entity->GetMaterial(), entity->GetTransform() });
+    void SceneRenderer::SubmitColliderMesh(const BoxColliderComponent &component, const glm::mat4 &parentTransform) {
+        s_Data.ColliderDrawList.push_back(
+            { component.DebugMesh, nullptr, glm::translate(parentTransform, component.Offset) });
+    }
+
+    void SceneRenderer::SubmitColliderMesh(const SphereColliderComponent &component, const glm::mat4 &parentTransform) {
+        s_Data.ColliderDrawList.push_back({ component.DebugMesh, nullptr, parentTransform });
+    }
+
+    void SceneRenderer::SubmitColliderMesh(const CapsuleColliderComponent &component,
+                                           const glm::mat4 &parentTransform) {
+        s_Data.ColliderDrawList.push_back({ component.DebugMesh, nullptr, parentTransform });
+    }
+
+    void SceneRenderer::SubmitColliderMesh(const MeshColliderComponent &component, const glm::mat4 &parentTransform) {
+        s_Data.ColliderDrawList.push_back({ component.ProcessedMesh, nullptr, parentTransform });
     }
 
     static Ref<Shader> equirectangularConversionShader, envFilteringShader, envIrradianceShader;
-
     std::pair<Ref<TextureCube>, Ref<TextureCube>> SceneRenderer::CreateEnvironmentMap(const std::string &filepath) {
         const uint32_t cubemapSize = 2048;
         const uint32_t irradianceMapSize = 32;
@@ -172,9 +203,22 @@ namespace Monado {
     }
 
     void SceneRenderer::GeometryPass() {
+        bool outline = s_Data.SelectedMeshDrawList.size() > 0;
+        bool collider = s_Data.ColliderDrawList.size() > 0;
+
+        if (outline || collider) {
+            Renderer::Submit([]() { glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); });
+        }
+
         Renderer::BeginRenderPass(s_Data.GeoPass);
 
-        auto viewProjection = s_Data.SceneData.SceneCamera.GetViewProjection();
+        if (outline || collider) {
+            Renderer::Submit([]() { glStencilMask(0); });
+        }
+
+        auto viewProjection =
+            s_Data.SceneData.SceneCamera.Camera.GetProjectionMatrix() * s_Data.SceneData.SceneCamera.ViewMatrix;
+        glm::vec3 cameraPosition = glm::inverse(s_Data.SceneData.SceneCamera.ViewMatrix)[3];
 
         // Skybox
         auto skyboxShader = s_Data.SceneData.SkyboxMaterial->GetShader();
@@ -185,7 +229,7 @@ namespace Monado {
         for (auto &dc : s_Data.DrawList) {
             auto baseMaterial = dc.Mesh->GetMaterial();
             baseMaterial->Set("u_ViewProjectionMatrix", viewProjection);
-            baseMaterial->Set("u_CameraPosition", s_Data.SceneData.SceneCamera.GetPosition());
+            baseMaterial->Set("u_CameraPosition", cameraPosition);
 
             // Environment (TODO: don't do this per mesh)
             baseMaterial->Set("u_EnvRadianceTex", s_Data.SceneData.SceneEnvironment.RadianceMap);
@@ -197,6 +241,75 @@ namespace Monado {
 
             auto overrideMaterial = nullptr; // dc.Material;
             Renderer::SubmitMesh(dc.Mesh, dc.Transform, overrideMaterial);
+        }
+
+        if (outline) {
+            Renderer::Submit([]() {
+                glStencilFunc(GL_NOTEQUAL, 1, 0xff);
+                glStencilMask(0);
+
+                glLineWidth(10);
+                glEnable(GL_LINE_SMOOTH);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                glDisable(GL_DEPTH_TEST);
+            });
+
+            // Draw outline here
+            s_Data.OutlineMaterial->Set("u_ViewProjection", viewProjection);
+            for (auto &dc : s_Data.SelectedMeshDrawList) {
+                Renderer::SubmitMesh(dc.Mesh, dc.Transform, s_Data.OutlineMaterial);
+            }
+
+            Renderer::Submit([]() {
+                glPointSize(10);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+            });
+
+            for (auto &dc : s_Data.SelectedMeshDrawList) {
+                Renderer::SubmitMesh(dc.Mesh, dc.Transform, s_Data.OutlineMaterial);
+            }
+
+            Renderer::Submit([]() {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                glStencilMask(0xff);
+                glStencilFunc(GL_ALWAYS, 1, 0xff);
+                glEnable(GL_DEPTH_TEST);
+            });
+        }
+
+        if (collider) {
+            Renderer::Submit([]() {
+                glStencilFunc(GL_NOTEQUAL, 1, 0xff);
+                glStencilMask(0);
+
+                glLineWidth(1);
+                glEnable(GL_LINE_SMOOTH);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                glDisable(GL_DEPTH_TEST);
+            });
+
+            s_Data.ColliderMaterial->Set("u_ViewProjection", viewProjection);
+            for (auto &dc : s_Data.ColliderDrawList) {
+                if (dc.Mesh)
+                    Renderer::SubmitMesh(dc.Mesh, dc.Transform, s_Data.ColliderMaterial);
+            }
+
+            Renderer::Submit([]() {
+                glPointSize(1);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+            });
+
+            for (auto &dc : s_Data.ColliderDrawList) {
+                if (dc.Mesh)
+                    Renderer::SubmitMesh(dc.Mesh, dc.Transform, s_Data.ColliderMaterial);
+            }
+
+            Renderer::Submit([]() {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                glStencilMask(0xff);
+                glStencilFunc(GL_ALWAYS, 1, 0xff);
+                glEnable(GL_DEPTH_TEST);
+            });
         }
 
         // Grid
@@ -220,7 +333,7 @@ namespace Monado {
     void SceneRenderer::CompositePass() {
         Renderer::BeginRenderPass(s_Data.CompositePass);
         s_Data.CompositeShader->Bind();
-        s_Data.CompositeShader->SetFloat("u_Exposure", s_Data.SceneData.SceneCamera.GetExposure());
+        s_Data.CompositeShader->SetFloat("u_Exposure", s_Data.SceneData.SceneCamera.Camera.GetExposure());
         s_Data.CompositeShader->SetInt(
             "u_TextureSamples", s_Data.GeoPass->GetSpecification().TargetFramebuffer->GetSpecification().Samples);
         s_Data.GeoPass->GetSpecification().TargetFramebuffer->BindTexture();
@@ -235,6 +348,8 @@ namespace Monado {
         CompositePass();
 
         s_Data.DrawList.clear();
+        s_Data.SelectedMeshDrawList.clear();
+        s_Data.ColliderDrawList.clear();
         s_Data.SceneData = {};
     }
 

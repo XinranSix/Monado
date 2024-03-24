@@ -6,7 +6,7 @@ namespace Monado {
     // Material
     //////////////////////////////////////////////////////////////////////////////////
 
-    Ref<Material> Material::Create(const Ref<Shader> &shader) { return std::make_shared<Material>(shader); }
+    Ref<Material> Material::Create(const Ref<Shader> &shader) { return Ref<Material>::Create(shader); }
 
     Material::Material(const Ref<Shader> &shader) : m_Shader(shader) {
         m_Shader->AddShaderReloadedCallback(std::bind(&Material::OnShaderReloaded, this));
@@ -78,7 +78,7 @@ namespace Monado {
         return m_VSUniformStorageBuffer;
     }
 
-    void Material::Bind() const {
+    void Material::Bind() {
         m_Shader->Bind();
 
         if (m_VSUniformStorageBuffer)
@@ -90,7 +90,7 @@ namespace Monado {
         BindTextures();
     }
 
-    void Material::BindTextures() const {
+    void Material::BindTextures() {
         for (size_t i = 0; i < m_Textures.size(); i++) {
             auto &texture = m_Textures[i];
             if (texture)
@@ -103,10 +103,11 @@ namespace Monado {
     //////////////////////////////////////////////////////////////////////////////////
 
     Ref<MaterialInstance> MaterialInstance::Create(const Ref<Material> &material) {
-        return std::make_shared<MaterialInstance>(material);
+        return Ref<MaterialInstance>::Create(material);
     }
 
-    MaterialInstance::MaterialInstance(const Ref<Material> &material) : m_Material(material) {
+    MaterialInstance::MaterialInstance(const Ref<Material> &material, const std::string &name)
+        : m_Material(material), m_Name(name) {
         m_Material->m_MaterialInstances.insert(this);
         AllocateStorage();
     }
@@ -158,7 +159,7 @@ namespace Monado {
         return m_VSUniformStorageBuffer;
     }
 
-    void MaterialInstance::Bind() const {
+    void MaterialInstance::Bind() {
         m_Material->m_Shader->Bind();
 
         if (m_VSUniformStorageBuffer)

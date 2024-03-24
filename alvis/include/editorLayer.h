@@ -11,6 +11,7 @@
 #include "monado/renderer/shader.h"
 #include "monado/renderer/mesh.h"
 #include "monado/editor/sceneHierarchyPanel.h"
+#include "monado/core/math/ray.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -22,7 +23,7 @@ namespace Monado {
 
     class EditorLayer : public Layer {
     public:
-        enum class PropertyFlag { None = 0, ColorProperty = 1 };
+        enum class PropertyFlag { None = 0, ColorProperty = 1, DragProperty = 2, SliderProperty = 4 };
 
     public:
         EditorLayer();
@@ -39,42 +40,61 @@ namespace Monado {
 
         // ImGui UI helpers
         bool Property(const std::string &name, bool &value);
-        void Property(const std::string &name, float &value, float min = -1.0f, float max = 1.0f,
+        bool Property(const std::string &name, float &value, float min = -1.0f, float max = 1.0f,
                       PropertyFlag flags = PropertyFlag::None);
-        void Property(const std::string &name, glm::vec2 &value, PropertyFlag flags);
-        void Property(const std::string &name, glm::vec2 &value, float min = -1.0f, float max = 1.0f,
+        bool Property(const std::string &name, glm::vec2 &value, PropertyFlag flags);
+        bool Property(const std::string &name, glm::vec2 &value, float min = -1.0f, float max = 1.0f,
                       PropertyFlag flags = PropertyFlag::None);
-        void Property(const std::string &name, glm::vec3 &value, PropertyFlag flags);
-        void Property(const std::string &name, glm::vec3 &value, float min = -1.0f, float max = 1.0f,
+        bool Property(const std::string &name, glm::vec3 &value, PropertyFlag flags);
+        bool Property(const std::string &name, glm::vec3 &value, float min = -1.0f, float max = 1.0f,
                       PropertyFlag flags = PropertyFlag::None);
-        void Property(const std::string &name, glm::vec4 &value, PropertyFlag flags);
-        void Property(const std::string &name, glm::vec4 &value, float min = -1.0f, float max = 1.0f,
+        bool Property(const std::string &name, glm::vec4 &value, PropertyFlag flags);
+        bool Property(const std::string &name, glm::vec4 &value, float min = -1.0f, float max = 1.0f,
                       PropertyFlag flags = PropertyFlag::None);
 
         void ShowBoundingBoxes(bool show, bool onTop = false);
+        void SelectEntity(Entity entity);
+
+        void OpenScene();
+        void SaveScene();
+        void SaveSceneAs();
 
     private:
         std::pair<float, float> GetMouseViewportSpace();
         std::pair<glm::vec3, glm::vec3> CastRay(float mx, float my);
 
+        struct SelectedSubmesh {
+            Monado::Entity Entity;
+            Submesh *Mesh = nullptr;
+            float Distance = 0.0f;
+        };
+
+        void OnSelected(const SelectedSubmesh &selectionContext);
+        void OnEntityDeleted(Entity e);
+        Ray CastMouseRay();
+
+        void OnScenePlay();
+        void OnSceneStop();
+
+        void UpdateWindowTitle(const std::string &sceneName);
+
+        float GetSnapValue();
+
     private:
         Scope<SceneHierarchyPanel> m_SceneHierarchyPanel;
 
-        Ref<Scene> m_Scene;
-        Ref<Scene> m_SphereScene;
-        Ref<Scene> m_ActiveScene;
+        Ref<Scene> m_RuntimeScene, m_EditorScene;
+        std::string m_SceneFilePath;
+        bool m_ReloadScriptOnPlay = true;
 
-        Entity *m_MeshEntity = nullptr;
+        EditorCamera m_EditorCamera;
 
         Ref<Shader> m_BrushShader;
-        Ref<Mesh> m_PlaneMesh;
         Ref<Material> m_SphereBaseMaterial;
 
         Ref<Material> m_MeshMaterial;
         std::vector<Ref<MaterialInstance>> m_MetalSphereMaterialInstances;
         std::vector<Ref<MaterialInstance>> m_DielectricSphereMaterialInstances;
-
-        float m_GridScale = 16.025f, m_GridSize = 0.025f;
 
         struct AlbedoInput {
             glm::vec3 Color = {
@@ -84,27 +104,27 @@ namespace Monado {
             bool SRGB = true;
             bool UseTexture = false;
         };
-        AlbedoInput m_AlbedoInput;
+        // AlbedoInput m_AlbedoInput;
 
         struct NormalInput {
             Ref<Texture2D> TextureMap;
             bool UseTexture = false;
         };
-        NormalInput m_NormalInput;
+        // NormalInput m_NormalInput;
 
         struct MetalnessInput {
             float Value = 1.0f;
             Ref<Texture2D> TextureMap;
             bool UseTexture = false;
         };
-        MetalnessInput m_MetalnessInput;
+        // MetalnessInput m_MetalnessInput;
 
         struct RoughnessInput {
             float Value = 0.2f;
             Ref<Texture2D> TextureMap;
             bool UseTexture = false;
         };
-        RoughnessInput m_RoughnessInput;
+        // RoughnessInput m_RoughnessInput;
 
         // PBR params
         bool m_RadiancePrefilter = false;
@@ -116,21 +136,29 @@ namespace Monado {
 
         // Editor resources
         Ref<Texture2D> m_CheckerboardTex;
+        Ref<Texture2D> m_PlayButtonTex;
 
         glm::vec2 m_ViewportBounds[2];
         int m_GizmoType = -1; // -1 = no gizmo
         float m_SnapValue = 0.5f;
+        float m_RotationSnapValue = 45.0f;
         bool m_AllowViewportCameraEvents = false;
         bool m_DrawOnTopBoundingBoxes = false;
 
         bool m_UIShowBoundingBoxes = false;
         bool m_UIShowBoundingBoxesOnTop = false;
 
-        struct SelectedSubmesh {
-            Submesh *Mesh;
-            float Distance;
-        };
-        std::vector<SelectedSubmesh> m_SelectedSubmeshes;
+        bool m_ViewportPanelMouseOver = false;
+        bool m_ViewportPanelFocused = false;
+
+        enum class SceneState { Edit = 0, Play = 1, Pause = 2 };
+        SceneState m_SceneState = SceneState::Edit;
+
+        enum class SelectionMode { None = 0, Entity = 1, SubMesh = 2 };
+
+        SelectionMode m_SelectionMode = SelectionMode::Entity;
+        std::vector<SelectedSubmesh> m_SelectionContext;
+        glm::mat4 *m_RelativeTransform = nullptr;
         glm::mat4 *m_CurrentlySelectedTransform = nullptr;
     };
 

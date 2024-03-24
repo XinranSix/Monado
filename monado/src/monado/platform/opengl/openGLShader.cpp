@@ -31,7 +31,7 @@ namespace Monado {
     }
 
     Ref<OpenGLShader> OpenGLShader::CreateFromString(const std::string &source) {
-        Ref<OpenGLShader> shader = std::make_shared<OpenGLShader>();
+        Ref<OpenGLShader> shader = Ref<OpenGLShader>::Create();
         shader->Load(source);
         return shader;
     }
@@ -81,11 +81,10 @@ namespace Monado {
             result.resize(in.tellg());
             in.seekg(0, std::ios::beg);
             in.read(&result[0], result.size());
-            in.close();
         } else {
             MND_CORE_ASSERT(false, "Could not load shader!");
         }
-
+        in.close();
         return result;
     }
 
@@ -197,8 +196,8 @@ namespace Monado {
 
         m_Resources.clear();
         m_Structs.clear();
-        m_VSMaterialUniformBuffer.reset();
-        m_PSMaterialUniformBuffer.reset();
+        m_VSMaterialUniformBuffer.Reset();
+        m_PSMaterialUniformBuffer.Reset();
 
         auto &vertexSource = m_ShaderSource[GL_VERTEX_SHADER];
         auto &fragmentSource = m_ShaderSource[GL_FRAGMENT_SHADER];
@@ -291,12 +290,12 @@ namespace Monado {
             } else {
                 if (domain == ShaderDomain::Vertex) {
                     if (!m_VSMaterialUniformBuffer)
-                        m_VSMaterialUniformBuffer.reset(new OpenGLShaderUniformBufferDeclaration("", domain));
+                        m_VSMaterialUniformBuffer.Reset(new OpenGLShaderUniformBufferDeclaration("", domain));
 
                     m_VSMaterialUniformBuffer->PushUniform(declaration);
                 } else if (domain == ShaderDomain::Pixel) {
                     if (!m_PSMaterialUniformBuffer)
-                        m_PSMaterialUniformBuffer.reset(new OpenGLShaderUniformBufferDeclaration("", domain));
+                        m_PSMaterialUniformBuffer.Reset(new OpenGLShaderUniformBufferDeclaration("", domain));
 
                     m_PSMaterialUniformBuffer->PushUniform(declaration);
                 }
@@ -543,7 +542,7 @@ namespace Monado {
         });
     }
 
-    void OpenGLShader::ResolveAndSetUniforms(const Scope<OpenGLShaderUniformBufferDeclaration> &decl, Buffer buffer) {
+    void OpenGLShader::ResolveAndSetUniforms(const Ref<OpenGLShaderUniformBufferDeclaration> &decl, Buffer buffer) {
         const ShaderUniformList &uniforms = decl->GetUniformDeclarations();
         for (size_t i = 0; i < uniforms.size(); i++) {
             OpenGLShaderUniformDeclaration *uniform = (OpenGLShaderUniformDeclaration *)uniforms[i];
@@ -681,6 +680,10 @@ namespace Monado {
 
     void OpenGLShader::SetInt(const std::string &name, int value) {
         Renderer::Submit([=]() { UploadUniformInt(name, value); });
+    }
+
+    void OpenGLShader::SetFloat3(const std::string &name, const glm::vec3 &value) {
+        Renderer::Submit([=]() { UploadUniformFloat3(name, value); });
     }
 
     void OpenGLShader::SetMat4(const std::string &name, const glm::mat4 &value) {

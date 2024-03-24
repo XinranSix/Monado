@@ -6,11 +6,14 @@
 
 #include "glm/glm.hpp"
 
-#include "monado/renderer/vertexArray.h"
 #include "monado/core/timeStep.h"
 #include "monado/core/log.h"
 #include "monado/core/math/aabb.h"
 #include "monado/renderer/material.h"
+#include "monado/renderer/pipeline.h"
+#include "monado/Renderer/indexBuffer.h"
+#include "monado/renderer/vertexBuffer.h"
+#include "monado/renderer/shader.h"
 
 struct aiNode;
 struct aiAnimation;
@@ -112,9 +115,10 @@ namespace Monado {
         std::string NodeName, MeshName;
     };
 
-    class Mesh {
+    class Mesh : public RefCounted {
     public:
         Mesh(const std::string &filename);
+        Mesh(const std::vector<Vertex> &vertices, const std::vector<Index> &indices);
         ~Mesh();
 
         void OnUpdate(Timestep ts);
@@ -122,6 +126,9 @@ namespace Monado {
 
         std::vector<Submesh> &GetSubmeshes() { return m_Submeshes; }
         const std::vector<Submesh> &GetSubmeshes() const { return m_Submeshes; }
+
+        const std::vector<Vertex> &GetStaticVertices() const { return m_StaticVertices; }
+        const std::vector<Index> &GetIndices() const { return m_Indices; }
 
         Ref<Shader> GetMeshShader() { return m_MeshShader; }
         Ref<Material> GetMaterial() { return m_BaseMaterial; }
@@ -154,7 +161,9 @@ namespace Monado {
         uint32_t m_BoneCount = 0;
         std::vector<BoneInfo> m_BoneInfo;
 
-        Ref<VertexArray> m_VertexArray;
+        Ref<Pipeline> m_Pipeline;
+        Ref<VertexBuffer> m_VertexBuffer;
+        Ref<IndexBuffer> m_IndexBuffer;
 
         std::vector<Vertex> m_StaticVertices;
         std::vector<AnimatedVertex> m_AnimatedVertices;

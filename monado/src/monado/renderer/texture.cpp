@@ -8,7 +8,7 @@ namespace Monado {
     Ref<Texture2D> Texture2D::Create(TextureFormat format, unsigned int width, unsigned int height, TextureWrap wrap) {
         switch (RendererAPI::Current()) {
         case RendererAPIType::None: return nullptr;
-        case RendererAPIType::OpenGL: return CreateRef<OpenGLTexture2D>(format, width, height, wrap);
+        case RendererAPIType::OpenGL: return Ref<OpenGLTexture2D>::Create(format, width, height, wrap);
         }
         return nullptr;
     }
@@ -16,7 +16,7 @@ namespace Monado {
     Ref<Texture2D> Texture2D::Create(const std::string &path, bool srgb) {
         switch (RendererAPI::Current()) {
         case RendererAPIType::None: return nullptr;
-        case RendererAPIType::OpenGL: return CreateRef<OpenGLTexture2D>(path, srgb);
+        case RendererAPIType::OpenGL: return Ref<OpenGLTexture2D>::Create(path, srgb);
         }
         return nullptr;
     }
@@ -24,7 +24,7 @@ namespace Monado {
     Ref<TextureCube> TextureCube::Create(TextureFormat format, uint32_t width, uint32_t height) {
         switch (RendererAPI::Current()) {
         case RendererAPIType::None: return nullptr;
-        case RendererAPIType::OpenGL: return CreateRef<OpenGLTextureCube>(format, width, height);
+        case RendererAPIType::OpenGL: return Ref<OpenGLTextureCube>::Create(format, width, height);
         }
         return nullptr;
     }
@@ -32,7 +32,7 @@ namespace Monado {
     Ref<TextureCube> TextureCube::Create(const std::string &path) {
         switch (RendererAPI::Current()) {
         case RendererAPIType::None: return nullptr;
-        case RendererAPIType::OpenGL: return CreateRef<OpenGLTextureCube>(path);
+        case RendererAPIType::OpenGL: return Ref<OpenGLTextureCube>::Create(path);
         }
         return nullptr;
     }

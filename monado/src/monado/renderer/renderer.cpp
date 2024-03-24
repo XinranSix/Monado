@@ -16,14 +16,17 @@ namespace Monado {
     struct RendererData {
         Ref<RenderPass> m_ActiveRenderPass;
         RenderCommandQueue m_CommandQueue;
-        Scope<ShaderLibrary> m_ShaderLibrary;
-        Ref<VertexArray> m_FullscreenQuadVertexArray;
+        Ref<ShaderLibrary> m_ShaderLibrary;
+
+        Ref<VertexBuffer> m_FullscreenQuadVertexBuffer;
+        Ref<IndexBuffer> m_FullscreenQuadIndexBuffer;
+        Ref<Pipeline> m_FullscreenQuadPipeline;
     };
 
     static RendererData s_Data;
 
     void Renderer::Init() {
-        s_Data.m_ShaderLibrary = std::make_unique<ShaderLibrary>();
+        s_Data.m_ShaderLibrary = Ref<ShaderLibrary>::Create();
         Renderer::Submit([]() { RendererAPI::Init(); });
 
         Renderer::GetShaderLibrary()->Load("alvis/assets/shaders/MonadoPBR_Static.glsl");
@@ -54,22 +57,21 @@ namespace Monado {
         data[3].Position = glm::vec3(x, y + height, 0.1f);
         data[3].TexCoord = glm::vec2(0, 1);
 
-        s_Data.m_FullscreenQuadVertexArray = VertexArray::Create();
-        auto quadVB = VertexBuffer::Create(data, 4 * sizeof(QuadVertex));
-        quadVB->SetLayout({ { ShaderDataType::Float3, "a_Position" }, { ShaderDataType::Float2, "a_TexCoord" } });
+        PipelineSpecification pipelineSpecification;
+        pipelineSpecification.Layout = { { ShaderDataType::Float3, "a_Position" },
+                                         { ShaderDataType::Float2, "a_TexCoord" } };
+        s_Data.m_FullscreenQuadPipeline = Pipeline::Create(pipelineSpecification);
 
+        s_Data.m_FullscreenQuadVertexBuffer = VertexBuffer::Create(data, 4 * sizeof(QuadVertex));
         uint32_t indices[6] = {
             0, 1, 2, 2, 3, 0,
         };
-        auto quadIB = IndexBuffer::Create(indices, 6 * sizeof(uint32_t));
-
-        s_Data.m_FullscreenQuadVertexArray->AddVertexBuffer(quadVB);
-        s_Data.m_FullscreenQuadVertexArray->SetIndexBuffer(quadIB);
+        s_Data.m_FullscreenQuadIndexBuffer = IndexBuffer::Create(indices, 6 * sizeof(uint32_t));
 
         Renderer2D::Init();
     }
 
-    const Scope<ShaderLibrary> &Renderer::GetShaderLibrary() { return s_Data.m_ShaderLibrary; }
+    Ref<ShaderLibrary> Renderer::GetShaderLibrary() { return s_Data.m_ShaderLibrary; }
 
     void Renderer::Clear() {
         Renderer::Submit([]() { RendererAPI::Clear(0.0f, 0.0f, 0.0f, 1.0f); });
@@ -93,7 +95,7 @@ namespace Monado {
 
     void Renderer::WaitAndRender() { s_Data.m_CommandQueue.Execute(); }
 
-    void Renderer::BeginRenderPass(const Ref<RenderPass> &renderPass, bool clear) {
+    void Renderer::BeginRenderPass(Ref<RenderPass> renderPass, bool clear) {
         MND_CORE_ASSERT(renderPass, "Render pass cannot be null!");
 
         // TODO: Convert all of this into a render command buffer
@@ -114,7 +116,7 @@ namespace Monado {
         s_Data.m_ActiveRenderPass = nullptr;
     }
 
-    void Renderer::SubmitQuad(const Ref<MaterialInstance> &material, const glm::mat4 &transform) {
+    void Renderer::SubmitQuad(Ref<MaterialInstance> material, const glm::mat4 &transform) {
         bool depthTest = true;
         if (material) {
             material->Bind();
@@ -124,32 +126,37 @@ namespace Monado {
             shader->SetMat4("u_Transform", transform);
         }
 
-        s_Data.m_FullscreenQuadVertexArray->Bind();
+        s_Data.m_FullscreenQuadVertexBuffer->Bind();
+        s_Data.m_FullscreenQuadPipeline->Bind();
+        s_Data.m_FullscreenQuadIndexBuffer->Bind();
         Renderer::DrawIndexed(6, PrimitiveType::Triangles, depthTest);
     }
 
-    void Renderer::SubmitFullscreenQuad(const Ref<MaterialInstance> &material) {
+    void Renderer::SubmitFullscreenQuad(Ref<MaterialInstance> material) {
         bool depthTest = true;
         if (material) {
             material->Bind();
             depthTest = material->GetFlag(MaterialFlag::DepthTest);
         }
 
-        s_Data.m_FullscreenQuadVertexArray->Bind();
+        s_Data.m_FullscreenQuadVertexBuffer->Bind();
+        s_Data.m_FullscreenQuadPipeline->Bind();
+        s_Data.m_FullscreenQuadIndexBuffer->Bind();
         Renderer::DrawIndexed(6, PrimitiveType::Triangles, depthTest);
     }
 
-    void Renderer::SubmitMesh(const Ref<Mesh> &mesh, const glm::mat4 &transform,
-                              const Ref<MaterialInstance> &overrideMaterial) {
+    void Renderer::SubmitMesh(Ref<Mesh> mesh, const glm::mat4 &transform, Ref<MaterialInstance> overrideMaterial) {
         // auto material = overrideMaterial ? overrideMaterial : mesh->GetMaterialInstance();
         // auto shader = material->GetShader();
         // TODO: Sort this out
-        mesh->m_VertexArray->Bind();
+        mesh->m_VertexBuffer->Bind();
+        mesh->m_Pipeline->Bind();
+        mesh->m_IndexBuffer->Bind();
 
         auto materials = mesh->GetMaterials();
         for (Submesh &submesh : mesh->m_Submeshes) {
             // Material
-            auto material = materials[submesh.MaterialIndex];
+            auto material = overrideMaterial ? overrideMaterial : materials[submesh.MaterialIndex];
             auto shader = material->GetShader();
             material->Bind();
 
@@ -173,7 +180,7 @@ namespace Monado {
         }
     }
 
-    void Renderer::DrawAABB(const Ref<Mesh> &mesh, const glm::mat4 &transform, const glm::vec4 &color) {
+    void Renderer::DrawAABB(Ref<Mesh> mesh, const glm::mat4 &transform, const glm::vec4 &color) {
         for (Submesh &submesh : mesh->m_Submeshes) {
             auto &aabb = submesh.BoundingBox;
             auto aabbTransform = transform * submesh.Transform;
