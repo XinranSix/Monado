@@ -17,11 +17,14 @@ end
 
 add_defines("STB_IMAGE_IMPLEMENTATION", "PX_PHYSX_STATIC_LIB", "NDEBUG")
 
+
 add_includedirs("imgui/include")
 add_includedirs("monado/include")
 add_includedirs("alvis/include")
 add_includedirs("extern/FastNoise")
 add_includedirs("extern/PhysX/include")
+add_includedirs("extern/PxShared/include")
+
 -- add_includedirs("extern/msdf-atlas-gen/msdf-atlas-gen")
 -- add_includedirs("extern/msdf-atlas-gen/msdfgen")
 
@@ -65,16 +68,14 @@ target("monado")
     else
         add_links("./libs/mono/lib/Release/mono-2.0-sgen.lib")
     end
-    add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysXFoundation_static_64.lib")
     add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysX_static_64.lib")
     add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysXCharacterKinematic_static_64.lib")
     add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysXCommon_static_64.lib")
     add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysXCooking_static_64.lib")
     add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysXExtensions_static_64.lib")
+    add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysXFoundation_static_64.lib")
     add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysXPvdSDK_static_64.lib")
     add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysXVehicle_static_64.lib")
-    add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PhysXVehicle2_static_64.lib")
-    add_links("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PVDRuntime_64.lib")
     add_packages("opengl", "glfw", "glad", "stb", "glm", "stb", "spdlog", "entt", "box2d", "yaml-cpp", "assimp")
     after_build(function (target)
         os.cp("monado/assets", target:targetdir() .. "/monado/assets")
@@ -98,7 +99,7 @@ target("alvis")
     add_links("libs/win/ComDlg32")
     after_build(function (target)
         os.cp("alvis/assets", target:targetdir() .. "/alvis/assets")
-        os.cp("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PVDRuntime_64.dll", target:targetdir())
+        -- os.cp("./extern/PhysX/bin/win.x86_64.vc143.mt/checked/PVDRuntime_64.dll", target:targetdir())
         if is_mode("debug") then
             os.cp("./libs/mono/bin/Debug/**.*", target:targetdir())
         else

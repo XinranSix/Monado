@@ -4,16 +4,17 @@ using System.Runtime.CompilerServices;
 
 namespace Monado
 {
+
     public class Entity
     {
         public ulong ID { get; private set; }
 
         private List<Action<float>> m_Collision2DBeginCallbacks = new List<Action<float>>();
         private List<Action<float>> m_Collision2DEndCallbacks = new List<Action<float>>();
-		private Action<float> m_CollisionBeginCallbacks;
-		private Action<float> m_CollisionEndCallbacks;
+        private Action<float> m_CollisionBeginCallbacks;
+        private Action<float> m_CollisionEndCallbacks;
 
-		protected Entity() { ID = 0; }
+        protected Entity() { ID = 0; }
 
         internal Entity(ulong id)
         {
@@ -54,8 +55,6 @@ namespace Monado
             return new Entity(entityID);
         }
 
-        // TODO: Components!
-
         public Matrix4 GetTransform()
         {
             Matrix4 mat4Instance;
@@ -64,24 +63,24 @@ namespace Monado
         }
 
         public Vector3 GetForwardDirection()
-		{
+        {
             GetForwardDirection_Native(ID, out Vector3 forward);
             return forward;
-		}
+        }
 
-		public Vector3 GetRightDirection()
-		{
-			GetRightDirection_Native(ID, out Vector3 right);
-			return right;
-		}
+        public Vector3 GetRightDirection()
+        {
+            GetRightDirection_Native(ID, out Vector3 right);
+            return right;
+        }
 
-		public Vector3 GetUpDirection()
-		{
-			GetUpDirection_Native(ID, out Vector3 up);
-			return up;
-		}
+        public Vector3 GetUpDirection()
+        {
+            GetUpDirection_Native(ID, out Vector3 up);
+            return up;
+        }
 
-		public void SetTransform(Matrix4 transform)
+        public void SetTransform(Matrix4 transform)
         {
             SetTransform_Native(ID, ref transform);
         }
@@ -96,29 +95,29 @@ namespace Monado
             m_Collision2DEndCallbacks.Add(callback);
         }
 
-		public void AddCollisionBeginCallback(Action<float> callback)
-		{
+        public void AddCollisionBeginCallback(Action<float> callback)
+        {
             m_CollisionBeginCallbacks += callback;
-		}
+        }
 
-		public void AddCollisionEndCallback(Action<float> callback)
-		{
+        public void AddCollisionEndCallback(Action<float> callback)
+        {
             m_CollisionEndCallbacks += callback;
-		}
+        }
 
-		private void OnCollisionBegin(float data)
-		{
+        private void OnCollisionBegin(float data)
+        {
             if (m_CollisionBeginCallbacks != null)
-			    m_CollisionBeginCallbacks.Invoke(data);
-		}
+                m_CollisionBeginCallbacks.Invoke(data);
+        }
 
-		private void OnCollisionEnd(float data)
-		{
-			if (m_CollisionEndCallbacks != null)
-				m_CollisionEndCallbacks.Invoke(data);
-		}
+        private void OnCollisionEnd(float data)
+        {
+            if (m_CollisionEndCallbacks != null)
+                m_CollisionEndCallbacks.Invoke(data);
+        }
 
-		private void OnCollision2DBegin(float data)
+        private void OnCollision2DBegin(float data)
         {
             foreach (var callback in m_Collision2DBeginCallbacks)
                 callback.Invoke(data);
@@ -130,21 +129,21 @@ namespace Monado
                 callback.Invoke(data);
         }
 
-		[MethodImpl(MethodImplOptions.InternalCall)]
+        [MethodImpl(MethodImplOptions.InternalCall)]
         private static extern void CreateComponent_Native(ulong entityID, Type type);
         [MethodImpl(MethodImplOptions.InternalCall)]
         private static extern bool HasComponent_Native(ulong entityID, Type type);
-        [MethodImpl(MethodImplOptions.InternalCall)] 
+        [MethodImpl(MethodImplOptions.InternalCall)]
         private static extern void GetTransform_Native(ulong entityID, out Matrix4 matrix);
         [MethodImpl(MethodImplOptions.InternalCall)]
         private static extern void SetTransform_Native(ulong entityID, ref Matrix4 matrix);
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private static extern void GetForwardDirection_Native(ulong entityID, out Vector3 forward);
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private static extern void GetRightDirection_Native(ulong entityID, out Vector3 right);
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private static extern void GetUpDirection_Native(ulong entityID, out Vector3 up);
-		[MethodImpl(MethodImplOptions.InternalCall)]
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        private static extern void GetForwardDirection_Native(ulong entityID, out Vector3 forward);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        private static extern void GetRightDirection_Native(ulong entityID, out Vector3 right);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        private static extern void GetUpDirection_Native(ulong entityID, out Vector3 up);
+        [MethodImpl(MethodImplOptions.InternalCall)]
         private static extern ulong FindEntityByTag_Native(string tag);
 
     }

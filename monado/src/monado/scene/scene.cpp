@@ -604,6 +604,36 @@ namespace Monado {
             }
         }
 
+        {
+            auto view = m_Registry.view<MeshColliderComponent>();
+            for (auto entity : view) {
+                Entity e = { entity, this };
+                auto &transform = e.Transform();
+
+                auto &meshCollider = m_Registry.get<MeshColliderComponent>(entity);
+                if (e.HasComponent<RigidBodyComponent>()) {
+                    auto &rigidBody = e.GetComponent<RigidBodyComponent>();
+                    auto &physicsMaterial = e.GetComponent<PhysicsMaterialComponent>();
+                    MND_CORE_ASSERT(rigidBody.RuntimeActor);
+                    physx::PxRigidActor *actor = static_cast<physx::PxRigidActor *>(rigidBody.RuntimeActor);
+
+                    /*physx::PxRigidBody* rigidBodyActor = actor->is<physx::PxRigidBody>();
+                    if (rigidBodyActor)
+                    {
+                            rigidBodyActor->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
+                    }*/
+
+                    physx::PxConvexMesh *triangleMesh = Physics3D::CreateMeshCollider(meshCollider);
+                    MND_CORE_ASSERT(triangleMesh);
+
+                    physx::PxConvexMeshGeometry triangleGeometry = physx::PxConvexMeshGeometry(triangleMesh);
+                    physx::PxMaterial *material = Physics3D::CreateMaterial(
+                        physicsMaterial.StaticFriction, physicsMaterial.DynamicFriction, physicsMaterial.Bounciness);
+                    physx::PxRigidActorExt::createExclusiveShape(*actor, triangleGeometry, *material);
+                }
+            }
+        }
+
         // Setup Collision Filters
         {
             auto view = m_Registry.view<RigidBodyComponent>();
@@ -730,6 +760,7 @@ namespace Monado {
         CopyComponentIfExists<PhysicsMaterialComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
         CopyComponentIfExists<BoxColliderComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
         CopyComponentIfExists<SphereColliderComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
+        CopyComponentIfExists<MeshColliderComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
     }
 
     Entity Scene::FindEntityByTag(const std::string &tag) {
@@ -776,6 +807,7 @@ namespace Monado {
         CopyComponent<PhysicsMaterialComponent>(target->m_Registry, m_Registry, enttMap);
         CopyComponent<BoxColliderComponent>(target->m_Registry, m_Registry, enttMap);
         CopyComponent<SphereColliderComponent>(target->m_Registry, m_Registry, enttMap);
+        CopyComponent<MeshColliderComponent>(target->m_Registry, m_Registry, enttMap);
 
         const auto &entityInstanceMap = ScriptEngine::GetEntityInstanceMap();
         if (entityInstanceMap.find(target->GetUUID()) != entityInstanceMap.end())
@@ -803,5 +835,4 @@ namespace Monado {
         auto [radiance, irradiance] = SceneRenderer::CreateEnvironmentMap(filepath);
         return { filepath, radiance, irradiance };
     }
-
 } // namespace Monado

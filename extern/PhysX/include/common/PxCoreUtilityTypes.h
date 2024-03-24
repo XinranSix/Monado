@@ -1,3 +1,4 @@
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -22,12 +23,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2021 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#ifndef PX_CORE_UTILITY_TYPES_H
-#define PX_CORE_UTILITY_TYPES_H
+
+#ifndef PX_CORE_UTILTY_TYPES_H
+#define PX_CORE_UTILTY_TYPES_H
 /** \addtogroup common
 @{
 */
@@ -76,20 +78,6 @@ struct PxTypedStridedData
 	{
 	}
 
-	PxTypedStridedData(const TDataType* data_, PxU32 stride_ = 0)
-		: stride(stride_)
-		, data(data_)
-	{
-	}
-	
-	PX_INLINE const TDataType& at(PxU32 idx) const
-	{
-		PxU32 theStride(stride);
-		if (theStride == 0)
-			theStride = sizeof(TDataType);
-		PxU32 offset(theStride * idx);
-		return *(reinterpret_cast<const TDataType*>(reinterpret_cast<const PxU8*>(data) + offset));
-	}
 };
 
 struct PxBoundedData : public PxStridedData
@@ -111,6 +99,12 @@ struct PxPadding
 
 template <PxU32 NB_ELEMENTS> class PxFixedSizeLookupTable
 {
+//= ATTENTION! =====================================================================================
+// Changing the data layout of this class breaks the binary serialization format.  See comments for 
+// PX_BINARY_SERIAL_VERSION.  If a modification is required, please adjust the getBinaryMetaData 
+// function.  If the modification is made on a custom branch, please change PX_BINARY_SERIAL_VERSION
+// accordingly.
+//==================================================================================================
 public:
 	
 	PxFixedSizeLookupTable() 
@@ -189,7 +183,7 @@ public:
 	
 	void clear()
 	{
-		PxMemSet(mDataPairs, 0, NB_ELEMENTS*2*sizeof(PxReal));
+		memset(mDataPairs, 0, NB_ELEMENTS*2*sizeof(PxReal));
 		mNbDataPairs = 0;
 	}
 

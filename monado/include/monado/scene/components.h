@@ -164,4 +164,14 @@ namespace Monado {
         CapsuleColliderComponent(const CapsuleColliderComponent &other) = default;
     };
 
+    struct MeshColliderComponent {
+        Ref<Monado::Mesh> CollisionMesh;
+
+        MeshColliderComponent() = default;
+        MeshColliderComponent(const MeshColliderComponent &other) = default;
+        MeshColliderComponent(const Ref<Monado::Mesh> &mesh) : CollisionMesh(mesh) {}
+
+        operator Ref<Monado::Mesh>() { return CollisionMesh; }
+    };
+
 } // namespace Monado

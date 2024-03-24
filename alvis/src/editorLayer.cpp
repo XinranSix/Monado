@@ -116,7 +116,7 @@ namespace Monado {
     }
 
     void EditorLayer::OnDetach() { m_EditorScene->OnShutdown(); }
-    
+
     void EditorLayer::OnScenePlay() {
         m_SelectionContext.clear();
 
@@ -346,7 +346,11 @@ namespace Monado {
     void EditorLayer::SelectEntity(Entity entity) {
         SelectedSubmesh selection;
         if (entity.HasComponent<MeshComponent>()) {
-            selection.Mesh = &entity.GetComponent<MeshComponent>().Mesh->GetSubmeshes()[0];
+            auto &meshComp = entity.GetComponent<MeshComponent>();
+
+            if (meshComp.Mesh) {
+                selection.Mesh = &meshComp.Mesh->GetSubmeshes()[0];
+            }
         }
         selection.Entity = entity;
         m_SelectionContext.clear();

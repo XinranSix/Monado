@@ -126,6 +126,9 @@ namespace Monado {
         std::vector<Submesh> &GetSubmeshes() { return m_Submeshes; }
         const std::vector<Submesh> &GetSubmeshes() const { return m_Submeshes; }
 
+        const std::vector<Vertex> &GetStaticVertices() const { return m_StaticVertices; }
+        const std::vector<Index> &GetIndices() const { return m_Indices; }
+
         Ref<Shader> GetMeshShader() { return m_MeshShader; }
         Ref<Material> GetMaterial() { return m_BaseMaterial; }
         std::vector<Ref<MaterialInstance>> GetMaterials() { return m_Materials; }
@@ -189,4 +192,5 @@ namespace Monado {
         friend class Renderer;
         friend class SceneHierarchyPanel;
     };
+
 } // namespace Monado
