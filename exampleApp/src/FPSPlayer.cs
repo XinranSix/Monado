@@ -76,14 +76,14 @@ namespace FPSExample
 		private void UpdateMovement()
 		{
 			if (Input.IsKeyPressed(KeyCode.W))
-				m_RigidBody.AddForce(m_Transform.Forward * m_CurrentSpeed);
+				m_RigidBody.AddForce(m_CameraTransform.Forward * m_CurrentSpeed);
 			else if (Input.IsKeyPressed(KeyCode.S))
-				m_RigidBody.AddForce(m_Transform.Forward * -m_CurrentSpeed);
+				m_RigidBody.AddForce(m_CameraTransform.Forward * -m_CurrentSpeed);
 
 			if (Input.IsKeyPressed(KeyCode.A))
-				m_RigidBody.AddForce(m_Transform.Right * -m_CurrentSpeed);
+				m_RigidBody.AddForce(m_CameraTransform.Right * -m_CurrentSpeed);
 			else if (Input.IsKeyPressed(KeyCode.D))
-				m_RigidBody.AddForce(m_Transform.Right * m_CurrentSpeed);
+				m_RigidBody.AddForce(m_CameraTransform.Right * m_CurrentSpeed);
 
 			if (Input.IsKeyPressed(KeyCode.Space) && m_Colliding)
 				m_RigidBody.AddForce(Vector3.Up * JumpForce);

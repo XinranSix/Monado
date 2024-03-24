@@ -200,7 +200,7 @@ namespace Monado {
             }
         }
 
-        Physics::Simulate();
+        Physics::Simulate(ts);
     }
 
     void Scene::OnRenderRuntime(Timestep ts) {

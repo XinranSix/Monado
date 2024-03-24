@@ -47,8 +47,10 @@ namespace Monado {
         if ((filterData0.word0 & filterData1.word1) || (filterData1.word0 & filterData0.word1)) {
             pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
             pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_LOST;
+            // return physx::PxFilterFlag::eDEFAULT;
         }
 
+        // return physx::PxFilterFlag::eSUPPRESS;
         return physx::PxFilterFlag::eDEFAULT;
     }
 

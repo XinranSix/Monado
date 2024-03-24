@@ -63,11 +63,21 @@ namespace Monado {
         return actor;
     }
 
-    void PXPhysicsWrappers::SetCollisionFilters(const physx::PxRigidActor &actor, uint32_t actorGroup,
-                                                uint32_t filters) {
+    void PXPhysicsWrappers::SetCollisionFilters(const physx::PxRigidActor &actor, uint32_t physicsLayer) {
+        const PhysicsLayer &layerInfo = PhysicsLayerManager::GetLayerInfo(physicsLayer);
+
+        uint32_t collisionBitField = 0;
+
+        for (const auto &collisionLayerInfo : PhysicsLayerManager::GetLayerCollisions(physicsLayer)) {
+            collisionBitField |= collisionLayerInfo.BitValue;
+        }
+
+        if (collisionBitField == 0)
+            return;
+
         physx::PxFilterData filterData;
-        filterData.word0 = actorGroup;
-        filterData.word1 = filters;
+        filterData.word0 = layerInfo.BitValue;
+        filterData.word1 = collisionBitField;
 
         const physx::PxU32 numShapes = actor.getNbShapes();
 
