@@ -1,4 +1,5 @@
 #include "editorLayer.h"
+#include "monado/editor/physicsSettingsWindow.h"
 #include "monado/core/application.h"
 #include "monado/renderer/renderer.h"
 #include "monado/renderer/sceneRenderer.h"
@@ -649,6 +650,12 @@ namespace Monado {
                 ImGui::EndMenu();
             }
 
+            if (ImGui::BeginMenu("Edit")) {
+                ImGui::MenuItem("Physics Settings", nullptr, &m_ShowPhysicsSettings);
+
+                ImGui::EndMenu();
+            }
+
             if (ImGui::BeginMenu("Debug")) {
                 if (ImGui::MenuItem("Connect To PVD")) {
                     Physics::ConnectVisualDebugger();
@@ -852,6 +859,7 @@ namespace Monado {
         ImGui::End();
 
         ScriptEngine::OnImGuiRender();
+        PhysicsSettingsWindow::OnImGuiRender(&m_ShowPhysicsSettings);
 
         ImGui::End();
     }

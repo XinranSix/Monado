@@ -671,7 +671,7 @@ namespace Monado {
             PhysicsLayerManager::ClearLayers();
 
             for (auto layer : physicsLayers) {
-                PhysicsLayerManager::AddLayer(layer["Name"].as<std::string>());
+                PhysicsLayerManager::AddLayer(layer["Name"].as<std::string>(), false);
             }
 
             for (auto layer : physicsLayers) {

@@ -151,6 +151,8 @@ namespace Monado {
         bool m_ViewportPanelMouseOver = false;
         bool m_ViewportPanelFocused = false;
 
+        bool m_ShowPhysicsSettings = false;
+
         enum class SceneState { Edit = 0, Play = 1, Pause = 2 };
         SceneState m_SceneState = SceneState::Edit;
 
