@@ -74,6 +74,8 @@ namespace FPSExample
 			m_LastMousePosition = currentMousePosition;
 		}
 
+		Collider[] colliders = new Collider[10];
+
 		private void UpdateMovement()
 		{
 			RaycastHit hitInfo;
@@ -84,7 +86,18 @@ namespace FPSExample
 
 			if (Input.IsKeyPressed(KeyCode.L))
 			{
-				Collider[] colliders = Physics.OverlapBox(m_Transform.Transform.Translation, new Vector3(1.0F));
+				// NOTE: The NonAlloc version of Overlap functions should be used when possible since it doesn't allocate a new array
+				//			whenever you call it. The normal versions allocates a brand new array every time.
+
+				int numColliders = Physics.OverlapBoxNonAlloc(m_Transform.Transform.Translation, new Vector3(1.0F), colliders);
+
+				// When using NonAlloc it's not safe to use a foreach loop since some of the colliders may not exist
+				for	(int i = 0; i < numColliders; i++)
+				{
+					Console.WriteLine(colliders[i]);
+				}
+
+				/*Collider[] colliders = Physics.OverlapBox(m_Transform.Transform.Translation, new Vector3(1.0F));
 				Console.WriteLine(colliders.Length);
 
 				foreach (Collider c in colliders)
@@ -95,7 +108,7 @@ namespace FPSExample
 					Console.WriteLine("IsSphere: {0}", c is SphereCollider);
 					Console.WriteLine("IsCapsule: {0}", c is CapsuleCollider);
 					Console.WriteLine("IsMesh: {0}", c is MeshCollider);
-				}
+				}*/
 			}
 
 			if (Input.IsKeyPressed(KeyCode.W))

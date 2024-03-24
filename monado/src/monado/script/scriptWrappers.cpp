@@ -31,7 +31,6 @@ namespace Monado {
 
 namespace Monado {
     namespace Script {
-
         static std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(const glm::mat4 &transform) {
             glm::vec3 scale, translation, skew;
             glm::vec4 perspective;
@@ -162,6 +161,55 @@ namespace Monado {
             }
 
             return outColliders;
+        }
+
+        int32_t Monado_Physics_OverlapBoxNonAlloc(glm::vec3 *origin, glm::vec3 *halfSize, MonoArray *outColliders) {
+            memset(s_OverlapBuffer.data(), 0, OVERLAP_MAX_COLLIDERS * sizeof(physx::PxOverlapHit));
+
+            uint64_t arrayLength = mono_array_length(outColliders);
+
+            uint32_t count;
+            if (PXPhysicsWrappers::OverlapBox(*origin, *halfSize, s_OverlapBuffer, &count)) {
+                if (count > arrayLength)
+                    count = arrayLength;
+
+                AddCollidersToArray(outColliders, s_OverlapBuffer, count);
+            }
+
+            return count;
+        }
+
+        int32_t Monado_Physics_OverlapCapsuleNonAlloc(glm::vec3 *origin, float radius, float halfHeight,
+                                                      MonoArray *outColliders) {
+            memset(s_OverlapBuffer.data(), 0, OVERLAP_MAX_COLLIDERS * sizeof(physx::PxOverlapHit));
+
+            uint64_t arrayLength = mono_array_length(outColliders);
+
+            uint32_t count;
+            if (PXPhysicsWrappers::OverlapCapsule(*origin, radius, halfHeight, s_OverlapBuffer, &count)) {
+                if (count > arrayLength)
+                    count = arrayLength;
+
+                AddCollidersToArray(outColliders, s_OverlapBuffer, count);
+            }
+
+            return count;
+        }
+
+        int32_t Monado_Physics_OverlapSphereNonAlloc(glm::vec3 *origin, float radius, MonoArray *outColliders) {
+            memset(s_OverlapBuffer.data(), 0, OVERLAP_MAX_COLLIDERS * sizeof(physx::PxOverlapHit));
+
+            uint64_t arrayLength = mono_array_length(outColliders);
+
+            uint32_t count;
+            if (PXPhysicsWrappers::OverlapSphere(*origin, radius, s_OverlapBuffer, &count)) {
+                if (count > arrayLength)
+                    count = arrayLength;
+
+                AddCollidersToArray(outColliders, s_OverlapBuffer, count);
+            }
+
+            return count;
         }
 
         ////////////////////////////////////////////////////////////////
