@@ -113,7 +113,6 @@ namespace Monado {
             std::bind(&EditorLayer::OnEntityDeleted, this, std::placeholders::_1));
 
         SceneSerializer serializer(m_EditorScene);
-        // serializer.Deserialize("alvis/assets/scenes/Physics3DTest.msc");
         serializer.Deserialize("alvis/assets/scenes/FPSDemo.msc");
     }
 
@@ -191,9 +190,7 @@ namespace Monado {
                     glm::vec4 color = (m_SelectionMode == SelectionMode::Entity) ? glm::vec4 { 1.0f, 1.0f, 1.0f, 1.0f }
                                                                                  : glm::vec4 { 0.2f, 0.9f, 0.2f, 1.0f };
                     Renderer::DrawAABB(selection.Mesh->BoundingBox,
-                                       selection.Entity.GetComponent<TransformComponent>().Transformation.GetMatrix() *
-                                           selection.Mesh->Transform,
-                                       color);
+                                       selection.Entity.Transform().GetTransform() * selection.Mesh->Transform, color);
                     Renderer2D::EndScene();
                     Renderer::EndRenderPass();
                 }
@@ -204,15 +201,13 @@ namespace Monado {
 
                 if (selection.Entity.HasComponent<BoxCollider2DComponent>()) {
                     const auto &size = selection.Entity.GetComponent<BoxCollider2DComponent>().Size;
-                    const Transform &transform = selection.Entity.GetComponent<TransformComponent>();
-                    glm::vec3 translation = transform.GetTranslation();
-                    glm::vec3 rotation = transform.GetRotation();
+                    const TransformComponent &transform = selection.Entity.GetComponent<TransformComponent>();
 
                     Renderer::BeginRenderPass(SceneRenderer::GetFinalRenderPass(), false);
                     auto viewProj = m_EditorCamera.GetViewProjection();
                     Renderer2D::BeginScene(viewProj, false);
-                    Renderer2D::DrawRotatedQuad({ translation.x, translation.y }, size * 2.0f, rotation.z,
-                                                { 1.0f, 0.0f, 1.0f, 1.0f });
+                    Renderer2D::DrawRotatedQuad({ transform.Translation.x, transform.Translation.y }, size * 2.0f,
+                                                transform.Rotation.z, { 1.0f, 0.0f, 1.0f, 1.0f });
                     Renderer2D::EndScene();
                     Renderer::EndRenderPass();
                 }
@@ -603,28 +598,28 @@ namespace Monado {
 
             bool snap = Input::IsKeyPressed(MND_KEY_LEFT_CONTROL);
 
-            Transform &entityTransform = selection.Entity.Transformation();
+            TransformComponent &entityTransform = selection.Entity.Transform();
             float snapValue = GetSnapValue();
             float snapValues[3] = { snapValue, snapValue, snapValue };
             if (m_SelectionMode == SelectionMode::Entity) {
-                glm::mat4 transform = entityTransform.GetMatrix();
+                glm::mat4 transform = entityTransform.GetTransform();
                 ImGuizmo::Manipulate(glm::value_ptr(m_EditorCamera.GetViewMatrix()),
                                      glm::value_ptr(m_EditorCamera.GetProjectionMatrix()),
                                      (ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform),
                                      nullptr, snap ? snapValues : nullptr);
 
                 auto [translation, rotation, scale] = GetTransformDecomposition(transform);
-                entityTransform.SetTranslation(translation);
-                entityTransform.SetRotation(rotation);
-                entityTransform.SetScale(scale);
+                entityTransform.Translation = translation;
+                entityTransform.Rotation = glm::degrees(glm::eulerAngles(rotation));
+                entityTransform.Scale = scale;
             } else {
-                glm::mat4 transformBase = entityTransform.GetMatrix() * selection.Mesh->Transform;
+                glm::mat4 transformBase = entityTransform.GetTransform() * selection.Mesh->Transform;
                 ImGuizmo::Manipulate(glm::value_ptr(m_EditorCamera.GetViewMatrix()),
                                      glm::value_ptr(m_EditorCamera.GetProjectionMatrix()),
                                      (ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(transformBase),
                                      nullptr, snap ? snapValues : nullptr);
 
-                selection.Mesh->Transform = glm::inverse(entityTransform.GetMatrix()) * transformBase;
+                selection.Mesh->Transform = glm::inverse(entityTransform.GetTransform()) * transformBase;
             }
         }
 
@@ -652,7 +647,7 @@ namespace Monado {
 
             if (ImGui::BeginMenu("Script")) {
                 if (ImGui::MenuItem("Reload C# Assembly"))
-                    ScriptEngine::ReloadAssembly("ExampleApp.dll");
+                    ScriptEngine::ReloadAssembly("alvis/assets/scripts/ExampleApp.dll");
 
                 ImGui::MenuItem("Reload assembly on play", nullptr, &m_ReloadScriptOnPlay);
                 ImGui::EndMenu();
@@ -950,9 +945,9 @@ namespace Monado {
                     float lastT = std::numeric_limits<float>::max();
                     for (uint32_t i = 0; i < submeshes.size(); i++) {
                         auto &submesh = submeshes[i];
-                        Ray ray = { glm::inverse(entity.Transformation().GetMatrix() * submesh.Transform) *
+                        Ray ray = { glm::inverse(entity.Transform().GetTransform() * submesh.Transform) *
                                         glm::vec4(origin, 1.0f),
-                                    glm::inverse(glm::mat3(entity.Transformation().GetMatrix()) *
+                                    glm::inverse(glm::mat3(entity.Transform().GetTransform()) *
                                                  glm::mat3(submesh.Transform)) *
                                         direction };
 

@@ -3,16 +3,13 @@
 #include <string>
 
 #include "PxPhysicsAPI.h"
-#include "monado/core/math/transform.h"
-#include "glm/glm.hpp"
-#define GLM_ENABLE_EXPERIMENTAL
-#include "glm/gtx/quaternion.hpp"
-#include "glm/gtx/matrix_decompose.hpp"
+#include "monado/scene/components.h"
+
 #include "glm/gtc/type_ptr.hpp"
 
 namespace Monado {
 
-    physx::PxTransform ToPhysXTransform(const Transform &transform);
+    physx::PxTransform ToPhysXTransform(const TransformComponent &transform);
     physx::PxTransform ToPhysXTransform(const glm::mat4 &transform);
     physx::PxMat44 ToPhysXMatrix(const glm::mat4 &matrix);
     physx::PxVec3 ToPhysXVector(const glm::vec3 &vector);
@@ -25,11 +22,10 @@ namespace Monado {
     glm::vec4 FromPhysXVector(const physx::PxVec4 &vector);
     glm::quat FromPhysXQuat(const physx::PxQuat &quat);
 
-    physx::PxFilterFlags MonadoFilterShader(physx::PxFilterObjectAttributes attributes0,
-                                            physx::PxFilterData filterData0,
-                                            physx::PxFilterObjectAttributes attributes1,
-                                            physx::PxFilterData filterData1, physx::PxPairFlags &pairFlags,
-                                            const void *constantBlock, physx::PxU32 constantBlockSize);
+    physx::PxFilterFlags MonadoFilterShader(physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
+                                           physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
+                                           physx::PxPairFlags &pairFlags, const void *constantBlock,
+                                           physx::PxU32 constantBlockSize);
 
     class ConvexMeshSerializer {
     public:

@@ -160,8 +160,10 @@ namespace Monado {
     }
 
     physx::PxRigidActor *PXPhysicsWrappers::CreateActor(const RigidBodyComponent &rigidbody,
-                                                        const Transform &transform) {
+                                                        const TransformComponent &transform) {
         physx::PxRigidActor *actor = nullptr;
+
+        const PhysicsSettings &settings = Physics::GetSettings();
 
         if (rigidbody.BodyType == RigidBodyComponent::Type::Static) {
             actor = s_Physics->createRigidStatic(ToPhysXTransform(transform));
@@ -182,6 +184,8 @@ namespace Monado {
                                                   rigidbody.LockRotationY);
             dynamicActor->setRigidDynamicLockFlag(physx::PxRigidDynamicLockFlag::eLOCK_ANGULAR_Z,
                                                   rigidbody.LockRotationZ);
+
+            dynamicActor->setSolverIterationCounts(settings.SolverIterations, settings.SolverVelocityIterations);
 
             physx::PxRigidBodyExt::updateMassAndInertia(*dynamicActor, rigidbody.Mass);
             actor = dynamicActor;
@@ -270,18 +274,17 @@ namespace Monado {
         shape->setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, collider.IsTrigger);
     }
 
-    // TODO: Save cooked mesh once processed
     physx::PxConvexMesh *PXPhysicsWrappers::CreateConvexMesh(MeshColliderComponent &collider) {
-        std::vector<Vertex> vertices = collider.CollisionMesh->GetStaticVertices();
-
-        physx::PxConvexMeshDesc convexDesc;
-        convexDesc.points.count = vertices.size();
-        convexDesc.points.stride = sizeof(Vertex);
-        convexDesc.points.data = vertices.data();
-        convexDesc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX;
-
         physx::PxConvexMesh *mesh = nullptr;
         if (!ConvexMeshSerializer::IsSerialized(collider.CollisionMesh->GetFilePath())) {
+            std::vector<Vertex> vertices = collider.CollisionMesh->GetStaticVertices();
+
+            physx::PxConvexMeshDesc convexDesc;
+            convexDesc.points.count = vertices.size();
+            convexDesc.points.stride = sizeof(Vertex);
+            convexDesc.points.data = vertices.data();
+            convexDesc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX;
+
             physx::PxDefaultMemoryOutputStream buf;
             physx::PxConvexMeshCookingResult::Enum result;
             if (!s_CookingFactory->cookConvexMesh(convexDesc, buf, &result))
@@ -296,6 +299,7 @@ namespace Monado {
             mesh = s_Physics->createConvexMesh(input);
         }
 
+        // TODO: This doesn't really belong here since this generates the debug mesh used for the editor
         if (!collider.ProcessedMesh) {
             // Based On:
             // https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/ThirdParty/PhysX3/NvCloth/samples/SampleBase/renderer/ConvexRenderMesh.cpp
@@ -447,6 +451,7 @@ namespace Monado {
     }
 
     void PXPhysicsWrappers::Shutdown() {
+        s_CookingFactory->release();
         s_Physics->release();
         s_Foundation->release();
     }

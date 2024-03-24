@@ -20,7 +20,7 @@ namespace Monado {
     uint32_t PhysicsLayerManager::AddLayer(const std::string &name, bool setCollisions) {
         uint32_t layerId = GetNextLayerID();
         PhysicsLayer layer = { layerId, name, (uint32_t)BIT(layerId), BIT(layerId) };
-        s_Layers.push_back(layer);
+        s_Layers.insert(s_Layers.begin() + layerId, layer);
 
         if (setCollisions) {
             for (const auto &layer2 : s_Layers) {
@@ -32,9 +32,6 @@ namespace Monado {
     }
 
     void PhysicsLayerManager::RemoveLayer(uint32_t layerId) {
-        if (!IsLayerValid(layerId))
-            return;
-
         PhysicsLayer &layerInfo = GetLayer(layerId);
 
         for (auto &otherLayer : s_Layers) {
@@ -81,13 +78,7 @@ namespace Monado {
     }
 
     PhysicsLayer &PhysicsLayerManager::GetLayer(uint32_t layerId) {
-        for (auto &layer : s_Layers) {
-            if (layer.LayerID == layerId) {
-                return layer;
-            }
-        }
-
-        return s_NullLayer;
+        return layerId >= s_Layers.size() ? s_NullLayer : s_Layers[layerId];
     }
 
     PhysicsLayer &PhysicsLayerManager::GetLayer(const std::string &layerName) {
@@ -105,15 +96,9 @@ namespace Monado {
     }
 
     bool PhysicsLayerManager::IsLayerValid(uint32_t layerId) {
-        for (const auto &layer : s_Layers) {
-            if (layer.LayerID == layerId)
-                return true;
-        }
-
-        return false;
+        const PhysicsLayer &layer = GetLayer(layerId);
+        return layer.LayerID != s_NullLayer.LayerID && layer.IsValid();
     }
-
-    void PhysicsLayerManager::ClearLayers() { s_Layers.clear(); }
 
     uint32_t PhysicsLayerManager::GetNextLayerID() {
         int32_t lastId = -1;

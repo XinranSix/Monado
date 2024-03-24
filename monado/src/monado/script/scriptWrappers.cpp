@@ -11,6 +11,7 @@
 #include "glm/gtx/quaternion.hpp"
 #include "glm/gtx/matrix_decompose.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include "glm/gtx/common.hpp"
 
 #include <mono/jit/jit.h>
 #include <mono/metadata/assembly.h>
@@ -172,7 +173,7 @@ namespace Monado {
         }
 
         int32_t Monado_Physics_OverlapCapsuleNonAlloc(glm::vec3 *origin, float radius, float halfHeight,
-                                                      MonoArray *outColliders) {
+                                                     MonoArray *outColliders) {
             memset(s_OverlapBuffer.data(), 0, OVERLAP_MAX_COLLIDERS * sizeof(physx::PxOverlapHit));
 
             uint64_t arrayLength = mono_array_length(outColliders);
@@ -214,7 +215,7 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             MonoType *monoType = mono_reflection_type_get_type((MonoReflectionType *)type);
@@ -226,7 +227,7 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             MonoType *monoType = mono_reflection_type_get_type((MonoReflectionType *)type);
@@ -250,14 +251,17 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
-            Transform &transform = entity.GetComponent<TransformComponent>();
-            *outTransform = {
-                transform.GetTranslation(), transform.GetRotation(),       transform.GetScale(),
-                transform.GetUpDirection(), transform.GetRightDirection(), transform.GetForwardDirection()
-            };
+            TransformComponent &transform = entity.GetComponent<TransformComponent>();
+
+            glm::quat rotation = glm::quat(glm::radians(transform.Rotation));
+            glm::vec3 right = glm::normalize(glm::rotate(rotation, glm::vec3(1.0F, 0.0F, 0.0F)));
+            glm::vec3 up = glm::normalize(glm::rotate(rotation, glm::vec3(0.0F, 1.0F, 0.0F)));
+            glm::vec3 forward = glm::normalize(glm::rotate(rotation, glm::vec3(0.0F, 0.0F, -1.0F)));
+
+            *outTransform = { transform.Translation, transform.Rotation, transform.Scale, up, right, forward };
         }
 
         void Monado_TransformComponent_SetTransform(uint64_t entityID, ScriptTransform *inTransform) {
@@ -265,13 +269,13 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
-            Transform &transform = entity.GetComponent<TransformComponent>();
-            transform.SetTranslation(inTransform->Translation);
-            transform.SetRotation(inTransform->Rotation);
-            transform.SetScale(inTransform->Scale);
+            TransformComponent &transform = entity.GetComponent<TransformComponent>();
+            transform.Translation = inTransform->Translation;
+            transform.Rotation = inTransform->Rotation;
+            transform.Scale = inTransform->Scale;
         }
 
         void *Monado_MeshComponent_GetMesh(uint64_t entityID) {
@@ -279,7 +283,7 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             auto &meshComponent = entity.GetComponent<MeshComponent>();
@@ -291,7 +295,7 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             auto &meshComponent = entity.GetComponent<MeshComponent>();
@@ -299,12 +303,12 @@ namespace Monado {
         }
 
         void Monado_RigidBody2DComponent_ApplyLinearImpulse(uint64_t entityID, glm::vec2 *impulse, glm::vec2 *offset,
-                                                            bool wake) {
+                                                           bool wake) {
             Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBody2DComponent>());
@@ -318,7 +322,7 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBody2DComponent>());
@@ -334,7 +338,7 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBody2DComponent>());
@@ -349,7 +353,7 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBodyComponent>());
@@ -362,7 +366,7 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBodyComponent>());
@@ -386,7 +390,7 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBodyComponent>());
@@ -410,7 +414,7 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBodyComponent>());
@@ -430,7 +434,7 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBodyComponent>());
@@ -449,7 +453,7 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBodyComponent>());
@@ -469,7 +473,7 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBodyComponent>());
@@ -488,7 +492,7 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBodyComponent>());
@@ -510,7 +514,7 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBodyComponent>());
@@ -523,7 +527,7 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBodyComponent>());
@@ -541,7 +545,7 @@ namespace Monado {
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
             MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
+                           "Invalid entity ID or entity doesn't exist in scene!");
 
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBodyComponent>());
@@ -642,7 +646,7 @@ namespace Monado {
         }
 
         void Monado_MaterialInstance_SetTexture(Ref<MaterialInstance> *_this, MonoString *uniform,
-                                                Ref<Texture2D> *texture) {
+                                               Ref<Texture2D> *texture) {
             Ref<MaterialInstance> &instance = *(Ref<MaterialInstance> *)_this;
             instance->Set(mono_string_to_utf8(uniform), *texture);
         }

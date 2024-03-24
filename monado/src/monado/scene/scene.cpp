@@ -174,15 +174,15 @@ namespace Monado {
             auto view = m_Registry.view<RigidBody2DComponent>();
             for (auto entity : view) {
                 Entity e = { entity, this };
-                Transform &transform = e.Transformation();
                 auto &rb2d = e.GetComponent<RigidBody2DComponent>();
                 b2Body *body = static_cast<b2Body *>(rb2d.RuntimeBody);
 
                 auto &position = body->GetPosition();
-                glm::vec3 rotation = transform.GetRotation();
+                auto &transform = e.GetComponent<TransformComponent>();
 
-                transform.SetTranslation({ position.x, position.y, transform.GetTranslation().z });
-                transform.SetRotation({ rotation.x, rotation.y, glm::degrees(body->GetAngle()) });
+                transform.Translation.x = position.x;
+                transform.Translation.y = position.y;
+                transform.Rotation.z = glm::degrees(body->GetAngle());
             }
         }
 
@@ -197,7 +197,7 @@ namespace Monado {
         if (!cameraEntity)
             return;
 
-        glm::mat4 cameraViewMatrix = glm::inverse(cameraEntity.Transformation().GetMatrix());
+        glm::mat4 cameraViewMatrix = glm::inverse(cameraEntity.Transform().GetTransform());
         MND_CORE_ASSERT(cameraEntity, "Scene does not contain any cameras!");
         SceneCamera &camera = cameraEntity.GetComponent<CameraComponent>();
         camera.SetViewportSize(m_ViewportWidth, m_ViewportHeight);
@@ -212,7 +212,7 @@ namespace Monado {
                 meshComponent.Mesh->OnUpdate(ts);
 
                 // TODO: Should we render (logically)
-                SceneRenderer::SubmitMesh(meshComponent, transformComponent.Transformation.GetMatrix(), nullptr);
+                SceneRenderer::SubmitMesh(meshComponent, transformComponent.GetTransform(), nullptr);
             }
         }
         SceneRenderer::EndScene();
@@ -251,7 +251,7 @@ namespace Monado {
                 meshComponent.Mesh->OnUpdate(ts);
 
                 // TODO: Should we render (logically)
-                SceneRenderer::SubmitMesh(meshComponent, transformComponent.Transformation.GetMatrix());
+                SceneRenderer::SubmitMesh(meshComponent, transformComponent.GetTransform());
 
                 /*if (m_SelectedEntity == entity)
                         SceneRenderer::SubmitSelectedMesh(meshComponent, transformComponent);*/
@@ -265,8 +265,7 @@ namespace Monado {
                 auto &collider = e.GetComponent<BoxColliderComponent>();
 
                 if (m_SelectedEntity == entity)
-                    SceneRenderer::SubmitColliderMesh(collider,
-                                                      e.GetComponent<TransformComponent>().Transformation.GetMatrix());
+                    SceneRenderer::SubmitColliderMesh(collider, e.GetComponent<TransformComponent>().GetTransform());
             }
         }
 
@@ -277,8 +276,7 @@ namespace Monado {
                 auto &collider = e.GetComponent<SphereColliderComponent>();
 
                 if (m_SelectedEntity == entity)
-                    SceneRenderer::SubmitColliderMesh(collider,
-                                                      e.GetComponent<TransformComponent>().Transformation.GetMatrix());
+                    SceneRenderer::SubmitColliderMesh(collider, e.GetComponent<TransformComponent>().GetTransform());
             }
         }
 
@@ -289,8 +287,7 @@ namespace Monado {
                 auto &collider = e.GetComponent<CapsuleColliderComponent>();
 
                 if (m_SelectedEntity == entity)
-                    SceneRenderer::SubmitColliderMesh(collider,
-                                                      e.GetComponent<TransformComponent>().Transformation.GetMatrix());
+                    SceneRenderer::SubmitColliderMesh(collider, e.GetComponent<TransformComponent>().GetTransform());
             }
         }
 
@@ -301,8 +298,7 @@ namespace Monado {
                 auto &collider = e.GetComponent<MeshColliderComponent>();
 
                 if (m_SelectedEntity == entity)
-                    SceneRenderer::SubmitColliderMesh(collider,
-                                                      e.GetComponent<TransformComponent>().Transformation.GetMatrix());
+                    SceneRenderer::SubmitColliderMesh(collider, e.GetComponent<TransformComponent>().GetTransform());
             }
         }
 
@@ -353,8 +349,7 @@ namespace Monado {
             for (auto entity : view) {
                 Entity e = { entity, this };
                 UUID entityID = e.GetComponent<IDComponent>().ID;
-                Transform &transform = e.Transformation();
-                glm::vec3 translation = transform.GetTranslation();
+                TransformComponent &transform = e.GetComponent<TransformComponent>();
                 auto &rigidBody2D = m_Registry.get<RigidBody2DComponent>(entity);
 
                 b2BodyDef bodyDef;
@@ -364,9 +359,9 @@ namespace Monado {
                     bodyDef.type = b2_dynamicBody;
                 else if (rigidBody2D.BodyType == RigidBody2DComponent::Type::Kinematic)
                     bodyDef.type = b2_kinematicBody;
-                bodyDef.position.Set(translation.x, translation.y);
+                bodyDef.position.Set(transform.Translation.x, transform.Translation.y);
 
-                bodyDef.angle = glm::radians(transform.GetRotation().z);
+                bodyDef.angle = glm::radians(transform.Rotation.z);
 
                 b2Body *body = world->CreateBody(&bodyDef);
                 body->SetFixedRotation(rigidBody2D.FixedRotation);
@@ -471,7 +466,7 @@ namespace Monado {
         auto &idComponent = entity.AddComponent<IDComponent>();
         idComponent.ID = {};
 
-        entity.AddComponent<TransformComponent>(Transform());
+        entity.AddComponent<TransformComponent>();
         if (!name.empty())
             entity.AddComponent<TagComponent>(name);
 
@@ -484,7 +479,7 @@ namespace Monado {
         auto &idComponent = entity.AddComponent<IDComponent>();
         idComponent.ID = uuid;
 
-        entity.AddComponent<TransformComponent>(Transform());
+        entity.AddComponent<TransformComponent>();
         if (!name.empty())
             entity.AddComponent<TagComponent>(name);
 
@@ -616,4 +611,5 @@ namespace Monado {
         auto [radiance, irradiance] = SceneRenderer::CreateEnvironmentMap(filepath);
         return { filepath, radiance, irradiance };
     }
+
 } // namespace Monado

@@ -3,7 +3,6 @@
 #include "monado/script/scriptEngine.h"
 #include "monado/core/input.h"
 #include "monado/physics/physics.h"
-#include "monado/core/math/transform.h"
 
 #include "glm/glm.hpp"
 
@@ -39,7 +38,7 @@ namespace Monado {
         MonoArray *Monado_Physics_OverlapSphere(glm::vec3 *origin, float radius);
         int32_t Monado_Physics_OverlapBoxNonAlloc(glm::vec3 *origin, glm::vec3 *halfSize, MonoArray *outColliders);
         int32_t Monado_Physics_OverlapCapsuleNonAlloc(glm::vec3 *origin, float radius, float halfHeight,
-                                                     MonoArray *outColliders);
+                                                      MonoArray *outColliders);
         int32_t Monado_Physics_OverlapSphereNonAlloc(glm::vec3 *origin, float radius, MonoArray *outColliders);
 
         // Entity
@@ -54,7 +53,7 @@ namespace Monado {
         void Monado_MeshComponent_SetMesh(uint64_t entityID, Ref<Mesh> *inMesh);
 
         void Monado_RigidBody2DComponent_ApplyLinearImpulse(uint64_t entityID, glm::vec2 *impulse, glm::vec2 *offset,
-                                                           bool wake);
+                                                            bool wake);
         void Monado_RigidBody2DComponent_GetLinearVelocity(uint64_t entityID, glm::vec2 *outVelocity);
         void Monado_RigidBody2DComponent_SetLinearVelocity(uint64_t entityID, glm::vec2 *velocity);
 
@@ -86,7 +85,7 @@ namespace Monado {
         void Monado_MaterialInstance_SetVector3(Ref<MaterialInstance> *_this, MonoString *uniform, glm::vec3 *value);
         void Monado_MaterialInstance_SetVector4(Ref<MaterialInstance> *_this, MonoString *uniform, glm::vec4 *value);
         void Monado_MaterialInstance_SetTexture(Ref<MaterialInstance> *_this, MonoString *uniform,
-                                               Ref<Texture2D> *texture);
+                                                Ref<Texture2D> *texture);
 
         // Mesh
         Ref<Mesh> *Monado_Mesh_Constructor(MonoString *filepath);

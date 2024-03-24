@@ -1,12 +1,14 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtx/quaternion.hpp"
 
 #include "monado/renderer/texture.h"
 #include "monado/renderer/mesh.h"
 #include "sceneCamera.h"
 #include "monado/core/uuid.h"
-#include "monado/core/math/transform.h"
 
 namespace Monado {
 
@@ -25,17 +27,22 @@ namespace Monado {
         operator const std::string &() const { return Tag; }
     };
 
+    // TODO: Should the Up, Right, Forward vectors be stored here?
     struct TransformComponent {
-        Transform Transformation;
+        glm::vec3 Translation = { 0.0F, 0.0F, 0.0F };
+        glm::vec3 Rotation = { 0.0F, 0.0F, 0.0F };
+        glm::vec3 Scale = { 0.0F, 0.0F, 0.0F };
 
         TransformComponent() = default;
         TransformComponent(const TransformComponent &other) = default;
-        TransformComponent(const Transform &transform) : Transformation(transform) {}
+        TransformComponent(const glm::vec3 &translation) : Translation(translation) {}
 
-        operator Transform &() { return Transformation; }
-        operator const Transform &() const { return Transformation; }
+        glm::mat4 GetTransform() const {
+            return glm::translate(glm::mat4(1.0F), Translation) * glm::toMat4(glm::quat(glm::radians(Rotation))) *
+                   glm::scale(glm::mat4(1.0F), Scale);
+        }
     };
-
+    
     struct MeshComponent {
         Ref<Monado::Mesh> Mesh;
 

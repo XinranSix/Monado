@@ -2,7 +2,7 @@
 #include "monado/physics/physics.h"
 #include "monado/physics/pXPhysicsWrappers.h"
 #include "monado/physics/physicsLayer.h"
-#include "monado/core/math/transform.h"
+#include "monado/script/scriptEngine.h"
 
 #include "extensions/PxBroadPhaseExt.h"
 
@@ -87,7 +87,8 @@ namespace Monado {
 
         RigidBodyComponent &rigidbody = e.GetComponent<RigidBodyComponent>();
 
-        physx::PxRigidActor *actor = PXPhysicsWrappers::CreateActor(rigidbody, e.Transformation());
+        TransformComponent &transform = e.GetComponent<TransformComponent>();
+        physx::PxRigidActor *actor = PXPhysicsWrappers::CreateActor(rigidbody, transform);
 
         if (rigidbody.BodyType == RigidBodyComponent::Type::Dynamic)
             s_SimulatedEntities.push_back(e);
@@ -101,26 +102,24 @@ namespace Monado {
 
         physx::PxMaterial *material = PXPhysicsWrappers::CreateMaterial(e.GetComponent<PhysicsMaterialComponent>());
 
-        const Transform &transform = e.Transformation();
-
         if (e.HasComponent<BoxColliderComponent>()) {
             BoxColliderComponent &collider = e.GetComponent<BoxColliderComponent>();
-            PXPhysicsWrappers::AddBoxCollider(*actor, *material, collider, transform.GetScale());
+            PXPhysicsWrappers::AddBoxCollider(*actor, *material, collider, transform.Scale);
         }
 
         if (e.HasComponent<SphereColliderComponent>()) {
             SphereColliderComponent &collider = e.GetComponent<SphereColliderComponent>();
-            PXPhysicsWrappers::AddSphereCollider(*actor, *material, collider, transform.GetScale());
+            PXPhysicsWrappers::AddSphereCollider(*actor, *material, collider, transform.Scale);
         }
 
         if (e.HasComponent<CapsuleColliderComponent>()) {
             CapsuleColliderComponent &collider = e.GetComponent<CapsuleColliderComponent>();
-            PXPhysicsWrappers::AddCapsuleCollider(*actor, *material, collider, transform.GetScale());
+            PXPhysicsWrappers::AddCapsuleCollider(*actor, *material, collider, transform.Scale);
         }
 
         if (e.HasComponent<MeshColliderComponent>()) {
             MeshColliderComponent &collider = e.GetComponent<MeshColliderComponent>();
-            PXPhysicsWrappers::AddMeshCollider(*actor, *material, collider, transform.GetScale());
+            PXPhysicsWrappers::AddMeshCollider(*actor, *material, collider, transform.Scale);
         }
 
         if (!PhysicsLayerManager::IsLayerValid(rigidbody.Layer))
@@ -133,8 +132,6 @@ namespace Monado {
     PhysicsSettings &Physics::GetSettings() { return s_Settings; }
 
     void Physics::Simulate(Timestep ts) {
-        MND_CORE_ASSERT(s_Scene);
-
         s_SimulationTime += ts.GetMilliseconds();
 
         if (s_SimulationTime < s_Settings.FixedTimestep)
@@ -142,16 +139,21 @@ namespace Monado {
 
         s_SimulationTime -= s_Settings.FixedTimestep;
 
+        for (Entity &e : s_SimulatedEntities) {
+            if (ScriptEngine::IsEntityModuleValid(e))
+                ScriptEngine::OnPhysicsUpdateEntity(e, s_Settings.FixedTimestep);
+        }
+
         s_Scene->simulate(s_Settings.FixedTimestep);
         s_Scene->fetchResults(true);
 
         for (Entity &e : s_SimulatedEntities) {
-            Transform &transform = e.Transformation();
+            TransformComponent &transform = e.Transform();
             RigidBodyComponent &rb = e.GetComponent<RigidBodyComponent>();
             physx::PxRigidActor *actor = static_cast<physx::PxRigidActor *>(rb.RuntimeActor);
             physx::PxTransform actorPose = actor->getGlobalPose();
-            transform.SetTranslation(FromPhysXVector(actorPose.p));
-            transform.SetRotation(FromPhysXQuat(actorPose.q));
+            transform.Translation = (FromPhysXVector(actorPose.p));
+            transform.Rotation = glm::degrees(glm::eulerAngles(FromPhysXQuat(actorPose.q)));
         }
     }
 
@@ -167,52 +169,5 @@ namespace Monado {
     }
 
     void *Physics::GetPhysicsScene() { return s_Scene; }
-
-    void ConvexMeshSerializer::SerializeMesh(const std::string &filepath,
-                                             const physx::PxDefaultMemoryOutputStream &data) {
-        std::filesystem::path p = filepath;
-        auto path = p.parent_path() / (p.filename().string() + ".pxm");
-        std::string cachedFilepath = path.string();
-
-        FILE *f = fopen(cachedFilepath.c_str(), "wb");
-        if (f) {
-            fwrite(data.getData(), sizeof(physx::PxU8), data.getSize() / sizeof(physx::PxU8), f);
-            fclose(f);
-        }
-    }
-
-    bool ConvexMeshSerializer::IsSerialized(const std::string &filepath) {
-        std::filesystem::path p = filepath;
-        auto path = p.parent_path() / (p.filename().string() + ".pxm");
-        std::string cachedFilepath = path.string();
-
-        FILE *f = fopen(cachedFilepath.c_str(), "rb");
-        bool exists = f != nullptr;
-        if (exists)
-            fclose(f);
-        return exists;
-    }
-
-    static physx::PxU8 *s_MeshDataBuffer;
-
-    physx::PxDefaultMemoryInputData ConvexMeshSerializer::DeserializeMesh(const std::string &filepath) {
-        std::filesystem::path p = filepath;
-        auto path = p.parent_path() / (p.filename().string() + ".pxm");
-        std::string cachedFilepath = path.string();
-
-        FILE *f = fopen(cachedFilepath.c_str(), "rb");
-
-        uint32_t size;
-        if (f) {
-            fseek(f, 0, SEEK_END);
-            size = ftell(f);
-            fseek(f, 0, SEEK_SET);
-            s_MeshDataBuffer = new physx::PxU8[size / sizeof(physx::PxU8)];
-            fread(s_MeshDataBuffer, sizeof(physx::PxU8), size / sizeof(physx::PxU8), f);
-            fclose(f);
-        }
-
-        return physx::PxDefaultMemoryInputData(s_MeshDataBuffer, size);
-    }
 
 } // namespace Monado

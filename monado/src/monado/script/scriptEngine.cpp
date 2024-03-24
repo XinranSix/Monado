@@ -14,7 +14,6 @@
 
 #include <iostream>
 #include <chrono>
-#include <thread>
 
 #include <Windows.h>
 #include <winioctl.h>
@@ -45,6 +44,7 @@ namespace Monado {
         MonoMethod *OnCreateMethod = nullptr;
         MonoMethod *OnDestroyMethod = nullptr;
         MonoMethod *OnUpdateMethod = nullptr;
+        MonoMethod *OnPhysicsUpdateMethod = nullptr;
 
         // Physics
         MonoMethod *OnCollisionBeginMethod = nullptr;
@@ -58,6 +58,7 @@ namespace Monado {
             Constructor = GetMethod(s_CoreAssemblyImage, "Monado.Entity:.ctor(ulong)");
             OnCreateMethod = GetMethod(image, FullName + ":OnCreate()");
             OnUpdateMethod = GetMethod(image, FullName + ":OnUpdate(single)");
+            OnPhysicsUpdateMethod = GetMethod(image, FullName + ":OnPhysicsUpdate(single)");
 
             // Physics (Entity class)
             OnCollisionBeginMethod = GetMethod(s_CoreAssemblyImage, "Monado.Entity:OnCollisionBegin(single)");
@@ -120,7 +121,7 @@ namespace Monado {
     }
 
     static void InitMono() {
-        mono_set_assemblies_path("./monado/assets/mono/lib");
+        mono_set_assemblies_path("monado/assets/mono/lib");
         // mono_jit_set_trace_options("--verbose");
         auto domain = mono_jit_init("Monado");
 
@@ -320,6 +321,14 @@ namespace Monado {
         }
     }
 
+    void ScriptEngine::OnPhysicsUpdateEntity(Entity entity, float fixedTimeStep) {
+        EntityInstance &entityInstance = GetEntityInstanceData(entity.GetSceneUUID(), entity.GetUUID()).Instance;
+        if (entityInstance.ScriptClass->OnPhysicsUpdateMethod) {
+            void *args[] = { &fixedTimeStep };
+            CallMethod(entityInstance.GetInstance(), entityInstance.ScriptClass->OnPhysicsUpdateMethod, args);
+        }
+    }
+
     void ScriptEngine::OnCollision2DBegin(Entity entity) {
         EntityInstance &entityInstance = GetEntityInstanceData(entity.GetSceneUUID(), entity.GetUUID()).Instance;
         if (entityInstance.ScriptClass->OnCollision2DBeginMethod) {
@@ -395,19 +404,6 @@ namespace Monado {
         if (callConstructor) {
             MonoMethodDesc *desc = mono_method_desc_new(parameterList.c_str(), NULL);
             MonoMethod *constructor = mono_method_desc_search_in_class(desc, clazz);
-
-            /*uint64_t id = 0;
-            bool t = false;
-            glm::vec3 a = { 0.5F, 1.0F, 2.0F };
-            glm::vec3 b = { 1.5F, 2.0F, 3.0F };
-
-            void* args[] = {
-                    &id,
-                    &t,
-                    &a,
-                    &b
-            };*/
-
             MonoObject *exception = nullptr;
             mono_runtime_invoke(constructor, obj, parameters, &exception);
         }
