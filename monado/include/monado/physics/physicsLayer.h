@@ -18,7 +18,7 @@ namespace Monado {
         static uint32_t AddLayer(const std::string &name, bool setCollisions = true);
         static void RemoveLayer(uint32_t layerId);
 
-        static void SetLayerCollision(uint32_t layerId, uint32_t otherLayer, bool collides);
+        static void SetLayerCollision(uint32_t layerId, uint32_t otherLayer, bool shouldCollide);
         static const std::vector<PhysicsLayer> &GetLayerCollisions(uint32_t layerId);
 
         static const std::vector<PhysicsLayer> &GetLayers() { return s_Layers; }
@@ -30,14 +30,15 @@ namespace Monado {
         static bool ShouldCollide(uint32_t layer1, uint32_t layer2);
         static bool IsLayerValid(uint32_t layerId);
 
-        static void ClearLayers();
-
     private:
+        static void ClearLayers();
         static uint32_t GetNextLayerID();
 
     private:
         static std::vector<PhysicsLayer> s_Layers;
         static PhysicsLayer s_NullLayer;
+
+        friend class SceneSerializer;
     };
 
 } // namespace Monado

@@ -50,7 +50,7 @@ namespace FPSExample
 
 			if (Input.IsMouseButtonPressed(MouseButton.Left) && Input.GetCursorMode() == CursorMode.Normal)
 				Input.SetCursorMode(CursorMode.Locked);
-	
+
 			m_CurrentSpeed = Input.IsKeyPressed(KeyCode.LeftControl) ? RunSpeed : WalkingSpeed;
 
 			UpdateRotation(ts);
@@ -85,7 +85,6 @@ namespace FPSExample
 				FindEntityByID(hitInfo.EntityID).GetComponent<MeshComponent>().Mesh.GetMaterial(0).Set("u_AlbedoColor", new Vector3(1.0f, 0.0f, 0.0f));
 			}
 
-			// TODO: This returns true for multiple frames which causes issues
 			if (Input.IsKeyPressed(KeyCode.L))
 			{
 				// NOTE: The NonAlloc version of Overlap functions should be used when possible since it doesn't allocate a new array
@@ -95,8 +94,8 @@ namespace FPSExample
 
 				Console.WriteLine("Colliders: {0}", numColliders);
 
-				// When using NonAlloc it's not safe to use a foreach loop since some of the colliders may not exist
-				for	(int i = 0; i < numColliders; i++)
+				// When using NonAlloc it's not safe to use a for each loop since some of the colliders may not exist
+				for (int i = 0; i < numColliders; i++)
 				{
 					Console.WriteLine(colliders[i]);
 				}

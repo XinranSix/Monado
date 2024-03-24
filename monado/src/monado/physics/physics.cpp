@@ -22,8 +22,8 @@ namespace Monado {
     static uint32_t s_EntityBufferCount;
     static int s_EntityStorageBufferPosition;
     static float s_SimulationTime = 0.0F;
-    static float s_Gravity = -9.8F;
-    static float s_FixedTimestep = 0.02F;
+
+    static PhysicsSettings s_Settings;
 
     void Physics::Init() {
         PXPhysicsWrappers::Initialize();
@@ -33,7 +33,8 @@ namespace Monado {
     void Physics::Shutdown() { PXPhysicsWrappers::Shutdown(); }
 
     void Physics::ExpandEntityBuffer(uint32_t amount) {
-        // NOTE: Future proofing for when scripts can add entities to the scene at runtime
+        MND_CORE_ASSERT(s_Scene);
+
         if (s_EntityStorageBuffer != nullptr) {
             Entity *temp = new Entity[s_EntityBufferCount + amount];
             memcpy(temp, s_EntityStorageBuffer, s_EntityBufferCount * sizeof(Entity));
@@ -57,12 +58,14 @@ namespace Monado {
         }
     }
 
-    void Physics::CreateScene(const SceneParams &params) {
+    void Physics::CreateScene() {
         MND_CORE_ASSERT(s_Scene == nullptr, "Scene already has a Physics Scene!");
-        s_Scene = PXPhysicsWrappers::CreateScene(params);
+        s_Scene = PXPhysicsWrappers::CreateScene();
     }
 
     void Physics::CreateActor(Entity e) {
+        MND_CORE_ASSERT(s_Scene);
+
         if (!e.HasComponent<RigidBodyComponent>()) {
             MND_CORE_WARN("Trying to create PhysX actor from a non-rigidbody actor!");
             return;
@@ -76,7 +79,10 @@ namespace Monado {
         RigidBodyComponent &rigidbody = e.GetComponent<RigidBodyComponent>();
 
         physx::PxRigidActor *actor = PXPhysicsWrappers::CreateActor(rigidbody, e.Transform());
-        s_SimulatedEntities.push_back(e);
+
+        if (rigidbody.BodyType == RigidBodyComponent::Type::Dynamic)
+            s_SimulatedEntities.push_back(e);
+
         Entity *entityStorage = &s_EntityStorageBuffer[s_EntityStorageBufferPosition];
         *entityStorage = e;
         actor->userData = (void *)entityStorage;
@@ -117,29 +123,19 @@ namespace Monado {
         s_Scene->addActor(*actor);
     }
 
-    void Physics::SetGravity(float gravity) {
-        s_Gravity = gravity;
-
-        if (s_Scene)
-            s_Scene->setGravity({ 0.0F, gravity, 0.0F });
-    }
-
-    float Physics::GetGravity() { return s_Gravity; }
-
-    void Physics::SetFixedTimestep(float timestep) { s_FixedTimestep = timestep; }
-
-    float Physics::GetFixedTimestep() { return s_FixedTimestep; }
+    PhysicsSettings &Physics::GetSettings() { return s_Settings; }
 
     void Physics::Simulate(Timestep ts) {
-        // TODO: Allow projects to control the fixed step amount
+        MND_CORE_ASSERT(s_Scene);
+
         s_SimulationTime += ts.GetMilliseconds();
 
-        if (s_SimulationTime < s_FixedTimestep)
+        if (s_SimulationTime < s_Settings.FixedTimestep)
             return;
 
-        s_SimulationTime -= s_FixedTimestep;
+        s_SimulationTime -= s_Settings.FixedTimestep;
 
-        s_Scene->simulate(s_FixedTimestep);
+        s_Scene->simulate(s_Settings.FixedTimestep);
         s_Scene->fetchResults(true);
 
         for (Entity &e : s_SimulatedEntities) {
@@ -147,16 +143,13 @@ namespace Monado {
             auto [translation, rotation, scale] = GetTransformDecomposition(transform);
             RigidBodyComponent &rb = e.GetComponent<RigidBodyComponent>();
             physx::PxRigidActor *actor = static_cast<physx::PxRigidActor *>(rb.RuntimeActor);
-
-            if (rb.BodyType == RigidBodyComponent::Type::Dynamic) {
-                transform = FromPhysXTransform(actor->getGlobalPose()) * glm::scale(glm::mat4(1.0F), scale);
-            } else if (rb.BodyType == RigidBodyComponent::Type::Static) {
-                actor->setGlobalPose(ToPhysXTransform(transform));
-            }
+            transform = FromPhysXTransform(actor->getGlobalPose()) * glm::scale(glm::mat4(1.0F), scale);
         }
     }
 
     void Physics::DestroyScene() {
+        MND_CORE_ASSERT(s_Scene);
+
         delete[] s_EntityStorageBuffer;
         s_EntityStorageBuffer = nullptr;
         s_EntityStorageBufferPosition = 0;
@@ -166,4 +159,5 @@ namespace Monado {
     }
 
     void *Physics::GetPhysicsScene() { return s_Scene; }
+
 } // namespace Monado

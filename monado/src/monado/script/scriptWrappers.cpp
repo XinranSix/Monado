@@ -72,12 +72,12 @@ namespace Monado {
         // Helper function for the Overlap functions below
         static void AddCollidersToArray(MonoArray *array,
                                         const std::array<physx::PxOverlapHit, OVERLAP_MAX_COLLIDERS> &hits,
-                                        uint32_t count) {
+                                        uint32_t count, uint32_t arrayLength) {
             uint32_t arrayIndex = 0;
             for (uint32_t i = 0; i < count; i++) {
                 Entity &entity = *(Entity *)hits[i].actor->userData;
 
-                if (entity.HasComponent<BoxColliderComponent>()) {
+                if (entity.HasComponent<BoxColliderComponent>() && arrayIndex < arrayLength) {
                     auto &boxCollider = entity.GetComponent<BoxColliderComponent>();
 
                     void *data[] = { &entity.GetUUID(), &boxCollider.IsTrigger, &boxCollider.Size,
@@ -88,7 +88,7 @@ namespace Monado {
                     mono_array_set(array, MonoObject *, arrayIndex++, obj);
                 }
 
-                if (entity.HasComponent<SphereColliderComponent>()) {
+                if (entity.HasComponent<SphereColliderComponent>() && arrayIndex < arrayLength) {
                     auto &sphereCollider = entity.GetComponent<SphereColliderComponent>();
 
                     void *data[] = { &entity.GetUUID(), &sphereCollider.IsTrigger, &sphereCollider.Radius };
@@ -98,7 +98,7 @@ namespace Monado {
                     mono_array_set(array, MonoObject *, arrayIndex++, obj);
                 }
 
-                if (entity.HasComponent<CapsuleColliderComponent>()) {
+                if (entity.HasComponent<CapsuleColliderComponent>() && arrayIndex < arrayLength) {
                     auto &capsuleCollider = entity.GetComponent<CapsuleColliderComponent>();
 
                     void *data[] = { &entity.GetUUID(), &capsuleCollider.IsTrigger, &capsuleCollider.Radius,
@@ -109,7 +109,7 @@ namespace Monado {
                     mono_array_set(array, MonoObject *, arrayIndex++, obj);
                 }
 
-                if (entity.HasComponent<MeshColliderComponent>()) {
+                if (entity.HasComponent<MeshColliderComponent>() && arrayIndex < arrayLength) {
                     auto &meshCollider = entity.GetComponent<MeshColliderComponent>();
 
                     Ref<Mesh> *mesh = new Ref<Mesh>(meshCollider.CollisionMesh);
@@ -131,7 +131,7 @@ namespace Monado {
             uint32_t count;
             if (PXPhysicsWrappers::OverlapBox(*origin, *halfSize, s_OverlapBuffer, &count)) {
                 outColliders = mono_array_new(mono_domain_get(), ScriptEngine::GetCoreClass("Monado.Collider"), count);
-                AddCollidersToArray(outColliders, s_OverlapBuffer, count);
+                AddCollidersToArray(outColliders, s_OverlapBuffer, count, count);
             }
 
             return outColliders;
@@ -144,7 +144,7 @@ namespace Monado {
             uint32_t count;
             if (PXPhysicsWrappers::OverlapCapsule(*origin, radius, halfHeight, s_OverlapBuffer, &count)) {
                 outColliders = mono_array_new(mono_domain_get(), ScriptEngine::GetCoreClass("Monado.Collider"), count);
-                AddCollidersToArray(outColliders, s_OverlapBuffer, count);
+                AddCollidersToArray(outColliders, s_OverlapBuffer, count, count);
             }
 
             return outColliders;
@@ -157,7 +157,7 @@ namespace Monado {
             uint32_t count;
             if (PXPhysicsWrappers::OverlapSphere(*origin, radius, s_OverlapBuffer, &count)) {
                 outColliders = mono_array_new(mono_domain_get(), ScriptEngine::GetCoreClass("Monado.Collider"), count);
-                AddCollidersToArray(outColliders, s_OverlapBuffer, count);
+                AddCollidersToArray(outColliders, s_OverlapBuffer, count, count);
             }
 
             return outColliders;
@@ -173,14 +173,14 @@ namespace Monado {
                 if (count > arrayLength)
                     count = arrayLength;
 
-                AddCollidersToArray(outColliders, s_OverlapBuffer, count);
+                AddCollidersToArray(outColliders, s_OverlapBuffer, count, arrayLength);
             }
 
             return count;
         }
 
         int32_t Monado_Physics_OverlapCapsuleNonAlloc(glm::vec3 *origin, float radius, float halfHeight,
-                                                      MonoArray *outColliders) {
+                                                     MonoArray *outColliders) {
             memset(s_OverlapBuffer.data(), 0, OVERLAP_MAX_COLLIDERS * sizeof(physx::PxOverlapHit));
 
             uint64_t arrayLength = mono_array_length(outColliders);
@@ -190,7 +190,7 @@ namespace Monado {
                 if (count > arrayLength)
                     count = arrayLength;
 
-                AddCollidersToArray(outColliders, s_OverlapBuffer, count);
+                AddCollidersToArray(outColliders, s_OverlapBuffer, count, arrayLength);
             }
 
             return count;
@@ -206,7 +206,7 @@ namespace Monado {
                 if (count > arrayLength)
                     count = arrayLength;
 
-                AddCollidersToArray(outColliders, s_OverlapBuffer, count);
+                AddCollidersToArray(outColliders, s_OverlapBuffer, count, arrayLength);
             }
 
             return count;
@@ -279,7 +279,7 @@ namespace Monado {
         }
 
         void Monado_TransformComponent_GetRelativeDirection(uint64_t entityID, glm::vec3 *outDirection,
-                                                            glm::vec3 *inAbsoluteDirection) {
+                                                           glm::vec3 *inAbsoluteDirection) {
             Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
@@ -346,7 +346,7 @@ namespace Monado {
         }
 
         void Monado_RigidBody2DComponent_ApplyLinearImpulse(uint64_t entityID, glm::vec2 *impulse, glm::vec2 *offset,
-                                                            bool wake) {
+                                                           bool wake) {
             Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
@@ -689,7 +689,7 @@ namespace Monado {
         }
 
         void Monado_MaterialInstance_SetTexture(Ref<MaterialInstance> *_this, MonoString *uniform,
-                                                Ref<Texture2D> *texture) {
+                                               Ref<Texture2D> *texture) {
             Ref<MaterialInstance> &instance = *(Ref<MaterialInstance> *)_this;
             instance->Set(mono_string_to_utf8(uniform), *texture);
         }

@@ -11,15 +11,15 @@ namespace Monado {
     static int32_t s_SelectedLayer = -1;
     static char s_NewLayerNameBuffer[50];
 
-    void PhysicsSettingsWindow::OnImGuiRender(bool *show) {
-        if (!(*show))
+    void PhysicsSettingsWindow::OnImGuiRender(bool &show) {
+        if (!show)
             return;
 
-        ImGui::Begin("Physics", show);
+        ImGui::Begin("Physics", &show);
         ImGui::PushID(0);
         ImGui::Columns(2);
         RenderWorldSettings();
-        ImGui::EndColumns(); // We have to call this manually since
+        ImGui::EndColumns();
         ImGui::PopID();
 
         ImGui::Separator();
@@ -36,14 +36,27 @@ namespace Monado {
     }
 
     void PhysicsSettingsWindow::RenderWorldSettings() {
-        float timestep = Physics::GetFixedTimestep();
-        if (Property("Fixed Timestep (Default: 0.02)", timestep)) {
-            Physics::SetFixedTimestep(timestep);
-        }
+        PhysicsSettings &settings = Physics::GetSettings();
 
-        float gravity = Physics::GetGravity();
-        if (Property("Gravity (Default: -9.81)", gravity)) {
-            Physics::SetGravity(gravity);
+        Property("Fixed Timestep (Default: 0.02)", settings.FixedTimestep);
+        Property("Gravity (Default: -9.81)", settings.Gravity.y);
+
+        // Broadphase Type
+        const char *broadphaseTypeStrings[] = { "Sweep And Prune", "Multi Box Pruning", "Automatic Box Pruning" };
+        const char *currentType = broadphaseTypeStrings[(int)settings.BroadphaseAlgorithm];
+        ImGui::TextUnformatted("Broadphase Type");
+        ImGui::SameLine();
+        if (ImGui::BeginCombo("##BroadphaseTypeSelection", currentType)) {
+            for (int type = 0; type < 3; type++) {
+                bool is_selected = (currentType == broadphaseTypeStrings[type]);
+                if (ImGui::Selectable(broadphaseTypeStrings[type], is_selected)) {
+                    currentType = broadphaseTypeStrings[type];
+                    settings.BroadphaseAlgorithm = (BroadphaseType)type;
+                }
+                if (is_selected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
         }
     }
 
@@ -64,7 +77,7 @@ namespace Monado {
             ImGui::EndPopup();
         }
 
-        uint32_t buttonId = 1;
+        uint32_t buttonId = 0;
 
         for (const auto &layer : PhysicsLayerManager::GetLayers()) {
             if (ImGui::Button(layer.Name.c_str())) {
