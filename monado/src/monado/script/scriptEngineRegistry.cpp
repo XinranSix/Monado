@@ -58,6 +58,8 @@ namespace Monado {
         mono_add_internal_call("Monado.Noise::PerlinNoise_Native", Monado::Script::Monado_Noise_PerlinNoise);
 
         mono_add_internal_call("Monado.Physics::Raycast_Native", Monado::Script::Monado_Physics_Raycast);
+        mono_add_internal_call("Monado.Physics::OverlapBox_Native", Monado::Script::Monado_Physics_OverlapBox);
+        mono_add_internal_call("Monado.Physics::OverlapSphere_Native", Monado::Script::Monado_Physics_OverlapSphere);
 
         mono_add_internal_call("Monado.Entity::GetTransform_Native", Monado::Script::Monado_Entity_GetTransform);
         mono_add_internal_call("Monado.Entity::SetTransform_Native", Monado::Script::Monado_Entity_SetTransform);
@@ -96,6 +98,12 @@ namespace Monado {
                                Monado::Script::Monado_RigidBodyComponent_SetLinearVelocity);
         mono_add_internal_call("Monado.RigidBodyComponent::Rotate_Native",
                                Monado::Script::Monado_RigidBodyComponent_Rotate);
+        mono_add_internal_call("Monado.RigidBodyComponent::GetLayer_Native",
+                               Monado::Script::Monado_RigidBodyComponent_GetLayer);
+        mono_add_internal_call("Monado.RigidBodyComponent::GetMass_Native",
+                               Monado::Script::Monado_RigidBodyComponent_GetMass);
+        mono_add_internal_call("Monado.RigidBodyComponent::SetMass_Native",
+                               Monado::Script::Monado_RigidBodyComponent_SetMass);
 
         mono_add_internal_call("Monado.Input::IsKeyPressed_Native", Monado::Script::Monado_Input_IsKeyPressed);
         mono_add_internal_call("Monado.Input::IsMouseButtonPressed_Native",

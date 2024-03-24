@@ -10,6 +10,7 @@
 extern "C" {
 typedef struct _MonoObject MonoObject;
 typedef struct _MonoClassField MonoClassField;
+typedef struct _MonoClass MonoClass;
 }
 
 namespace Monado {
@@ -114,6 +115,10 @@ namespace Monado {
         static void OnCollisionEnd(Entity entity);
         static void OnTriggerBegin(Entity entity);
         static void OnTriggerEnd(Entity entity);
+
+        static MonoObject *Construct(const std::string &fullName, bool callConstructor = true,
+                                     void **parameters = nullptr);
+        static MonoClass *GetCoreClass(const std::string &fullName);
 
         static bool IsEntityModuleValid(Entity entity);
 

@@ -374,6 +374,65 @@ namespace Monado {
         }
     }
 
+    MonoObject *ScriptEngine::Construct(const std::string &fullName, bool callConstructor, void **parameters) {
+        std::string namespaceName;
+        std::string className;
+        std::string parameterList;
+
+        if (fullName.find(".") != std::string::npos) {
+            namespaceName = fullName.substr(0, fullName.find_first_of('.'));
+            className = fullName.substr(fullName.find_first_of('.') + 1,
+                                        (fullName.find_first_of(':') - fullName.find_first_of('.')) - 1);
+        }
+
+        if (fullName.find(":") != std::string::npos) {
+            parameterList = fullName.substr(fullName.find_first_of(':'));
+        }
+
+        MonoClass *clazz = mono_class_from_name(s_CoreAssemblyImage, namespaceName.c_str(), className.c_str());
+        MonoObject *obj = mono_object_new(mono_domain_get(), clazz);
+
+        if (callConstructor) {
+            MonoMethodDesc *desc = mono_method_desc_new(parameterList.c_str(), NULL);
+            MonoMethod *constructor = mono_method_desc_search_in_class(desc, clazz);
+
+            /*uint64_t id = 0;
+            bool t = false;
+            glm::vec3 a = { 0.5F, 1.0F, 2.0F };
+            glm::vec3 b = { 1.5F, 2.0F, 3.0F };
+
+            void* args[] = {
+                    &id,
+                    &t,
+                    &a,
+                    &b
+            };*/
+
+            MonoObject *exception = nullptr;
+            mono_runtime_invoke(constructor, obj, parameters, &exception);
+        }
+
+        return obj;
+    }
+
+    MonoClass *ScriptEngine::GetCoreClass(const std::string &fullName) {
+        std::string namespaceName = "";
+        std::string className;
+
+        if (fullName.find('.') != std::string::npos) {
+            namespaceName = fullName.substr(0, fullName.find_last_of('.'));
+            className = fullName.substr(fullName.find_last_of('.') + 1);
+        } else {
+            className = fullName;
+        }
+
+        MonoClass *monoClass = mono_class_from_name(s_CoreAssemblyImage, namespaceName.c_str(), className.c_str());
+        if (!monoClass)
+            std::cout << "mono_class_from_name failed" << std::endl;
+
+        return monoClass;
+    }
+
     bool ScriptEngine::IsEntityModuleValid(Entity entity) {
         return entity.HasComponent<ScriptComponent>() &&
                ModuleExists(entity.GetComponent<ScriptComponent>().ModuleName);

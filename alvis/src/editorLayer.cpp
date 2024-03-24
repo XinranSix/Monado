@@ -144,6 +144,8 @@ namespace Monado {
         m_SelectionContext.clear();
         ScriptEngine::SetSceneContext(m_EditorScene);
         m_SceneHierarchyPanel->SetContext(m_EditorScene);
+
+        Input::SetCursorMode(CursorMode::Normal);
     }
 
     void EditorLayer::UpdateWindowTitle(const std::string &sceneName) {

@@ -241,6 +241,48 @@ namespace Monado {
         return result;
     }
 
+    bool PXPhysicsWrappers::OverlapBox(const glm::vec3 &origin, const glm::vec3 &halfSize,
+                                       std::vector<physx::PxOverlapHit> &buffer) {
+        physx::PxScene *scene = static_cast<physx::PxScene *>(Physics::GetPhysicsScene());
+
+        constexpr uint32_t bufferSize = 50;
+        physx::PxOverlapHit hitBuffer[bufferSize];
+        physx::PxOverlapBuffer buf(hitBuffer, bufferSize);
+        physx::PxBoxGeometry geometry = physx::PxBoxGeometry(halfSize.x, halfSize.y, halfSize.z);
+        physx::PxTransform pose = ToPhysXTransform(glm::translate(glm::mat4(1.0F), origin));
+
+        bool result = scene->overlap(geometry, pose, buf);
+
+        if (result) {
+            for (uint32_t i = 0; i < buf.nbTouches; i++) {
+                buffer.push_back(buf.touches[i]);
+            }
+        }
+
+        return result;
+    }
+
+    bool PXPhysicsWrappers::OverlapSphere(const glm::vec3 &origin, float radius,
+                                          std::vector<physx::PxOverlapHit> &buffer) {
+        physx::PxScene *scene = static_cast<physx::PxScene *>(Physics::GetPhysicsScene());
+
+        constexpr uint32_t bufferSize = 50;
+        physx::PxOverlapHit hitBuffer[bufferSize];
+        physx::PxOverlapBuffer buf(hitBuffer, bufferSize);
+        physx::PxSphereGeometry geometry = physx::PxSphereGeometry(radius);
+        physx::PxTransform pose = ToPhysXTransform(glm::translate(glm::mat4(1.0F), origin));
+
+        bool result = scene->overlap(geometry, pose, buf);
+
+        if (result) {
+            for (uint32_t i = 0; i < buf.nbTouches; i++) {
+                buffer.push_back(buf.touches[i]);
+            }
+        }
+
+        return result;
+    }
+
     void PXPhysicsWrappers::Initialize() {
         MND_CORE_ASSERT(!s_Foundation, "PXPhysicsWrappers::Initializer shouldn't be called more than once!");
 

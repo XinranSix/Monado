@@ -50,7 +50,8 @@ namespace Monado {
 
         bool operator!=(const Entity &other) const { return !(*this == other); }
 
-        UUID GetUUID() { return GetComponent<IDComponent>().ID; }
+        // FIXME: 此处不对
+        UUID &GetUUID() { return GetComponent<IDComponent>().ID; }
         UUID GetSceneUUID() { return m_Scene->GetUUID(); }
 
     private:
