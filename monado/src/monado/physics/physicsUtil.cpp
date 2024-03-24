@@ -89,19 +89,17 @@ namespace Monado {
         Entity &a = *(Entity *)pairs->triggerActor->userData;
         Entity &b = *(Entity *)pairs->otherActor->userData;
 
-        if (pairs->status & physx::PxPairFlag::eNOTIFY_TOUCH_FOUND) {
+        if (pairs->status == physx::PxPairFlag::eNOTIFY_TOUCH_FOUND) {
             if (ScriptEngine::IsEntityModuleValid(a))
-                ScriptEngine::OnTriggerBegin(a.GetSceneUUID(), a.GetUUID());
+                ScriptEngine::OnTriggerBegin(a);
             if (ScriptEngine::IsEntityModuleValid(b))
-                ScriptEngine::OnTriggerBegin(b.GetSceneUUID(), b.GetUUID());
-        } else if (pairs->status & physx::PxPairFlag::eNOTIFY_TOUCH_LOST) {
+                ScriptEngine::OnTriggerBegin(b);
+        } else if (pairs->status == physx::PxPairFlag::eNOTIFY_TOUCH_LOST) {
             if (ScriptEngine::IsEntityModuleValid(a))
-                ScriptEngine::OnTriggerEnd(a.GetSceneUUID(), a.GetUUID());
+                ScriptEngine::OnTriggerEnd(a);
             if (ScriptEngine::IsEntityModuleValid(b))
-                ScriptEngine::OnTriggerEnd(b.GetSceneUUID(), b.GetUUID());
+                ScriptEngine::OnTriggerEnd(b);
         }
-
-        PX_UNUSED(count);
     }
 
     void ContactListener::onAdvance(const physx::PxRigidBody *const *bodyBuffer, const physx::PxTransform *poseBuffer,
@@ -110,5 +108,5 @@ namespace Monado {
         PX_UNUSED(poseBuffer);
         PX_UNUSED(count);
     }
-    
+
 } // namespace Monado

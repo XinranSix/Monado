@@ -167,10 +167,9 @@ namespace Monado {
         {
             auto view = m_Registry.view<ScriptComponent>();
             for (auto entity : view) {
-                UUID entityID = m_Registry.get<IDComponent>(entity).ID;
                 Entity e = { entity, this };
                 if (ScriptEngine::ModuleExists(e.GetComponent<ScriptComponent>().ModuleName))
-                    ScriptEngine::OnUpdateEntity(m_SceneID, entityID, ts);
+                    ScriptEngine::OnUpdateEntity(e, ts);
             }
         }
 

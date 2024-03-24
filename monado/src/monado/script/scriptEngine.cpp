@@ -307,17 +307,13 @@ namespace Monado {
     }
 
     void ScriptEngine::OnCreateEntity(Entity entity) {
-        OnCreateEntity(entity.m_Scene->GetUUID(), entity.GetComponent<IDComponent>().ID);
-    }
-
-    void ScriptEngine::OnCreateEntity(UUID sceneID, UUID entityID) {
-        EntityInstance &entityInstance = GetEntityInstanceData(sceneID, entityID).Instance;
+        EntityInstance &entityInstance = GetEntityInstanceData(entity.GetSceneUUID(), entity.GetUUID()).Instance;
         if (entityInstance.ScriptClass->OnCreateMethod)
             CallMethod(entityInstance.GetInstance(), entityInstance.ScriptClass->OnCreateMethod);
     }
 
-    void ScriptEngine::OnUpdateEntity(UUID sceneID, UUID entityID, Timestep ts) {
-        EntityInstance &entityInstance = GetEntityInstanceData(sceneID, entityID).Instance;
+    void ScriptEngine::OnUpdateEntity(Entity entity, Timestep ts) {
+        EntityInstance &entityInstance = GetEntityInstanceData(entity.GetSceneUUID(), entity.GetUUID()).Instance;
         if (entityInstance.ScriptClass->OnUpdateMethod) {
             void *args[] = { &ts };
             CallMethod(entityInstance.GetInstance(), entityInstance.ScriptClass->OnUpdateMethod, args);
@@ -325,11 +321,7 @@ namespace Monado {
     }
 
     void ScriptEngine::OnCollision2DBegin(Entity entity) {
-        OnCollision2DBegin(entity.m_Scene->GetUUID(), entity.GetComponent<IDComponent>().ID);
-    }
-
-    void ScriptEngine::OnCollision2DBegin(UUID sceneID, UUID entityID) {
-        EntityInstance &entityInstance = GetEntityInstanceData(sceneID, entityID).Instance;
+        EntityInstance &entityInstance = GetEntityInstanceData(entity.GetSceneUUID(), entity.GetUUID()).Instance;
         if (entityInstance.ScriptClass->OnCollision2DBeginMethod) {
             float value = 5.0f;
             void *args[] = { &value };
@@ -338,11 +330,7 @@ namespace Monado {
     }
 
     void ScriptEngine::OnCollision2DEnd(Entity entity) {
-        OnCollision2DEnd(entity.m_Scene->GetUUID(), entity.GetComponent<IDComponent>().ID);
-    }
-
-    void ScriptEngine::OnCollision2DEnd(UUID sceneID, UUID entityID) {
-        EntityInstance &entityInstance = GetEntityInstanceData(sceneID, entityID).Instance;
+        EntityInstance &entityInstance = GetEntityInstanceData(entity.GetSceneUUID(), entity.GetUUID()).Instance;
         if (entityInstance.ScriptClass->OnCollision2DEndMethod) {
             float value = 5.0f;
             void *args[] = { &value };
@@ -351,11 +339,7 @@ namespace Monado {
     }
 
     void ScriptEngine::OnCollisionBegin(Entity entity) {
-        OnCollisionBegin(entity.m_Scene->GetUUID(), entity.GetComponent<IDComponent>().ID);
-    }
-
-    void ScriptEngine::OnCollisionBegin(UUID sceneID, UUID entityID) {
-        EntityInstance &entityInstance = GetEntityInstanceData(sceneID, entityID).Instance;
+        EntityInstance &entityInstance = GetEntityInstanceData(entity.GetSceneUUID(), entity.GetUUID()).Instance;
         if (entityInstance.ScriptClass->OnCollisionBeginMethod) {
             float value = 5.0f;
             void *args[] = { &value };
@@ -364,11 +348,7 @@ namespace Monado {
     }
 
     void ScriptEngine::OnCollisionEnd(Entity entity) {
-        OnCollisionEnd(entity.m_Scene->GetUUID(), entity.GetComponent<IDComponent>().ID);
-    }
-
-    void ScriptEngine::OnCollisionEnd(UUID sceneID, UUID entityID) {
-        EntityInstance &entityInstance = GetEntityInstanceData(sceneID, entityID).Instance;
+        EntityInstance &entityInstance = GetEntityInstanceData(entity.GetSceneUUID(), entity.GetUUID()).Instance;
         if (entityInstance.ScriptClass->OnCollisionEndMethod) {
             float value = 5.0f;
             void *args[] = { &value };
@@ -376,8 +356,8 @@ namespace Monado {
         }
     }
 
-    void ScriptEngine::OnTriggerBegin(UUID sceneID, UUID entityID) {
-        EntityInstance &entityInstance = GetEntityInstanceData(sceneID, entityID).Instance;
+    void ScriptEngine::OnTriggerBegin(Entity entity) {
+        EntityInstance &entityInstance = GetEntityInstanceData(entity.GetSceneUUID(), entity.GetUUID()).Instance;
         if (entityInstance.ScriptClass->OnTriggerBeginMethod) {
             float value = 5.0f;
             void *args[] = { &value };
@@ -385,8 +365,8 @@ namespace Monado {
         }
     }
 
-    void ScriptEngine::OnTriggerEnd(UUID sceneID, UUID entityID) {
-        EntityInstance &entityInstance = GetEntityInstanceData(sceneID, entityID).Instance;
+    void ScriptEngine::OnTriggerEnd(Entity entity) {
+        EntityInstance &entityInstance = GetEntityInstanceData(entity.GetSceneUUID(), entity.GetUUID()).Instance;
         if (entityInstance.ScriptClass->OnTriggerEndMethod) {
             float value = 5.0f;
             void *args[] = { &value };

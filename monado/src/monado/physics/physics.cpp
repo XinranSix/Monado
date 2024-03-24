@@ -108,6 +108,7 @@ namespace Monado {
 
     void Physics::DestroyScene() {
         delete[] s_EntityStorageBuffer;
+        s_EntityStorageBuffer = nullptr;
         s_EntityStorageBufferPosition = 0;
         s_SimulatedEntities.clear();
         s_Scene->release();

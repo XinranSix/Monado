@@ -47,12 +47,10 @@ namespace Example
 
         void OnPlayerTriggerBegin(float value)
         {
-            Console.WriteLine("OnPlayerTriggerBegin");
         }
 
         void OnPlayerTriggerEnd(float value)
         {
-            Console.WriteLine("OnPlayerTriggerEnd");
         }
 
         void OnUpdate(float ts)
