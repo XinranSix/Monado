@@ -2,7 +2,6 @@
 #include "monado/core/math/noise.h"
 #include "monado/scene/scene.h"
 #include "monado/scene/entity.h"
-#include "monado/scene/components.h"
 #include "monado/core/input.h"
 #include "monado/physics/physicsUtil.h"
 #include "monado/physics/pxPhysicsWrappers.h"
@@ -32,8 +31,6 @@ namespace Monado {
 
 namespace Monado {
     namespace Script {
-
-        enum class ComponentID { None = 0, Transform = 1, Mesh = 2, Script = 3, SpriteRenderer = 4 };
 
         static std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(const glm::mat4 &transform) {
             glm::vec3 scale, translation, skew;
@@ -73,10 +70,13 @@ namespace Monado {
             return PXPhysicsWrappers::Raycast(*origin, *direction, maxDistance, hit);
         }
 
-        static void AddCollidersToArray(MonoArray *array, const std::vector<physx::PxOverlapHit> &hits) {
+        // Helper function for the Overlap functions below
+        static void AddCollidersToArray(MonoArray *array,
+                                        const std::array<physx::PxOverlapHit, OVERLAP_MAX_COLLIDERS> &hits,
+                                        uint32_t count) {
             uint32_t arrayIndex = 0;
-            for (const auto &hit : hits) {
-                Entity &entity = *(Entity *)hit.actor->userData;
+            for (uint32_t i = 0; i < count; i++) {
+                Entity &entity = *(Entity *)hits[i].actor->userData;
 
                 if (entity.HasComponent<BoxColliderComponent>()) {
                     auto &boxCollider = entity.GetComponent<BoxColliderComponent>();
@@ -123,14 +123,29 @@ namespace Monado {
             }
         }
 
+        static std::array<physx::PxOverlapHit, OVERLAP_MAX_COLLIDERS> s_OverlapBuffer;
+
         MonoArray *Monado_Physics_OverlapBox(glm::vec3 *origin, glm::vec3 *halfSize) {
             MonoArray *outColliders = nullptr;
-            std::vector<physx::PxOverlapHit> buffer;
+            memset(s_OverlapBuffer.data(), 0, OVERLAP_MAX_COLLIDERS * sizeof(physx::PxOverlapHit));
 
-            if (PXPhysicsWrappers::OverlapBox(*origin, *halfSize, buffer)) {
-                outColliders =
-                    mono_array_new(mono_domain_get(), ScriptEngine::GetCoreClass("Monado.Collider"), buffer.size());
-                AddCollidersToArray(outColliders, buffer);
+            uint32_t count;
+            if (PXPhysicsWrappers::OverlapBox(*origin, *halfSize, s_OverlapBuffer, &count)) {
+                outColliders = mono_array_new(mono_domain_get(), ScriptEngine::GetCoreClass("Monado.Collider"), count);
+                AddCollidersToArray(outColliders, s_OverlapBuffer, count);
+            }
+
+            return outColliders;
+        }
+
+        MonoArray *Monado_Physics_OverlapCapsule(glm::vec3 *origin, float radius, float halfHeight) {
+            MonoArray *outColliders = nullptr;
+            memset(s_OverlapBuffer.data(), 0, OVERLAP_MAX_COLLIDERS * sizeof(physx::PxOverlapHit));
+
+            uint32_t count;
+            if (PXPhysicsWrappers::OverlapCapsule(*origin, radius, halfHeight, s_OverlapBuffer, &count)) {
+                outColliders = mono_array_new(mono_domain_get(), ScriptEngine::GetCoreClass("Monado.Collider"), count);
+                AddCollidersToArray(outColliders, s_OverlapBuffer, count);
             }
 
             return outColliders;
@@ -138,12 +153,12 @@ namespace Monado {
 
         MonoArray *Monado_Physics_OverlapSphere(glm::vec3 *origin, float radius) {
             MonoArray *outColliders = nullptr;
-            std::vector<physx::PxOverlapHit> buffer;
+            memset(s_OverlapBuffer.data(), 0, OVERLAP_MAX_COLLIDERS * sizeof(physx::PxOverlapHit));
 
-            if (PXPhysicsWrappers::OverlapSphere(*origin, radius, buffer)) {
-                outColliders =
-                    mono_array_new(mono_domain_get(), ScriptEngine::GetCoreClass("Monado.Collider"), buffer.size());
-                AddCollidersToArray(outColliders, buffer);
+            uint32_t count;
+            if (PXPhysicsWrappers::OverlapSphere(*origin, radius, s_OverlapBuffer, &count)) {
+                outColliders = mono_array_new(mono_domain_get(), ScriptEngine::GetCoreClass("Monado.Collider"), count);
+                AddCollidersToArray(outColliders, s_OverlapBuffer, count);
             }
 
             return outColliders;
@@ -227,7 +242,7 @@ namespace Monado {
             auto &transformComponent = entity.GetComponent<TransformComponent>();
 
             auto [position, rotation, scale] = GetTransformDecomposition(transformComponent.Transform);
-            *outDirection = glm::rotate(glm::normalize(rotation), *inAbsoluteDirection);
+            *outDirection = glm::rotate(rotation, *inAbsoluteDirection);
         }
 
         void Monado_TransformComponent_GetRotation(uint64_t entityID, glm::vec3 *outRotation) {

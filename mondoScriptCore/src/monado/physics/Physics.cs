@@ -26,6 +26,11 @@ namespace Monado
             return OverlapBox_Native(ref origin, ref halfSize);
         }
 
+        public static Collider[] OverlapCapsule(Vector3 origin, float radius, float halfHeight)
+        {
+            return OverlapCapsule_Native(ref origin, radius, halfHeight);
+        }
+
         public static Collider[] OverlapSphere(Vector3 origin, float radius)
         {
             return OverlapSphere_Native(ref origin, radius);
@@ -36,6 +41,8 @@ namespace Monado
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern Collider[] OverlapBox_Native(ref Vector3 origin, ref Vector3 halfSize);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern Collider[] OverlapCapsule_Native(ref Vector3 origin, float radius, float halfHeight);
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern Collider[] OverlapSphere_Native(ref Vector3 origin, float radius);
     }

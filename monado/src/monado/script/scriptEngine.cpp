@@ -415,7 +415,11 @@ namespace Monado {
         return obj;
     }
 
+    static std::unordered_map<std::string, MonoClass *> s_Classes;
     MonoClass *ScriptEngine::GetCoreClass(const std::string &fullName) {
+        if (s_Classes.find(fullName) != s_Classes.end())
+            return s_Classes[fullName];
+
         std::string namespaceName = "";
         std::string className;
 
@@ -429,6 +433,8 @@ namespace Monado {
         MonoClass *monoClass = mono_class_from_name(s_CoreAssemblyImage, namespaceName.c_str(), className.c_str());
         if (!monoClass)
             std::cout << "mono_class_from_name failed" << std::endl;
+
+        s_Classes[fullName] = monoClass;
 
         return monoClass;
     }

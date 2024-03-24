@@ -3,22 +3,59 @@
 #include "monado/physics/physicsLayer.h"
 #include "glm/gtx/rotate_vector.hpp"
 
-#ifdef MND_DEBUG
-    #define PHYSX_DEBUGGER 0
-#endif
-
 namespace Monado {
 
-    static physx::PxDefaultErrorCallback s_ErrorCallback;
+    static PhysicsErrorCallback s_ErrorCallback;
     static physx::PxDefaultAllocator s_Allocator;
     static physx::PxFoundation *s_Foundation;
     static physx::PxPhysics *s_Physics;
     static physx::PxPvd *s_VisualDebugger = nullptr;
     static physx::PxCooking *s_CookingFactory;
+    static physx::PxOverlapHit s_OverlapBuffer[OVERLAP_MAX_COLLIDERS];
 
     static physx::PxSimulationFilterShader s_FilterShader = physx::PxDefaultSimulationFilterShader;
 
     static ContactListener s_ContactListener;
+
+    void PhysicsErrorCallback::reportError(physx::PxErrorCode::Enum code, const char *message, const char *file,
+                                           int line) {
+        const char *errorMessage = NULL;
+
+        switch (code) {
+        case physx::PxErrorCode::eNO_ERROR: errorMessage = "No Error"; break;
+        case physx::PxErrorCode::eDEBUG_INFO: errorMessage = "Info"; break;
+        case physx::PxErrorCode::eDEBUG_WARNING: errorMessage = "Warning"; break;
+        case physx::PxErrorCode::eINVALID_PARAMETER: errorMessage = "Invalid Parameter"; break;
+        case physx::PxErrorCode::eINVALID_OPERATION: errorMessage = "Invalid Operation"; break;
+        case physx::PxErrorCode::eOUT_OF_MEMORY: errorMessage = "Out Of Memory"; break;
+        case physx::PxErrorCode::eINTERNAL_ERROR: errorMessage = "Internal Error"; break;
+        case physx::PxErrorCode::eABORT: errorMessage = "Abort"; break;
+        case physx::PxErrorCode::ePERF_WARNING: errorMessage = "Performance Warning"; break;
+        case physx::PxErrorCode::eMASK_ALL: errorMessage = "Unknown Error"; break;
+        }
+
+        switch (code) {
+        case physx::PxErrorCode::eNO_ERROR:
+        case physx::PxErrorCode::eDEBUG_INFO:
+            MND_CORE_INFO("[PhysX]: {0}: {1} at {2} ({3})", errorMessage, message, file, line);
+            break;
+        case physx::PxErrorCode::eDEBUG_WARNING:
+        case physx::PxErrorCode::ePERF_WARNING:
+            MND_CORE_WARN("[PhysX]: {0}: {1} at {2} ({3})", errorMessage, message, file, line);
+            break;
+        case physx::PxErrorCode::eINVALID_PARAMETER:
+        case physx::PxErrorCode::eINVALID_OPERATION:
+        case physx::PxErrorCode::eOUT_OF_MEMORY:
+        case physx::PxErrorCode::eINTERNAL_ERROR:
+            MND_CORE_ERROR("[PhysX]: {0}: {1} at {2} ({3})", errorMessage, message, file, line);
+            break;
+        case physx::PxErrorCode::eABORT:
+        case physx::PxErrorCode::eMASK_ALL:
+            MND_CORE_FATAL("[PhysX]: {0}: {1} at {2} ({3})", errorMessage, message, file, line);
+            MND_CORE_ASSERT(false);
+            break;
+        }
+    }
 
     physx::PxScene *PXPhysicsWrappers::CreateScene(const SceneParams &sceneParams) {
         physx::PxSceneDesc sceneDesc(s_Physics->getTolerancesScale());
@@ -227,11 +264,6 @@ namespace Monado {
 
         if (result) {
             Entity &entity = *(Entity *)hitInfo.block.actor->userData;
-
-            // NOTE: This should never be the case...
-            if (!entity)
-                MND_CORE_ASSERT("Physics body with not Entity?");
-
             hit->EntityID = entity.GetUUID();
             hit->Position = FromPhysXVector(hitInfo.block.position);
             hit->Normal = FromPhysXVector(hitInfo.block.normal);
@@ -242,42 +274,63 @@ namespace Monado {
     }
 
     bool PXPhysicsWrappers::OverlapBox(const glm::vec3 &origin, const glm::vec3 &halfSize,
-                                       std::vector<physx::PxOverlapHit> &buffer) {
+                                       std::array<physx::PxOverlapHit, OVERLAP_MAX_COLLIDERS> &buffer,
+                                       uint32_t *count) {
         physx::PxScene *scene = static_cast<physx::PxScene *>(Physics::GetPhysicsScene());
 
-        constexpr uint32_t bufferSize = 50;
-        physx::PxOverlapHit hitBuffer[bufferSize];
-        physx::PxOverlapBuffer buf(hitBuffer, bufferSize);
+        memset(s_OverlapBuffer, 0, sizeof(s_OverlapBuffer));
+        physx::PxOverlapBuffer buf(s_OverlapBuffer, OVERLAP_MAX_COLLIDERS);
         physx::PxBoxGeometry geometry = physx::PxBoxGeometry(halfSize.x, halfSize.y, halfSize.z);
         physx::PxTransform pose = ToPhysXTransform(glm::translate(glm::mat4(1.0F), origin));
 
         bool result = scene->overlap(geometry, pose, buf);
 
         if (result) {
-            for (uint32_t i = 0; i < buf.nbTouches; i++) {
-                buffer.push_back(buf.touches[i]);
-            }
+            uint32_t bodyCount = buf.nbTouches >= OVERLAP_MAX_COLLIDERS ? OVERLAP_MAX_COLLIDERS : buf.nbTouches;
+            memcpy(buffer.data(), buf.touches, bodyCount * sizeof(physx::PxOverlapHit));
+            *count = bodyCount;
+        }
+
+        return result;
+    }
+
+    bool PXPhysicsWrappers::OverlapCapsule(const glm::vec3 &origin, float radius, float halfHeight,
+                                           std::array<physx::PxOverlapHit, OVERLAP_MAX_COLLIDERS> &buffer,
+                                           uint32_t *count) {
+        physx::PxScene *scene = static_cast<physx::PxScene *>(Physics::GetPhysicsScene());
+
+        memset(s_OverlapBuffer, 0, sizeof(s_OverlapBuffer));
+        physx::PxOverlapBuffer buf(s_OverlapBuffer, OVERLAP_MAX_COLLIDERS);
+        physx::PxCapsuleGeometry geometry = physx::PxCapsuleGeometry(radius, halfHeight);
+        physx::PxTransform pose = ToPhysXTransform(glm::translate(glm::mat4(1.0F), origin));
+
+        bool result = scene->overlap(geometry, pose, buf);
+
+        if (result) {
+            uint32_t bodyCount = buf.nbTouches >= OVERLAP_MAX_COLLIDERS ? OVERLAP_MAX_COLLIDERS : buf.nbTouches;
+            memcpy(buffer.data(), buf.touches, bodyCount * sizeof(physx::PxOverlapHit));
+            *count = bodyCount;
         }
 
         return result;
     }
 
     bool PXPhysicsWrappers::OverlapSphere(const glm::vec3 &origin, float radius,
-                                          std::vector<physx::PxOverlapHit> &buffer) {
+                                          std::array<physx::PxOverlapHit, OVERLAP_MAX_COLLIDERS> &buffer,
+                                          uint32_t *count) {
         physx::PxScene *scene = static_cast<physx::PxScene *>(Physics::GetPhysicsScene());
 
-        constexpr uint32_t bufferSize = 50;
-        physx::PxOverlapHit hitBuffer[bufferSize];
-        physx::PxOverlapBuffer buf(hitBuffer, bufferSize);
+        memset(s_OverlapBuffer, 0, sizeof(s_OverlapBuffer));
+        physx::PxOverlapBuffer buf(s_OverlapBuffer, OVERLAP_MAX_COLLIDERS);
         physx::PxSphereGeometry geometry = physx::PxSphereGeometry(radius);
         physx::PxTransform pose = ToPhysXTransform(glm::translate(glm::mat4(1.0F), origin));
 
         bool result = scene->overlap(geometry, pose, buf);
 
         if (result) {
-            for (uint32_t i = 0; i < buf.nbTouches; i++) {
-                buffer.push_back(buf.touches[i]);
-            }
+            uint32_t bodyCount = buf.nbTouches >= OVERLAP_MAX_COLLIDERS ? OVERLAP_MAX_COLLIDERS : buf.nbTouches;
+            memcpy(buffer.data(), buf.touches, bodyCount * sizeof(physx::PxOverlapHit));
+            *count = bodyCount;
         }
 
         return result;
@@ -307,6 +360,7 @@ namespace Monado {
         s_Foundation->release();
     }
 
+    // TODO: Consider removing this now that we have our own collider visualization
     void PXPhysicsWrappers::ConnectVisualDebugger() {
 #if PHYSX_DEBUGGER
         if (s_VisualDebugger->isConnected(false))

@@ -59,6 +59,7 @@ namespace Monado {
 
         mono_add_internal_call("Monado.Physics::Raycast_Native", Monado::Script::Monado_Physics_Raycast);
         mono_add_internal_call("Monado.Physics::OverlapBox_Native", Monado::Script::Monado_Physics_OverlapBox);
+        mono_add_internal_call("Monado.Physics::OverlapCapsule_Native", Monado::Script::Monado_Physics_OverlapCapsule);
         mono_add_internal_call("Monado.Physics::OverlapSphere_Native", Monado::Script::Monado_Physics_OverlapSphere);
 
         mono_add_internal_call("Monado.Entity::GetTransform_Native", Monado::Script::Monado_Entity_GetTransform);

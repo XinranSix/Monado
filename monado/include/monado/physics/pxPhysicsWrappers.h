@@ -4,10 +4,18 @@
 #include "physics.h"
 #include "monado/scene/components.h"
 
+#define OVERLAP_MAX_COLLIDERS 10
+
 namespace Monado {
 
     struct SceneParams;
     struct RaycastHit;
+
+    class PhysicsErrorCallback : public physx::PxErrorCallback {
+    public:
+        virtual void reportError(physx::PxErrorCode::Enum code, const char *message, const char *file,
+                                 int line) override;
+    };
 
     class PXPhysicsWrappers {
     public:
@@ -30,8 +38,11 @@ namespace Monado {
 
         static bool Raycast(const glm::vec3 &origin, const glm::vec3 &direction, float maxDistance, RaycastHit *hit);
         static bool OverlapBox(const glm::vec3 &origin, const glm::vec3 &halfSize,
-                               std::vector<physx::PxOverlapHit> &buffer);
-        static bool OverlapSphere(const glm::vec3 &origin, float radius, std::vector<physx::PxOverlapHit> &buffer);
+                               std::array<physx::PxOverlapHit, OVERLAP_MAX_COLLIDERS> &buffer, uint32_t *count);
+        static bool OverlapCapsule(const glm::vec3 &origin, float radius, float halfHeight,
+                                   std::array<physx::PxOverlapHit, OVERLAP_MAX_COLLIDERS> &buffer, uint32_t *count);
+        static bool OverlapSphere(const glm::vec3 &origin, float radius,
+                                  std::array<physx::PxOverlapHit, OVERLAP_MAX_COLLIDERS> &buffer, uint32_t *count);
 
     private:
         static void Initialize();
