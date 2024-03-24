@@ -2,7 +2,7 @@
 
 #include "monado/script/scriptEngine.h"
 #include "monado/core/keyCodes.h"
-#include "monado/physics/physics3D.h"
+#include "monado/physics/physics.h"
 
 #include "glm/glm.hpp"
 
@@ -28,13 +28,13 @@ namespace Monado {
         uint64_t Monado_Entity_FindEntityByTag(MonoString *tag);
 
         void Monado_TransformComponent_GetRelativeDirection(uint64_t entityID, glm::vec3 *outDirection,
-                                                           glm::vec3 *inAbsoluteDirection);
+                                                            glm::vec3 *inAbsoluteDirection);
 
         void *Monado_MeshComponent_GetMesh(uint64_t entityID);
         void Monado_MeshComponent_SetMesh(uint64_t entityID, Ref<Mesh> *inMesh);
 
         void Monado_RigidBody2DComponent_ApplyLinearImpulse(uint64_t entityID, glm::vec2 *impulse, glm::vec2 *offset,
-                                                           bool wake);
+                                                            bool wake);
         void Monado_RigidBody2DComponent_GetLinearVelocity(uint64_t entityID, glm::vec2 *outVelocity);
         void Monado_RigidBody2DComponent_SetLinearVelocity(uint64_t entityID, glm::vec2 *velocity);
 
@@ -59,7 +59,7 @@ namespace Monado {
         void Monado_MaterialInstance_SetVector3(Ref<MaterialInstance> *_this, MonoString *uniform, glm::vec3 *value);
         void Monado_MaterialInstance_SetVector4(Ref<MaterialInstance> *_this, MonoString *uniform, glm::vec4 *value);
         void Monado_MaterialInstance_SetTexture(Ref<MaterialInstance> *_this, MonoString *uniform,
-                                               Ref<Texture2D> *texture);
+                                                Ref<Texture2D> *texture);
 
         // Mesh
         Ref<Mesh> *Monado_Mesh_Constructor(MonoString *filepath);

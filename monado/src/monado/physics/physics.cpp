@@ -1,5 +1,5 @@
 
-#include "monado/physics/physics3D.h"
+#include "monado/physics/physics.h"
 #include "monado/physics/pXPhysicsWrappers.h"
 #include "monado/scene/scene.h"
 
@@ -19,16 +19,16 @@ namespace Monado {
         return { translation, orientation, scale };
     }
 
-    void Physics3D::Init() { PXPhysicsWrappers::Initialize(); }
+    void Physics::Init() { PXPhysicsWrappers::Initialize(); }
 
-    void Physics3D::Shutdown() { PXPhysicsWrappers::Shutdown(); }
+    void Physics::Shutdown() { PXPhysicsWrappers::Shutdown(); }
 
-    void Physics3D::CreateScene(const SceneParams &params) {
+    void Physics::CreateScene(const SceneParams &params) {
         MND_CORE_ASSERT(s_Scene == nullptr, "Scene already has a Physics Scene!");
         s_Scene = PXPhysicsWrappers::CreateScene(params);
     }
 
-    void Physics3D::CreateActor(Entity e, int entityCount) {
+    void Physics::CreateActor(Entity e, int entityCount) {
         if (!e.HasComponent<RigidBodyComponent>()) {
             MND_CORE_WARN("Trying to create PhysX actor from a non-rigidbody actor!");
             return;
@@ -86,7 +86,7 @@ namespace Monado {
         s_Scene->addActor(*actor);
     }
 
-    void Physics3D::Simulate() {
+    void Physics::Simulate() {
         constexpr float stepSize = 0.016666660f;
         s_Scene->simulate(stepSize);
         s_Scene->fetchResults(true);
@@ -106,15 +106,16 @@ namespace Monado {
         }
     }
 
-    void Physics3D::DestroyScene() {
+    void Physics::DestroyScene() {
         delete[] s_EntityStorageBuffer;
+        s_EntityStorageBufferPosition = 0;
         s_SimulatedEntities.clear();
         s_Scene->release();
         s_Scene = nullptr;
     }
 
-    void Physics3D::ConnectVisualDebugger() { PXPhysicsWrappers::ConnectVisualDebugger(); }
+    void Physics::ConnectVisualDebugger() { PXPhysicsWrappers::ConnectVisualDebugger(); }
 
-    void Physics3D::DisconnectVisualDebugger() { PXPhysicsWrappers::DisconnectVisualDebugger(); }
+    void Physics::DisconnectVisualDebugger() { PXPhysicsWrappers::DisconnectVisualDebugger(); }
 
 } // namespace Monado

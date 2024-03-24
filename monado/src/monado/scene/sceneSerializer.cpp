@@ -317,6 +317,7 @@ namespace Monado {
             auto &boxColliderComponent = entity.GetComponent<BoxColliderComponent>();
             out << YAML::Key << "Offset" << YAML::Value << boxColliderComponent.Offset;
             out << YAML::Key << "Size" << YAML::Value << boxColliderComponent.Size;
+            out << YAML::Key << "IsTrigger" << YAML::Value << boxColliderComponent.IsTrigger;
 
             out << YAML::EndMap; // BoxColliderComponent
         }
@@ -327,16 +328,30 @@ namespace Monado {
 
             auto &sphereColliderComponent = entity.GetComponent<SphereColliderComponent>();
             out << YAML::Key << "Radius" << YAML::Value << sphereColliderComponent.Radius;
+            out << YAML::Key << "IsTrigger" << YAML::Value << sphereColliderComponent.IsTrigger;
 
             out << YAML::EndMap; // SphereColliderComponent
+        }
+
+        if (entity.HasComponent<CapsuleColliderComponent>()) {
+            out << YAML::Key << "CapsuleColliderComponent";
+            out << YAML::BeginMap; // CapsuleColliderComponent
+
+            auto &capsuleColliderComponent = entity.GetComponent<CapsuleColliderComponent>();
+            out << YAML::Key << "Radius" << YAML::Value << capsuleColliderComponent.Radius;
+            out << YAML::Key << "Height" << YAML::Value << capsuleColliderComponent.Height;
+            out << YAML::Key << "IsTrigger" << YAML::Value << capsuleColliderComponent.IsTrigger;
+
+            out << YAML::EndMap; // CapsuleColliderComponent
         }
 
         if (entity.HasComponent<MeshColliderComponent>()) {
             out << YAML::Key << "MeshColliderComponent";
             out << YAML::BeginMap; // MeshColliderComponent
 
-            auto mesh = entity.GetComponent<MeshColliderComponent>().CollisionMesh;
-            out << YAML::Key << "AssetPath" << YAML::Value << mesh->GetFilePath();
+            auto &meshColliderComponent = entity.GetComponent<MeshColliderComponent>();
+            out << YAML::Key << "AssetPath" << YAML::Value << meshColliderComponent.CollisionMesh->GetFilePath();
+            out << YAML::Key << "IsTrigger" << YAML::Value << meshColliderComponent.IsTrigger;
 
             out << YAML::EndMap; // MeshColliderComponent
         }
@@ -563,19 +578,15 @@ namespace Monado {
                     auto &component = deserializedEntity.AddComponent<RigidBodyComponent>();
                     component.BodyType = (RigidBodyComponent::Type)rigidBodyComponent["BodyType"].as<int>();
                     component.Mass = rigidBodyComponent["Mass"].as<float>();
+                    component.IsKinematic =
+                        rigidBodyComponent["IsKinematic"] ? rigidBodyComponent["IsKinematic"].as<bool>() : false;
 
-                    component.LockPositionX =
-                        rigidBodyComponent["LockPositionX"] ? rigidBodyComponent["LockPositionX"].as<bool>() : false;
-                    component.LockPositionY =
-                        rigidBodyComponent["LockPositionY"] ? rigidBodyComponent["LockPositionY"].as<bool>() : false;
-                    component.LockPositionZ =
-                        rigidBodyComponent["LockPositionZ"] ? rigidBodyComponent["LockPositionZ"].as<bool>() : false;
-                    component.LockRotationX =
-                        rigidBodyComponent["LockRotationX"] ? rigidBodyComponent["LockRotationX"].as<bool>() : false;
-                    component.LockRotationY =
-                        rigidBodyComponent["LockRotationY"] ? rigidBodyComponent["LockRotationY"].as<bool>() : false;
-                    component.LockRotationZ =
-                        rigidBodyComponent["LockRotationZ"] ? rigidBodyComponent["LockRotationZ"].as<bool>() : false;
+                    component.LockPositionX = rigidBodyComponent["Constraints"]["LockPositionX"].as<bool>();
+                    component.LockPositionY = rigidBodyComponent["Constraints"]["LockPositionY"].as<bool>();
+                    component.LockPositionZ = rigidBodyComponent["Constraints"]["LockPositionZ"].as<bool>();
+                    component.LockRotationX = rigidBodyComponent["Constraints"]["LockRotationX"].as<bool>();
+                    component.LockRotationY = rigidBodyComponent["Constraints"]["LockRotationY"].as<bool>();
+                    component.LockRotationZ = rigidBodyComponent["Constraints"]["LockRotationZ"].as<bool>();
                 }
 
                 auto physicsMaterialComponent = entity["PhysicsMaterialComponent"];
@@ -591,18 +602,35 @@ namespace Monado {
                     auto &component = deserializedEntity.AddComponent<BoxColliderComponent>();
                     component.Offset = boxColliderComponent["Offset"].as<glm::vec3>();
                     component.Size = boxColliderComponent["Size"].as<glm::vec3>();
+                    component.IsTrigger =
+                        boxColliderComponent["IsTrigger"] ? boxColliderComponent["IsTrigger"].as<bool>() : false;
                 }
 
                 auto sphereColliderComponent = entity["SphereColliderComponent"];
                 if (sphereColliderComponent) {
                     auto &component = deserializedEntity.AddComponent<SphereColliderComponent>();
                     component.Radius = sphereColliderComponent["Radius"].as<float>();
+                    component.IsTrigger =
+                        sphereColliderComponent["IsTrigger"] ? sphereColliderComponent["IsTrigger"].as<bool>() : false;
+                }
+
+                auto capsuleColliderComponent = entity["CapsuleColliderComponent"];
+                if (capsuleColliderComponent) {
+                    auto &component = deserializedEntity.AddComponent<CapsuleColliderComponent>();
+                    component.Radius = capsuleColliderComponent["Radius"].as<float>();
+                    component.Height = capsuleColliderComponent["Height"].as<float>();
+                    component.IsTrigger = capsuleColliderComponent["IsTrigger"]
+                                              ? capsuleColliderComponent["IsTrigger"].as<bool>()
+                                              : false;
                 }
 
                 auto meshColliderComponent = entity["MeshColliderComponent"];
                 if (meshColliderComponent) {
                     std::string meshPath = meshColliderComponent["AssetPath"].as<std::string>();
-                    deserializedEntity.AddComponent<MeshColliderComponent>(Ref<Mesh>::Create(meshPath));
+                    auto &component =
+                        deserializedEntity.AddComponent<MeshColliderComponent>(Ref<Mesh>::Create(meshPath));
+                    component.IsTrigger =
+                        meshColliderComponent["IsTrigger"] ? meshColliderComponent["IsTrigger"].as<bool>() : false;
 
                     MND_CORE_INFO("  Mesh Collider Asset Path: {0}", meshPath);
                 }

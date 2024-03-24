@@ -127,6 +127,12 @@ namespace Monado {
                             ImGui::CloseCurrentPopup();
                         }
                     }
+                    if (!m_SelectionContext.HasComponent<SphereColliderComponent>()) {
+                        if (ImGui::Button("Capsule Collider")) {
+                            m_SelectionContext.AddComponent<CapsuleColliderComponent>();
+                            ImGui::CloseCurrentPopup();
+                        }
+                    }
                     if (!m_SelectionContext.HasComponent<MeshColliderComponent>()) {
                         if (ImGui::Button("Mesh Collider")) {
                             m_SelectionContext.AddComponent<MeshColliderComponent>();
@@ -814,6 +820,7 @@ namespace Monado {
 
             Property("Size", bcc.Size);
             // Property("Offset", bcc.Offset);
+            Property("Is Trigger", bcc.IsTrigger);
 
             EndPropertyGrid();
         });
@@ -822,11 +829,22 @@ namespace Monado {
             BeginPropertyGrid();
 
             Property("Radius", scc.Radius);
+            Property("Is Trigger", scc.IsTrigger);
 
             EndPropertyGrid();
         });
 
-        DrawComponent<MeshColliderComponent>("Mesh Collider", entity, [](MeshColliderComponent &mc) {
+        DrawComponent<CapsuleColliderComponent>("Capsule Collider", entity, [](CapsuleColliderComponent &ccc) {
+            BeginPropertyGrid();
+
+            Property("Radius", ccc.Radius);
+            Property("Height", ccc.Height);
+            Property("Is Trigger", ccc.IsTrigger);
+
+            EndPropertyGrid();
+        });
+
+        DrawComponent<MeshColliderComponent>("Mesh Collider", entity, [](MeshColliderComponent &mcc) {
             ImGui::Columns(3);
             ImGui::SetColumnWidth(0, 100);
             ImGui::SetColumnWidth(1, 300);
@@ -834,8 +852,8 @@ namespace Monado {
             ImGui::Text("File Path");
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);
-            if (mc.CollisionMesh)
-                ImGui::InputText("##meshfilepath", (char *)mc.CollisionMesh->GetFilePath().c_str(), 256,
+            if (mcc.CollisionMesh)
+                ImGui::InputText("##meshfilepath", (char *)mcc.CollisionMesh->GetFilePath().c_str(), 256,
                                  ImGuiInputTextFlags_ReadOnly);
             else
                 ImGui::InputText("##meshfilepath", (char *)"Null", 256, ImGuiInputTextFlags_ReadOnly);
@@ -844,8 +862,10 @@ namespace Monado {
             if (ImGui::Button("...##openmesh")) {
                 std::string file = Application::Get().OpenFile();
                 if (!file.empty())
-                    mc.CollisionMesh = Ref<Mesh>::Create(file);
+                    mcc.CollisionMesh = Ref<Mesh>::Create(file);
             }
+
+            Property("Is Trigger", mcc.IsTrigger);
         });
     }
 

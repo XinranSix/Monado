@@ -9,7 +9,7 @@
 #include "monado/core/input.h"
 #include "monado/script/scriptEngine.h"
 #include "monado/core/math/ray.h"
-#include "monado/physics/physics3D.h"
+#include "monado/physics/physics.h"
 
 #include "editorLayer.h"
 
@@ -650,7 +650,7 @@ namespace Monado {
 
             if (ImGui::BeginMenu("Debug")) {
                 if (ImGui::MenuItem("Connect To PVD")) {
-                    Physics3D::ConnectVisualDebugger();
+                    Physics::ConnectVisualDebugger();
                 }
 
                 ImGui::EndMenu();

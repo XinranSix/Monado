@@ -4,6 +4,7 @@
 #include "monado/scene/components.h"
 
 namespace Monado {
+
     struct SceneParams;
 
     class PXPhysicsWrappers {
@@ -31,6 +32,7 @@ namespace Monado {
         static void DisconnectVisualDebugger();
 
     private:
-        friend class Physics3D;
+        friend class Physics;
     };
+
 } // namespace Monado

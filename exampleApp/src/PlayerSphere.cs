@@ -31,6 +31,8 @@ namespace Example
 
             AddCollisionBeginCallback(OnPlayerCollisionBegin);
             AddCollisionEndCallback(OnPlayerCollisionEnd);
+            AddTriggerBeginCallback(OnPlayerTriggerBegin);
+            AddTriggerEndCallback(OnPlayerTriggerEnd);
         }
 
         void OnPlayerCollisionBegin(float value)
@@ -43,6 +45,16 @@ namespace Example
             m_CollisionCounter--;
         }
 
+        void OnPlayerTriggerBegin(float value)
+        {
+            Console.WriteLine("OnPlayerTriggerBegin");
+        }
+
+        void OnPlayerTriggerEnd(float value)
+        {
+            Console.WriteLine("OnPlayerTriggerEnd");
+        }
+
         void OnUpdate(float ts)
         {
             float movementForce = HorizontalForce;
@@ -52,17 +64,17 @@ namespace Example
                 movementForce *= 0.4f;
             }
 
-			if (Input.IsKeyPressed(KeyCode.W))
-				m_PhysicsBody.AddForce(m_Transform.Forward * movementForce);
-			else if (Input.IsKeyPressed(KeyCode.S))
-				m_PhysicsBody.AddForce(m_Transform.Forward * -movementForce);
+            if (Input.IsKeyPressed(KeyCode.W))
+                m_PhysicsBody.AddForce(m_Transform.Forward * movementForce);
+            else if (Input.IsKeyPressed(KeyCode.S))
+                m_PhysicsBody.AddForce(m_Transform.Forward * -movementForce);
 
-			if (Input.IsKeyPressed(KeyCode.D))
-				m_PhysicsBody.AddForce(m_Transform.Right * movementForce);
-			else if (Input.IsKeyPressed(KeyCode.A))
-				m_PhysicsBody.AddForce(m_Transform.Right * -movementForce);
+            if (Input.IsKeyPressed(KeyCode.D))
+                m_PhysicsBody.AddForce(m_Transform.Right * movementForce);
+            else if (Input.IsKeyPressed(KeyCode.A))
+                m_PhysicsBody.AddForce(m_Transform.Right * -movementForce);
 
-			if (Colliding && Input.IsKeyPressed(KeyCode.Space))
+            if (Colliding && Input.IsKeyPressed(KeyCode.Space))
                 m_PhysicsBody.AddForce(m_Transform.Up * JumpForce);
 
             if (Colliding)

@@ -146,12 +146,15 @@ namespace Monado {
         glm::vec3 Size = { 1.0F, 1.0F, 1.0F };
         glm::vec3 Offset = { 0.0F, 0.0F, 0.0F };
 
+        bool IsTrigger = false;
+
         BoxColliderComponent() = default;
         BoxColliderComponent(const BoxColliderComponent &other) = default;
     };
 
     struct SphereColliderComponent {
         float Radius = 1.0F;
+        bool IsTrigger = false;
 
         SphereColliderComponent() = default;
         SphereColliderComponent(const SphereColliderComponent &other) = default;
@@ -160,6 +163,7 @@ namespace Monado {
     struct CapsuleColliderComponent {
         float Radius = 0.5F;
         float Height = 1.0F;
+        bool IsTrigger = false;
 
         CapsuleColliderComponent() = default;
         CapsuleColliderComponent(const CapsuleColliderComponent &other) = default;
@@ -167,6 +171,7 @@ namespace Monado {
 
     struct MeshColliderComponent {
         Ref<Monado::Mesh> CollisionMesh;
+        bool IsTrigger = false;
 
         MeshColliderComponent() = default;
         MeshColliderComponent(const MeshColliderComponent &other) = default;

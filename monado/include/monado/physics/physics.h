@@ -18,7 +18,7 @@ namespace Monado {
         glm::vec3 Gravity = { 0.0F, -9.81F, 0.0F };
     };
 
-    class Physics3D {
+    class Physics {
     public:
         static void Init();
         static void Shutdown();
@@ -33,5 +33,5 @@ namespace Monado {
         static void ConnectVisualDebugger();
         static void DisconnectVisualDebugger();
     };
-    
+
 } // namespace Monado

@@ -16,7 +16,7 @@
 #include "box2d/box2d.h"
 #include "box2d/b2_body.h"
 
-#include "monado/physics/physics3D.h"
+#include "monado/physics/physics.h"
 
 #include "PxPhysicsAPI.h"
 
@@ -132,7 +132,7 @@ namespace Monado {
         if (!isEditorScene) {
             SceneParams sceneDesc;
             sceneDesc.Gravity = glm::vec3(0.0F, -9.81F, 0.0F);
-            Physics3D::CreateScene(sceneDesc);
+            Physics::CreateScene(sceneDesc);
         }
 
         Init();
@@ -201,7 +201,7 @@ namespace Monado {
             }
         }
 
-        Physics3D::Simulate();
+        Physics::Simulate();
     }
 
     void Scene::OnRenderRuntime(Timestep ts) {
@@ -397,7 +397,7 @@ namespace Monado {
             auto view = m_Registry.view<RigidBodyComponent>();
             for (auto entity : view) {
                 Entity e = { entity, this };
-                Physics3D::CreateActor(e, view.size());
+                Physics::CreateActor(e, view.size());
             }
         }
 
@@ -406,7 +406,7 @@ namespace Monado {
 
     void Scene::OnRuntimeStop() {
         delete[] m_Physics2DBodyEntityBuffer;
-        Physics3D::DestroyScene();
+        Physics::DestroyScene();
         m_IsPlaying = false;
     }
 
