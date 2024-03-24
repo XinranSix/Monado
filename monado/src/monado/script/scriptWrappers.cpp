@@ -73,79 +73,64 @@ namespace Monado {
             return PXPhysicsWrappers::Raycast(*origin, *direction, maxDistance, hit);
         }
 
+        static void AddCollidersToArray(MonoArray *array, const std::vector<physx::PxOverlapHit> &hits) {
+            uint32_t arrayIndex = 0;
+            for (const auto &hit : hits) {
+                Entity &entity = *(Entity *)hit.actor->userData;
+
+                if (entity.HasComponent<BoxColliderComponent>()) {
+                    auto &boxCollider = entity.GetComponent<BoxColliderComponent>();
+
+                    void *data[] = { &entity.GetUUID(), &boxCollider.IsTrigger, &boxCollider.Size,
+                                     &boxCollider.Offset };
+
+                    MonoObject *obj =
+                        ScriptEngine::Construct("Monado.BoxCollider:.ctor(ulong,bool,Vector3,Vector3)", true, data);
+                    mono_array_set(array, MonoObject *, arrayIndex++, obj);
+                }
+
+                if (entity.HasComponent<SphereColliderComponent>()) {
+                    auto &sphereCollider = entity.GetComponent<SphereColliderComponent>();
+
+                    void *data[] = { &entity.GetUUID(), &sphereCollider.IsTrigger, &sphereCollider.Radius };
+
+                    MonoObject *obj =
+                        ScriptEngine::Construct("Monado.SphereCollider:.ctor(ulong,bool,float)", true, data);
+                    mono_array_set(array, MonoObject *, arrayIndex++, obj);
+                }
+
+                if (entity.HasComponent<CapsuleColliderComponent>()) {
+                    auto &capsuleCollider = entity.GetComponent<CapsuleColliderComponent>();
+
+                    void *data[] = { &entity.GetUUID(), &capsuleCollider.IsTrigger, &capsuleCollider.Radius,
+                                     &capsuleCollider.Height };
+
+                    MonoObject *obj =
+                        ScriptEngine::Construct("Monado.CapsuleCollider:.ctor(ulong,bool,float,float)", true, data);
+                    mono_array_set(array, MonoObject *, arrayIndex++, obj);
+                }
+
+                if (entity.HasComponent<MeshColliderComponent>()) {
+                    auto &meshCollider = entity.GetComponent<MeshColliderComponent>();
+
+                    Ref<Mesh> *mesh = new Ref<Mesh>(meshCollider.CollisionMesh);
+                    void *data[] = { &entity.GetUUID(), &meshCollider.IsTrigger, &mesh };
+
+                    MonoObject *obj =
+                        ScriptEngine::Construct("Monado.MeshCollider:.ctor(ulong,bool,intptr)", true, data);
+                    mono_array_set(array, MonoObject *, arrayIndex++, obj);
+                }
+            }
+        }
+
         MonoArray *Monado_Physics_OverlapBox(glm::vec3 *origin, glm::vec3 *halfSize) {
             MonoArray *outColliders = nullptr;
-            uint32_t arrayIndex = 0;
             std::vector<physx::PxOverlapHit> buffer;
+
             if (PXPhysicsWrappers::OverlapBox(*origin, *halfSize, buffer)) {
-                // TODO: Exclude MeshColliders for now
-                uintptr_t count = buffer.size();
-                for (const auto &hit : buffer) {
-                    Entity &entity = *(Entity *)hit.actor->userData;
-
-                    if (!entity.HasComponent<BoxColliderComponent>() &&
-                        !entity.HasComponent<SphereColliderComponent>() &&
-                        !entity.HasComponent<CapsuleColliderComponent>()) {
-                        if (entity.HasComponent<MeshColliderComponent>()) {
-                            count--;
-                        }
-                    }
-                }
-
-                outColliders = mono_array_new(mono_domain_get(), ScriptEngine::GetCoreClass("Monado.Collider"), count);
-
-                for (const auto &hit : buffer) {
-                    if (arrayIndex >= count)
-                        break;
-
-                    Entity &entity = *(Entity *)hit.actor->userData;
-
-                    if (entity.HasComponent<BoxColliderComponent>()) {
-                        auto &boxCollider = entity.GetComponent<BoxColliderComponent>();
-
-                        void *data[] = { &entity.GetUUID(), &boxCollider.IsTrigger, &boxCollider.Size,
-                                         &boxCollider.Offset };
-
-                        MonoObject *obj =
-                            ScriptEngine::Construct("Monado.BoxCollider:.ctor(ulong,bool,Vector3,Vector3)", true, data);
-                        mono_array_set(outColliders, MonoObject *, arrayIndex++, obj);
-                    }
-
-                    if (entity.HasComponent<SphereColliderComponent>()) {
-                        auto &sphereCollider = entity.GetComponent<SphereColliderComponent>();
-
-                        void *data[] = { &entity.GetUUID(), &sphereCollider.IsTrigger, &sphereCollider.Radius };
-
-                        MonoObject *obj =
-                            ScriptEngine::Construct("Monado.SphereCollider:.ctor(ulong,bool,float)", true, data);
-                        mono_array_set(outColliders, MonoObject *, arrayIndex++, obj);
-                    }
-
-                    if (entity.HasComponent<CapsuleColliderComponent>()) {
-                        auto &capsuleCollider = entity.GetComponent<CapsuleColliderComponent>();
-
-                        void *data[] = { &entity.GetUUID(), &capsuleCollider.IsTrigger, &capsuleCollider.Radius,
-                                         &capsuleCollider.Height };
-
-                        MonoObject *obj =
-                            ScriptEngine::Construct("Monado.CapsuleCollider:.ctor(ulong,bool,float,float)", true, data);
-                        mono_array_set(outColliders, MonoObject *, arrayIndex++, obj);
-                    }
-
-                    /*if (entity.HasComponent<MeshColliderComponent>())
-                    {
-                            auto& meshCollider = entity.GetComponent<MeshColliderComponent>();
-
-                            MonoString* filepath = mono_string_new(mono_domain_get(),
-                    meshCollider.CollisionMesh->GetFilePath().c_str()); void* data[] = { &entity.GetUUID(),
-                                    &meshCollider.IsTrigger,
-                                    &filepath
-                            };
-
-                            MonoObject* obj = ScriptEngine::Construct("Monado.MeshCollider:.ctor(ulong,bool,string)",
-                    true, data); mono_array_set(outColliders, MonoObject*, arrayIndex++, obj);
-                    }*/
-                }
+                outColliders =
+                    mono_array_new(mono_domain_get(), ScriptEngine::GetCoreClass("Monado.Collider"), buffer.size());
+                AddCollidersToArray(outColliders, buffer);
             }
 
             return outColliders;
@@ -153,77 +138,12 @@ namespace Monado {
 
         MonoArray *Monado_Physics_OverlapSphere(glm::vec3 *origin, float radius) {
             MonoArray *outColliders = nullptr;
-            uint32_t arrayIndex = 0;
             std::vector<physx::PxOverlapHit> buffer;
+
             if (PXPhysicsWrappers::OverlapSphere(*origin, radius, buffer)) {
-                // TODO: Exclude MeshColliders for now
-                uintptr_t count = buffer.size();
-                for (const auto &hit : buffer) {
-                    Entity &entity = *(Entity *)hit.actor->userData;
-
-                    if (!entity.HasComponent<BoxColliderComponent>() &&
-                        !entity.HasComponent<SphereColliderComponent>() &&
-                        !entity.HasComponent<CapsuleColliderComponent>()) {
-                        if (entity.HasComponent<MeshColliderComponent>()) {
-                            count--;
-                        }
-                    }
-                }
-
-                outColliders = mono_array_new(mono_domain_get(), ScriptEngine::GetCoreClass("Monado.Collider"), count);
-
-                for (const auto &hit : buffer) {
-                    if (arrayIndex >= count)
-                        break;
-
-                    Entity &entity = *(Entity *)hit.actor->userData;
-
-                    if (entity.HasComponent<BoxColliderComponent>()) {
-                        auto &boxCollider = entity.GetComponent<BoxColliderComponent>();
-
-                        void *data[] = { &entity.GetUUID(), &boxCollider.IsTrigger, &boxCollider.Size,
-                                         &boxCollider.Offset };
-
-                        MonoObject *obj =
-                            ScriptEngine::Construct("Monado.BoxCollider:.ctor(ulong,bool,Vector3,Vector3)", true, data);
-                        mono_array_set(outColliders, MonoObject *, arrayIndex++, obj);
-                    }
-
-                    if (entity.HasComponent<SphereColliderComponent>()) {
-                        auto &sphereCollider = entity.GetComponent<SphereColliderComponent>();
-
-                        void *data[] = { &entity.GetUUID(), &sphereCollider.IsTrigger, &sphereCollider.Radius };
-
-                        MonoObject *obj =
-                            ScriptEngine::Construct("Monado.SphereCollider:.ctor(ulong,bool,float)", true, data);
-                        mono_array_set(outColliders, MonoObject *, arrayIndex++, obj);
-                    }
-
-                    if (entity.HasComponent<CapsuleColliderComponent>()) {
-                        auto &capsuleCollider = entity.GetComponent<CapsuleColliderComponent>();
-
-                        void *data[] = { &entity.GetUUID(), &capsuleCollider.IsTrigger, &capsuleCollider.Radius,
-                                         &capsuleCollider.Height };
-
-                        MonoObject *obj =
-                            ScriptEngine::Construct("Monado.CapsuleCollider:.ctor(ulong,bool,float,float)", true, data);
-                        mono_array_set(outColliders, MonoObject *, arrayIndex++, obj);
-                    }
-
-                    /*if (entity.HasComponent<MeshColliderComponent>())
-                    {
-                            auto& meshCollider = entity.GetComponent<MeshColliderComponent>();
-
-                            MonoString* filepath = mono_string_new(mono_domain_get(),
-                    meshCollider.CollisionMesh->GetFilePath().c_str()); void* data[] = { &entity.GetUUID(),
-                                    &meshCollider.IsTrigger,
-                                    &filepath
-                            };
-
-                            MonoObject* obj = ScriptEngine::Construct("Monado.MeshCollider:.ctor(ulong,bool,string)",
-                    true, data); mono_array_set(outColliders, MonoObject*, arrayIndex++, obj);
-                    }*/
-                }
+                outColliders =
+                    mono_array_new(mono_domain_get(), ScriptEngine::GetCoreClass("Monado.Collider"), buffer.size());
+                AddCollidersToArray(outColliders, buffer);
             }
 
             return outColliders;

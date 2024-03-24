@@ -2,37 +2,11 @@
 
 namespace Monado
 {
-	public enum ColliderType
-    {
-		Box = 0,
-		Sphere = 1,
-		Capsule = 2
-    }
-
 	public class Collider
 	{
-		public ColliderType Type { get; protected set; }
 		public ulong EntityID { get; protected set; }
 		public bool IsTrigger { get; protected set; }
-
-		public bool Is<T>() where T : Collider
-        {
-			if (typeof(T) == typeof(BoxCollider) && Type == ColliderType.Box)
-            {
-				return true;
-            }
-			else if (typeof(T) == typeof(SphereCollider) && Type == ColliderType.Sphere)
-            {
-                return true;
-            }
-			else if (typeof(T) == typeof(CapsuleCollider) && Type == ColliderType.Capsule)
-            {
-                return true;
-            }
-
-			return false;
-        }
-    }
+	}
 
 	public class BoxCollider : Collider
 	{
@@ -40,52 +14,49 @@ namespace Monado
 		public Vector3 Offset { get; protected set; }
 
 		private BoxCollider(ulong entityID, bool isTrigger, Vector3 size, Vector3 offset)
-        {
-			Type = ColliderType.Box;
+		{
 			EntityID = entityID;
 			IsTrigger = isTrigger;
 			Size = size;
 			Offset = offset;
-        }
+		}
 	}
 
 	public class SphereCollider : Collider
 	{
-        public float Radius { get; protected set; }
+		public float Radius { get; protected set; }
 
-        private SphereCollider(ulong entityID, bool isTrigger, float radius)
-        {
-            Type = ColliderType.Sphere;
-            EntityID = entityID;
-            IsTrigger = isTrigger;
+		private SphereCollider(ulong entityID, bool isTrigger, float radius)
+		{
+			EntityID = entityID;
+			IsTrigger = isTrigger;
 			Radius = radius;
-        }
-    }
+		}
+	}
 
 	public class CapsuleCollider : Collider
 	{
-        public float Radius { get; protected set; }
+		public float Radius { get; protected set; }
 		public float Height { get; protected set; }
 
-        private CapsuleCollider(ulong entityID, bool isTrigger, float radius, float height)
-        {
-            Type = ColliderType.Capsule;
-            EntityID = entityID;
-            IsTrigger = isTrigger;
-            Radius = radius;
+		private CapsuleCollider(ulong entityID, bool isTrigger, float radius, float height)
+		{
+			EntityID = entityID;
+			IsTrigger = isTrigger;
+			Radius = radius;
 			Height = height;
-        }
-    }
+		}
+	}
 
 	public class MeshCollider : Collider
 	{
-        public Mesh Mesh { get; protected set; }
+		public Mesh Mesh { get; protected set; }
 
-		private MeshCollider(ulong entityID, bool isTrigger, string filepath)
-        {
+		private MeshCollider(ulong entityID, bool isTrigger, IntPtr mesh)
+		{
 			EntityID = entityID;
 			IsTrigger = isTrigger;
-			Mesh = new Mesh(filepath);
-        }
+			Mesh = new Mesh(mesh);
+		}
 	}
 }
