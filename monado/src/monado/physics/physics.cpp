@@ -75,7 +75,7 @@ namespace Monado {
 
         if (e.HasComponent<MeshColliderComponent>()) {
             MeshColliderComponent &collider = e.GetComponent<MeshColliderComponent>();
-            PXPhysicsWrappers::AddMeshCollider(*actor, *material, collider);
+            PXPhysicsWrappers::AddMeshCollider(*actor, *material, collider, scale);
         }
 
         // Set collision filters

@@ -311,9 +311,8 @@ namespace Monado {
                 Entity e = { entity, this };
                 auto &collider = e.GetComponent<MeshColliderComponent>();
 
-                if (m_SelectedEntity == entity) {
+                if (m_SelectedEntity == entity)
                     SceneRenderer::SubmitColliderMesh(collider, e.GetComponent<TransformComponent>());
-                }
             }
         }
 
