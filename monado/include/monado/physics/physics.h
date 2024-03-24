@@ -31,17 +31,22 @@ namespace Monado {
         static void Init();
         static void Shutdown();
 
+        static void ExpandEntityBuffer(uint32_t entityCount);
+
         static void CreateScene(const SceneParams &params);
-        static void CreateActor(Entity e, int entityCount);
+        static void CreateActor(Entity e);
+
+        static void SetGravity(float gravity);
+        static float GetGravity();
+
+        static void SetFixedTimestep(float timestep);
+        static float GetFixedTimestep();
 
         static void Simulate(Timestep ts);
 
         static void DestroyScene();
 
         static void *GetPhysicsScene();
-
-        static void ConnectVisualDebugger();
-        static void DisconnectVisualDebugger();
     };
 
 } // namespace Monado

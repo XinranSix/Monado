@@ -438,15 +438,15 @@ namespace Monado {
 
         {
             auto view = m_Registry.view<RigidBodyComponent>();
+            Physics::ExpandEntityBuffer(view.size());
             for (auto entity : view) {
                 Entity e = { entity, this };
-                Physics::CreateActor(e, view.size());
+                Physics::CreateActor(e);
             }
         }
 
         m_IsPlaying = true;
     }
-
     void Scene::OnRuntimeStop() {
         delete[] m_Physics2DBodyEntityBuffer;
         Physics::DestroyScene();

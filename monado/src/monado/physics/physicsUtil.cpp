@@ -12,13 +12,11 @@ namespace Monado {
 
     physx::PxMat44 ToPhysXMatrix(const glm::mat4 &matrix) { return *(physx::PxMat44 *)&matrix; }
 
-    physx::PxVec3 ToPhysXVector(const glm::vec3 &vector) { return physx::PxVec3(vector.x, vector.y, vector.z); }
+    physx::PxVec3 ToPhysXVector(const glm::vec3 &vector) { return *(physx::PxVec3 *)&vector; }
 
-    physx::PxVec4 ToPhysXVector(const glm::vec4 &vector) {
-        return physx::PxVec4(vector.x, vector.y, vector.z, vector.w);
-    }
+    physx::PxVec4 ToPhysXVector(const glm::vec4 &vector) { return *(physx::PxVec4 *)&vector; }
 
-    physx::PxQuat ToPhysXQuat(const glm::quat &quat) { return physx::PxQuat(quat.x, quat.y, quat.z, quat.w); }
+    physx::PxQuat ToPhysXQuat(const glm::quat &quat) { return *(physx::PxQuat *)&quat; }
 
     glm::mat4 FromPhysXTransform(const physx::PxTransform &transform) {
         glm::quat rotation = FromPhysXQuat(transform.q);
@@ -28,17 +26,16 @@ namespace Monado {
 
     glm::mat4 FromPhysXMatrix(const physx::PxMat44 &matrix) { return *(glm::mat4 *)&matrix; }
 
-    glm::vec3 FromPhysXVector(const physx::PxVec3 &vector) { return glm::vec3(vector.x, vector.y, vector.z); }
+    glm::vec3 FromPhysXVector(const physx::PxVec3 &vector) { return *(glm::vec3 *)&vector; }
 
-    glm::vec4 FromPhysXVector(const physx::PxVec4 &vector) { return glm::vec4(vector.x, vector.y, vector.z, vector.w); }
+    glm::vec4 FromPhysXVector(const physx::PxVec4 &vector) { return *(glm::vec4 *)&vector; }
 
-    glm::quat FromPhysXQuat(const physx::PxQuat &quat) { return glm::quat(quat.w, quat.x, quat.y, quat.z); }
+    glm::quat FromPhysXQuat(const physx::PxQuat &quat) { return *(glm::quat *)&quat; }
 
-    physx::PxFilterFlags MonadoFilterShader(physx::PxFilterObjectAttributes attributes0,
-                                            physx::PxFilterData filterData0,
-                                            physx::PxFilterObjectAttributes attributes1,
-                                            physx::PxFilterData filterData1, physx::PxPairFlags &pairFlags,
-                                            const void *constantBlock, physx::PxU32 constantBlockSize) {
+    physx::PxFilterFlags MonadoFilterShader(physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
+                                           physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
+                                           physx::PxPairFlags &pairFlags, const void *constantBlock,
+                                           physx::PxU32 constantBlockSize) {
         if (physx::PxFilterObjectIsTrigger(attributes0) || physx::PxFilterObjectIsTrigger(attributes1)) {
             pairFlags = physx::PxPairFlag::eTRIGGER_DEFAULT;
             return physx::PxFilterFlag::eDEFAULT;

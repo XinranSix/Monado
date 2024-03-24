@@ -1,8 +1,10 @@
 #include "monado/physics/physics.h"
 #include "monado/editor/physicsSettingsWindow.h"
 #include "monado/physics/physicsLayer.h"
+#include "monado/physics/physics.h"
 
 #include "imgui.h"
+#include "imgui_internal.h"
 
 namespace Monado {
 
@@ -16,13 +18,33 @@ namespace Monado {
         ImGui::Begin("Physics", show);
         ImGui::PushID(0);
         ImGui::Columns(2);
+        RenderWorldSettings();
+        ImGui::EndColumns(); // We have to call this manually since
+        ImGui::PopID();
 
+        ImGui::Separator();
+
+        ImGui::PushID(1);
+        ImGui::Columns(2);
         RenderLayerList();
         ImGui::NextColumn();
         RenderSelectedLayer();
-
+        ImGui::EndColumns();
         ImGui::PopID();
+
         ImGui::End();
+    }
+
+    void PhysicsSettingsWindow::RenderWorldSettings() {
+        float timestep = Physics::GetFixedTimestep();
+        if (Property("Fixed Timestep (Default: 0.02)", timestep)) {
+            Physics::SetFixedTimestep(timestep);
+        }
+
+        float gravity = Physics::GetGravity();
+        if (Property("Gravity (Default: -9.81)", gravity)) {
+            Physics::SetGravity(gravity);
+        }
     }
 
     void PhysicsSettingsWindow::RenderLayerList() {
@@ -87,6 +109,24 @@ namespace Monado {
                 PhysicsLayerManager::SetLayerCollision(s_SelectedLayer, layer.LayerID, shouldCollide);
             }
         }
+
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) {
+            s_SelectedLayer = -1;
+        }
+    }
+
+    bool PhysicsSettingsWindow::Property(const char *label, float &value, float min, float max) {
+        ImGui::Text(label);
+        ImGui::NextColumn();
+        ImGui::PushItemWidth(-1);
+
+        std::string id = "##" + std::string(label);
+        bool changed = ImGui::SliderFloat(id.c_str(), &value, min, max);
+
+        ImGui::PopItemWidth();
+        ImGui::NextColumn();
+
+        return changed;
     }
 
 } // namespace Monado

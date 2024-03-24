@@ -14,7 +14,7 @@ typedef struct _MonoArray MonoArray;
 namespace Monado {
     namespace Script {
 
-      // Math
+   	// Math
 	float Monado_Noise_PerlinNoise(float x, float y);
 
 	// Input
@@ -51,10 +51,13 @@ namespace Monado {
 	void Monado_RigidBody2DComponent_GetLinearVelocity(uint64_t entityID, glm::vec2* outVelocity);
 	void Monado_RigidBody2DComponent_SetLinearVelocity(uint64_t entityID, glm::vec2* velocity);
 
+	RigidBodyComponent::Type Monado_RigidBodyComponent_GetBodyType(uint64_t entityID);
 	void Monado_RigidBodyComponent_AddForce(uint64_t entityID, glm::vec3* force, ForceMode foceMode);
 	void Monado_RigidBodyComponent_AddTorque(uint64_t entityID, glm::vec3* torque, ForceMode forceMode);
 	void Monado_RigidBodyComponent_GetLinearVelocity(uint64_t entityID, glm::vec3* outVelocity);
 	void Monado_RigidBodyComponent_SetLinearVelocity(uint64_t entityID, glm::vec3* velocity);
+	void Monado_RigidBodyComponent_GetAngularVelocity(uint64_t entityID, glm::vec3* outVelocity);
+	void Monado_RigidBodyComponent_SetAngularVelocity(uint64_t entityID, glm::vec3* velocity);
 	void Monado_RigidBodyComponent_Rotate(uint64_t entityID, glm::vec3* rotation);
 	uint32_t Monado_RigidBodyComponent_GetLayer(uint64_t entityID);
 	float Monado_RigidBodyComponent_GetMass(uint64_t entityID);

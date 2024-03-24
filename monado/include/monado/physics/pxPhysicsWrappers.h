@@ -48,9 +48,6 @@ namespace Monado {
         static void Initialize();
         static void Shutdown();
 
-        static void ConnectVisualDebugger();
-        static void DisconnectVisualDebugger();
-
     private:
         friend class Physics;
     };

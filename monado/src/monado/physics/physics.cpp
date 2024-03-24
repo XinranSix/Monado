@@ -6,6 +6,7 @@
 #include <cstdint>
 
 namespace Monado {
+
     static std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(const glm::mat4 &transform) {
         glm::vec3 scale, translation, skew;
         glm::vec4 perspective;
@@ -18,8 +19,11 @@ namespace Monado {
     static physx::PxScene *s_Scene;
     static std::vector<Entity> s_SimulatedEntities;
     static Entity *s_EntityStorageBuffer;
+    static uint32_t s_EntityBufferCount;
     static int s_EntityStorageBufferPosition;
     static float s_SimulationTime = 0.0F;
+    static float s_Gravity = -9.8F;
+    static float s_FixedTimestep = 0.02F;
 
     void Physics::Init() {
         PXPhysicsWrappers::Initialize();
@@ -28,12 +32,37 @@ namespace Monado {
 
     void Physics::Shutdown() { PXPhysicsWrappers::Shutdown(); }
 
+    void Physics::ExpandEntityBuffer(uint32_t amount) {
+        // NOTE: Future proofing for when scripts can add entities to the scene at runtime
+        if (s_EntityStorageBuffer != nullptr) {
+            Entity *temp = new Entity[s_EntityBufferCount + amount];
+            memcpy(temp, s_EntityStorageBuffer, s_EntityBufferCount * sizeof(Entity));
+
+            for (uint32_t i = 0; i < s_EntityBufferCount; i++) {
+                Entity &e = s_EntityStorageBuffer[i];
+                RigidBodyComponent &rb = e.GetComponent<RigidBodyComponent>();
+
+                if (rb.RuntimeActor) {
+                    physx::PxRigidActor *actor = static_cast<physx::PxRigidActor *>(rb.RuntimeActor);
+                    actor->userData = &temp[rb.EntityBufferIndex];
+                }
+            }
+
+            delete[] s_EntityStorageBuffer;
+            s_EntityStorageBuffer = temp;
+            s_EntityBufferCount += amount;
+        } else {
+            s_EntityStorageBuffer = new Entity[amount];
+            s_EntityBufferCount = amount;
+        }
+    }
+
     void Physics::CreateScene(const SceneParams &params) {
         MND_CORE_ASSERT(s_Scene == nullptr, "Scene already has a Physics Scene!");
         s_Scene = PXPhysicsWrappers::CreateScene(params);
     }
 
-    void Physics::CreateActor(Entity e, int entityCount) {
+    void Physics::CreateActor(Entity e) {
         if (!e.HasComponent<RigidBodyComponent>()) {
             MND_CORE_WARN("Trying to create PhysX actor from a non-rigidbody actor!");
             return;
@@ -46,15 +75,14 @@ namespace Monado {
 
         RigidBodyComponent &rigidbody = e.GetComponent<RigidBodyComponent>();
 
-        if (s_EntityStorageBuffer == nullptr)
-            s_EntityStorageBuffer = new Entity[entityCount];
-
         physx::PxRigidActor *actor = PXPhysicsWrappers::CreateActor(rigidbody, e.Transform());
         s_SimulatedEntities.push_back(e);
-        Entity *entityStorage = &s_EntityStorageBuffer[s_EntityStorageBufferPosition++];
+        Entity *entityStorage = &s_EntityStorageBuffer[s_EntityStorageBufferPosition];
         *entityStorage = e;
         actor->userData = (void *)entityStorage;
         rigidbody.RuntimeActor = actor;
+        rigidbody.EntityBufferIndex = s_EntityStorageBufferPosition;
+        s_EntityStorageBufferPosition++;
 
         physx::PxMaterial *material = PXPhysicsWrappers::CreateMaterial(e.GetComponent<PhysicsMaterialComponent>());
 
@@ -89,16 +117,29 @@ namespace Monado {
         s_Scene->addActor(*actor);
     }
 
+    void Physics::SetGravity(float gravity) {
+        s_Gravity = gravity;
+
+        if (s_Scene)
+            s_Scene->setGravity({ 0.0F, gravity, 0.0F });
+    }
+
+    float Physics::GetGravity() { return s_Gravity; }
+
+    void Physics::SetFixedTimestep(float timestep) { s_FixedTimestep = timestep; }
+
+    float Physics::GetFixedTimestep() { return s_FixedTimestep; }
+
     void Physics::Simulate(Timestep ts) {
-        constexpr float stepSize = 1.0F / 50.0F;
+        // TODO: Allow projects to control the fixed step amount
         s_SimulationTime += ts.GetMilliseconds();
 
-        if (s_SimulationTime < stepSize)
+        if (s_SimulationTime < s_FixedTimestep)
             return;
 
-        s_SimulationTime -= stepSize;
+        s_SimulationTime -= s_FixedTimestep;
 
-        s_Scene->simulate(stepSize);
+        s_Scene->simulate(s_FixedTimestep);
         s_Scene->fetchResults(true);
 
         for (Entity &e : s_SimulatedEntities) {
@@ -125,8 +166,4 @@ namespace Monado {
     }
 
     void *Physics::GetPhysicsScene() { return s_Scene; }
-
-    void Physics::ConnectVisualDebugger() { PXPhysicsWrappers::ConnectVisualDebugger(); }
-
-    void Physics::DisconnectVisualDebugger() { PXPhysicsWrappers::DisconnectVisualDebugger(); }
 } // namespace Monado

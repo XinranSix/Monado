@@ -179,6 +179,12 @@ namespace Monado
 
     public class RigidBodyComponent : Component
 	{
+        public enum Type
+		{
+            Static,
+            Dynamic
+		}
+
         public enum ForceMode
 		{
 			Force = 0,
@@ -186,6 +192,22 @@ namespace Monado
 			VelocityChange,
 			Acceleration
 		}
+
+        public Type BodyType
+        {
+            get
+			{
+                return GetBodyType_Native(Entity.ID);
+			}
+        }
+
+        public float Mass
+        {
+            get { return GetMass_Native(Entity.ID); }
+            set { SetMass_Native(Entity.ID, value); }
+        }
+
+        public uint Layer { get { return GetLayer_Native(Entity.ID); } }
 
         public void AddForce(Vector3 force, ForceMode forceMode = ForceMode.Force)
         {
@@ -208,6 +230,17 @@ namespace Monado
             SetLinearVelocity_Native(Entity.ID, ref velocity);
 		}
 
+        public Vector3 GetAngularVelocity()
+		{
+            GetAngularVelocity_Native(Entity.ID, out Vector3 velocity);
+            return velocity;
+		}
+
+        public void SetAngularVelocity(Vector3 velocity)
+		{
+            SetAngularVelocity_Native(Entity.ID, ref velocity);
+		}
+
         public void Rotate(Vector3 rotation)
 		{
             Rotate_Native(Entity.ID, ref rotation);
@@ -225,8 +258,24 @@ namespace Monado
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		internal static extern void SetLinearVelocity_Native(ulong entityID, ref Vector3 velocity);
 
-        [MethodImpl(MethodImplOptions.InternalCall)]
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		internal static extern void GetAngularVelocity_Native(ulong entityID, out Vector3 velocity);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		internal static extern void SetAngularVelocity_Native(ulong entityID, ref Vector3 velocity);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern void Rotate_Native(ulong entityID, ref Vector3 rotation);
-	}
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern uint GetLayer_Native(ulong entityID);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern float GetMass_Native(ulong entityID);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern float SetMass_Native(ulong entityID, float mass);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern Type GetBodyType_Native(ulong entityID);
+    }
 
 }

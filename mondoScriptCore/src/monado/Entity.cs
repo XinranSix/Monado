@@ -148,6 +148,5 @@ namespace Monado
         private static extern void SetTransform_Native(ulong entityID, ref Matrix4 matrix);
 		[MethodImpl(MethodImplOptions.InternalCall)]
         private static extern ulong FindEntityByTag_Native(string tag);
-
     }
 }

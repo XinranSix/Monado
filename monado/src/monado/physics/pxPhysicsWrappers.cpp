@@ -9,7 +9,6 @@ namespace Monado {
     static physx::PxDefaultAllocator s_Allocator;
     static physx::PxFoundation *s_Foundation;
     static physx::PxPhysics *s_Physics;
-    static physx::PxPvd *s_VisualDebugger = nullptr;
     static physx::PxCooking *s_CookingFactory;
     static physx::PxOverlapHit s_OverlapBuffer[OVERLAP_MAX_COLLIDERS];
 
@@ -60,7 +59,7 @@ namespace Monado {
     physx::PxScene *PXPhysicsWrappers::CreateScene(const SceneParams &sceneParams) {
         physx::PxSceneDesc sceneDesc(s_Physics->getTolerancesScale());
 
-        sceneDesc.gravity = ToPhysXVector(sceneParams.Gravity);
+        sceneDesc.gravity = { 0.0F, Physics::GetGravity(), 0.0F }; // ToPhysXVector(sceneParams.Gravity);
         sceneDesc.cpuDispatcher = physx::PxDefaultCpuDispatcherCreate(1);
         sceneDesc.filterShader = MonadoFilterShader;
         sceneDesc.simulationEventCallback = &s_ContactListener;
@@ -161,7 +160,6 @@ namespace Monado {
 
         if (size.x != 0.0F)
             colliderRadius *= (size.x / 2.0F);
-
         if (size.y != 0.0F)
             colliderHeight *= size.y;
 
@@ -342,13 +340,7 @@ namespace Monado {
         s_Foundation = PxCreateFoundation(PX_PHYSICS_VERSION, s_Allocator, s_ErrorCallback);
         MND_CORE_ASSERT(s_Foundation, "PxCreateFoundation Failed!");
 
-#if PHYSX_DEBUGGER
-        s_VisualDebugger = PxCreatePvd(*s_Foundation);
-        ConnectVisualDebugger();
-#endif
-
-        s_Physics =
-            PxCreatePhysics(PX_PHYSICS_VERSION, *s_Foundation, physx::PxTolerancesScale(), true, s_VisualDebugger);
+        s_Physics = PxCreatePhysics(PX_PHYSICS_VERSION, *s_Foundation, physx::PxTolerancesScale(), true);
         MND_CORE_ASSERT(s_Physics, "PxCreatePhysics Failed!");
 
         s_CookingFactory = PxCreateCooking(PX_PHYSICS_VERSION, *s_Foundation, s_Physics->getTolerancesScale());
@@ -358,24 +350,6 @@ namespace Monado {
     void PXPhysicsWrappers::Shutdown() {
         s_Physics->release();
         s_Foundation->release();
-    }
-
-    // TODO: Consider removing this now that we have our own collider visualization
-    void PXPhysicsWrappers::ConnectVisualDebugger() {
-#if PHYSX_DEBUGGER
-        if (s_VisualDebugger->isConnected(false))
-            s_VisualDebugger->disconnect();
-
-        physx::PxPvdTransport *transport = physx::PxDefaultPvdSocketTransportCreate("localhost", 5425, 10);
-        s_VisualDebugger->connect(*transport, physx::PxPvdInstrumentationFlag::eALL);
-#endif
-    }
-
-    void PXPhysicsWrappers::DisconnectVisualDebugger() {
-#if PHYSX_DEBUGGER
-        if (s_VisualDebugger->isConnected(false))
-            s_VisualDebugger->disconnect();
-#endif
     }
 
 } // namespace Monado
