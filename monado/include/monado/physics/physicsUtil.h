@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "PxPhysicsAPI.h"
 #include "monado/core/math/transform.h"
 #include "glm/glm.hpp"
@@ -23,9 +25,17 @@ namespace Monado {
     glm::vec4 FromPhysXVector(const physx::PxVec4 &vector);
     glm::quat FromPhysXQuat(const physx::PxQuat &quat);
 
-    physx::PxFilterFlags MonadoFilterShader(physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
-                                           physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
-                                           physx::PxPairFlags &pairFlags, const void *constantBlock,
-                                           physx::PxU32 constantBlockSize);
+    physx::PxFilterFlags MonadoFilterShader(physx::PxFilterObjectAttributes attributes0,
+                                            physx::PxFilterData filterData0,
+                                            physx::PxFilterObjectAttributes attributes1,
+                                            physx::PxFilterData filterData1, physx::PxPairFlags &pairFlags,
+                                            const void *constantBlock, physx::PxU32 constantBlockSize);
+
+    class ConvexMeshSerializer {
+    public:
+        static void SerializeMesh(const std::string &filepath, const physx::PxDefaultMemoryOutputStream &data);
+        static bool IsSerialized(const std::string &filepath);
+        static physx::PxDefaultMemoryInputData DeserializeMesh(const std::string &filepath);
+    };
 
 } // namespace Monado

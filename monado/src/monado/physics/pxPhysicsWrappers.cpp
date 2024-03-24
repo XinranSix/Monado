@@ -280,13 +280,21 @@ namespace Monado {
         convexDesc.points.data = vertices.data();
         convexDesc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX;
 
-        physx::PxDefaultMemoryOutputStream buf;
-        physx::PxConvexMeshCookingResult::Enum result;
-        if (!s_CookingFactory->cookConvexMesh(convexDesc, buf, &result))
-            MND_CORE_ASSERT(false);
+        physx::PxConvexMesh *mesh = nullptr;
+        if (!ConvexMeshSerializer::IsSerialized(collider.CollisionMesh->GetFilePath())) {
+            physx::PxDefaultMemoryOutputStream buf;
+            physx::PxConvexMeshCookingResult::Enum result;
+            if (!s_CookingFactory->cookConvexMesh(convexDesc, buf, &result))
+                MND_CORE_ASSERT(false);
 
-        physx::PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
-        physx::PxConvexMesh *mesh = s_Physics->createConvexMesh(input);
+            ConvexMeshSerializer::SerializeMesh(collider.CollisionMesh->GetFilePath(), buf);
+            physx::PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+            mesh = s_Physics->createConvexMesh(input);
+        } else {
+            physx::PxDefaultMemoryInputData input =
+                ConvexMeshSerializer::DeserializeMesh(collider.CollisionMesh->GetFilePath());
+            mesh = s_Physics->createConvexMesh(input);
+        }
 
         if (!collider.ProcessedMesh) {
             // Based On:
