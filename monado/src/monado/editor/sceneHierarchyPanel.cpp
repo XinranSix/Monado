@@ -842,7 +842,7 @@ namespace Monado {
             EndPropertyGrid();
         });
 
-        DrawComponent<CapsuleColliderComponent>("Capsule Collider", entity, [](CapsuleColliderComponent &ccc) {
+        DrawComponent<CapsuleColliderComponent>("Capsule Collider", entity, [=](CapsuleColliderComponent &ccc) {
             BeginPropertyGrid();
 
             bool changed = false;
@@ -852,6 +852,7 @@ namespace Monado {
 
             if (Property("Height", ccc.Height))
                 changed = true;
+
             Property("Is Trigger", ccc.IsTrigger);
 
             if (changed) {

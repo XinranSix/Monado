@@ -551,6 +551,7 @@ namespace Monado {
         CopyComponentIfExists<PhysicsMaterialComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
         CopyComponentIfExists<BoxColliderComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
         CopyComponentIfExists<SphereColliderComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
+        CopyComponentIfExists<CapsuleColliderComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
         CopyComponentIfExists<MeshColliderComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
     }
 
@@ -598,6 +599,7 @@ namespace Monado {
         CopyComponent<PhysicsMaterialComponent>(target->m_Registry, m_Registry, enttMap);
         CopyComponent<BoxColliderComponent>(target->m_Registry, m_Registry, enttMap);
         CopyComponent<SphereColliderComponent>(target->m_Registry, m_Registry, enttMap);
+        CopyComponent<CapsuleColliderComponent>(target->m_Registry, m_Registry, enttMap);
         CopyComponent<MeshColliderComponent>(target->m_Registry, m_Registry, enttMap);
 
         const auto &entityInstanceMap = ScriptEngine::GetEntityInstanceMap();

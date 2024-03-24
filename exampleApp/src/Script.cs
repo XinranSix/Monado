@@ -26,11 +26,11 @@ namespace Example
             Vector3 translation = transform.Translation;
 
             float speed = Speed * ts;
-
+            
             translation.X += Velocity.X * ts;
             translation.Y += Velocity.Y * ts;
             translation.Z += Velocity.Z * ts;
-
+            
             translation.Y -= SinkRate * ts;
 
             transform.Translation = translation;
