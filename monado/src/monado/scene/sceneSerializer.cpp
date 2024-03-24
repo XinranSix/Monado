@@ -281,6 +281,7 @@ namespace Monado {
             auto &rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
             out << YAML::Key << "BodyType" << YAML::Value << (int)rigidbodyComponent.BodyType;
             out << YAML::Key << "Mass" << YAML::Value << rigidbodyComponent.Mass;
+            out << YAML::Key << "IsKinematic" << YAML::Value << rigidbodyComponent.IsKinematic;
 
             out << YAML::Key << "Constraints";
             out << YAML::BeginMap; // Constraints

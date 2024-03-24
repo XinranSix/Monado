@@ -34,11 +34,10 @@ namespace Monado {
 
     class Scene : public RefCounted {
     public:
-        Scene(const std::string &debugName = "Scene");
+        Scene(const std::string &debugName = "Scene", bool isEditorScene = false);
         ~Scene();
 
         void Init();
-        void OnShutdown();
 
         void OnUpdate(Timestep ts);
         void OnRenderRuntime(Timestep ts);
@@ -107,7 +106,6 @@ namespace Monado {
 
         entt::entity m_SelectedEntity;
 
-        Entity *m_Physics3DBodyEntityBuffer = nullptr;
         Entity *m_Physics2DBodyEntityBuffer = nullptr;
 
         float m_SkyboxLod = 1.0f;

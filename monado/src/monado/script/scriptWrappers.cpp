@@ -21,6 +21,8 @@
 #include <mono/metadata/class.h>
 #include <mono/metadata/reflection.h>
 
+#include "PxPhysicsAPI.h"
+
 namespace Monado {
     extern std::unordered_map<MonoType *, std::function<bool(Entity &)>> s_HasComponentFuncs;
     extern std::unordered_map<MonoType *, std::function<void(Entity &)>> s_CreateComponentFuncs;
@@ -84,48 +86,6 @@ namespace Monado {
             memcpy(glm::value_ptr(transformComponent.Transform), inTransform, sizeof(glm::mat4));
         }
 
-        void Monado_Entity_GetForwardDirection(uint64_t entityID, glm::vec3 *outForward) {
-            Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
-            MND_CORE_ASSERT(scene, "No active scene!");
-            const auto &entityMap = scene->GetEntityMap();
-            MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
-
-            Entity entity = entityMap.at(entityID);
-            auto &transformComponent = entity.GetComponent<TransformComponent>();
-
-            auto [position, rotation, scale] = GetTransformDecomposition(transformComponent.Transform);
-            *outForward = glm::rotate(glm::inverse(glm::normalize(rotation)), glm::vec3(0, 0, -1));
-        }
-
-        void Monado_Entity_GetRightDirection(uint64_t entityID, glm::vec3 *outRight) {
-            Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
-            MND_CORE_ASSERT(scene, "No active scene!");
-            const auto &entityMap = scene->GetEntityMap();
-            MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
-
-            Entity entity = entityMap.at(entityID);
-            auto &transformComponent = entity.GetComponent<TransformComponent>();
-
-            auto [position, rotation, scale] = GetTransformDecomposition(transformComponent.Transform);
-            *outRight = glm::rotate(glm::inverse(glm::normalize(rotation)), glm::vec3(1, 0, 0));
-        }
-
-        void Monado_Entity_GetUpDirection(uint64_t entityID, glm::vec3 *outUp) {
-            Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
-            MND_CORE_ASSERT(scene, "No active scene!");
-            const auto &entityMap = scene->GetEntityMap();
-            MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                            "Invalid entity ID or entity doesn't exist in scene!");
-
-            Entity entity = entityMap.at(entityID);
-            auto &transformComponent = entity.GetComponent<TransformComponent>();
-
-            auto [position, rotation, scale] = GetTransformDecomposition(transformComponent.Transform);
-            *outUp = glm::rotate(glm::inverse(glm::normalize(rotation)), glm::vec3(0, 1, 0));
-        }
-
         void Monado_Entity_CreateComponent(uint64_t entityID, void *type) {
             Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
             MND_CORE_ASSERT(scene, "No active scene!");
@@ -160,6 +120,21 @@ namespace Monado {
                 return entity.GetComponent<IDComponent>().ID;
 
             return 0;
+        }
+
+        void Monado_TransformComponent_GetRelativeDirection(uint64_t entityID, glm::vec3 *outDirection,
+                                                            glm::vec3 *inAbsoluteDirection) {
+            Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
+            MND_CORE_ASSERT(scene, "No active scene!");
+            const auto &entityMap = scene->GetEntityMap();
+            MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
+                            "Invalid entity ID or entity doesn't exist in scene!");
+
+            Entity entity = entityMap.at(entityID);
+            auto &transformComponent = entity.GetComponent<TransformComponent>();
+
+            auto [position, rotation, scale] = GetTransformDecomposition(transformComponent.Transform);
+            *outDirection = glm::rotate(glm::inverse(glm::normalize(rotation)), *inAbsoluteDirection);
         }
 
         void *Monado_MeshComponent_GetMesh(uint64_t entityID) {
@@ -242,13 +217,15 @@ namespace Monado {
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBodyComponent>());
             auto &component = entity.GetComponent<RigidBodyComponent>();
+
+            if (component.IsKinematic) {
+                MND_CORE_WARN("Cannot add a force to a kinematic actor! EntityID({0})", entityID);
+                return;
+            }
+
             physx::PxRigidActor *actor = (physx::PxRigidActor *)component.RuntimeActor;
             physx::PxRigidDynamic *dynamicActor = actor->is<physx::PxRigidDynamic>();
-
-            // We don't want to assert since scripts might want to be able to switch
-            // between a static and dynamic actor at runtime
-            if (!dynamicActor)
-                return;
+            MND_CORE_ASSERT(dynamicActor);
 
             MND_CORE_ASSERT(force);
             dynamicActor->addForce({ force->x, force->y, force->z }, (physx::PxForceMode::Enum)forceMode);
@@ -264,13 +241,15 @@ namespace Monado {
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBodyComponent>());
             auto &component = entity.GetComponent<RigidBodyComponent>();
+
+            if (component.IsKinematic) {
+                MND_CORE_WARN("Cannot add torque to a kinematic actor! EntityID({0})", entityID);
+                return;
+            }
+
             physx::PxRigidActor *actor = (physx::PxRigidActor *)component.RuntimeActor;
             physx::PxRigidDynamic *dynamicActor = actor->is<physx::PxRigidDynamic>();
-
-            // We don't want to assert since scripts might want to be able to switch
-            // between a static and dynamic actor at runtime
-            if (!dynamicActor)
-                return;
+            MND_CORE_ASSERT(dynamicActor);
 
             MND_CORE_ASSERT(torque);
             dynamicActor->addTorque({ torque->x, torque->y, torque->z }, (physx::PxForceMode::Enum)forceMode);
@@ -286,13 +265,10 @@ namespace Monado {
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBodyComponent>());
             auto &component = entity.GetComponent<RigidBodyComponent>();
+
             physx::PxRigidActor *actor = (physx::PxRigidActor *)component.RuntimeActor;
             physx::PxRigidDynamic *dynamicActor = actor->is<physx::PxRigidDynamic>();
-
-            // We don't want to assert since scripts might want to be able to switch
-            // between a static and dynamic actor at runtime
-            if (!dynamicActor)
-                return;
+            MND_CORE_ASSERT(dynamicActor);
 
             MND_CORE_ASSERT(outVelocity);
             physx::PxVec3 velocity = dynamicActor->getLinearVelocity();
@@ -309,13 +285,10 @@ namespace Monado {
             Entity entity = entityMap.at(entityID);
             MND_CORE_ASSERT(entity.HasComponent<RigidBodyComponent>());
             auto &component = entity.GetComponent<RigidBodyComponent>();
+
             physx::PxRigidActor *actor = (physx::PxRigidActor *)component.RuntimeActor;
             physx::PxRigidDynamic *dynamicActor = actor->is<physx::PxRigidDynamic>();
-
-            // We don't want to assert since scripts might want to be able to switch
-            // between a static and dynamic actor at runtime
-            if (!dynamicActor)
-                return;
+            MND_CORE_ASSERT(dynamicActor);
 
             MND_CORE_ASSERT(velocity);
             dynamicActor->setLinearVelocity({ velocity->x, velocity->y, velocity->z });

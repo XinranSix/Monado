@@ -13,6 +13,7 @@ typedef struct _MonoArray MonoArray;
 
 namespace Monado {
     namespace Script {
+
         // Math
         float Monado_Noise_PerlinNoise(float x, float y);
 
@@ -22,18 +23,18 @@ namespace Monado {
         // Entity
         void Monado_Entity_GetTransform(uint64_t entityID, glm::mat4 *outTransform);
         void Monado_Entity_SetTransform(uint64_t entityID, glm::mat4 *inTransform);
-        void Monado_Entity_GetForwardDirection(uint64_t entityID, glm::vec3 *outForward);
-        void Monado_Entity_GetRightDirection(uint64_t entityID, glm::vec3 *outRight);
-        void Monado_Entity_GetUpDirection(uint64_t entityID, glm::vec3 *outUp);
         void Monado_Entity_CreateComponent(uint64_t entityID, void *type);
         bool Monado_Entity_HasComponent(uint64_t entityID, void *type);
         uint64_t Monado_Entity_FindEntityByTag(MonoString *tag);
+
+        void Monado_TransformComponent_GetRelativeDirection(uint64_t entityID, glm::vec3 *outDirection,
+                                                           glm::vec3 *inAbsoluteDirection);
 
         void *Monado_MeshComponent_GetMesh(uint64_t entityID);
         void Monado_MeshComponent_SetMesh(uint64_t entityID, Ref<Mesh> *inMesh);
 
         void Monado_RigidBody2DComponent_ApplyLinearImpulse(uint64_t entityID, glm::vec2 *impulse, glm::vec2 *offset,
-                                                            bool wake);
+                                                           bool wake);
         void Monado_RigidBody2DComponent_GetLinearVelocity(uint64_t entityID, glm::vec2 *outVelocity);
         void Monado_RigidBody2DComponent_SetLinearVelocity(uint64_t entityID, glm::vec2 *velocity);
 
@@ -58,7 +59,7 @@ namespace Monado {
         void Monado_MaterialInstance_SetVector3(Ref<MaterialInstance> *_this, MonoString *uniform, glm::vec3 *value);
         void Monado_MaterialInstance_SetVector4(Ref<MaterialInstance> *_this, MonoString *uniform, glm::vec4 *value);
         void Monado_MaterialInstance_SetTexture(Ref<MaterialInstance> *_this, MonoString *uniform,
-                                                Ref<Texture2D> *texture);
+                                               Ref<Texture2D> *texture);
 
         // Mesh
         Ref<Mesh> *Monado_Mesh_Constructor(MonoString *filepath);

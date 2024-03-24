@@ -1,22 +1,14 @@
+
 #include "monado/physics/physics3D.h"
-
-#include "glm/glm.hpp"
-#define GLM_ENABLE_EXPERIMENTAL
-#include "glm/gtx/quaternion.hpp"
-#include "glm/gtx/matrix_decompose.hpp"
-#include "glm/gtc/type_ptr.hpp"
-
-#define PHYSX_DEBUGGER 1
+#include "monado/physics/pXPhysicsWrappers.h"
+#include "monado/scene/scene.h"
 
 namespace Monado {
 
-    // TODO: Kinematic Actors
-    // TODO: Collision "layers"
-    // TODO: Expose more of the API to scripts
-    // TODO: Connect/Disconnect PVD
-    // TODO: Collision Shape Rendering
-
-    static physx::PxSimulationFilterShader s_DefaultFilterShader = physx::PxDefaultSimulationFilterShader;
+    static physx::PxScene *s_Scene;
+    static std::vector<Entity> s_SimulatedEntities;
+    static Entity *s_EntityStorageBuffer;
+    static int s_EntityStorageBufferPosition;
 
     static std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(const glm::mat4 &transform) {
         glm::vec3 scale, translation, skew;
@@ -27,178 +19,102 @@ namespace Monado {
         return { translation, orientation, scale };
     }
 
-    static physx::PxFilterFlags HazelFilterShader(physx::PxFilterObjectAttributes attributes0,
-                                                  physx::PxFilterData filterData0,
-                                                  physx::PxFilterObjectAttributes attributes1,
-                                                  physx::PxFilterData filterData1, physx::PxPairFlags &pairFlags,
-                                                  const void *constantBlock, physx::PxU32 constantBlockSize) {
-        if (physx::PxFilterObjectIsTrigger(attributes0) || physx::PxFilterObjectIsTrigger(attributes1)) {
-            pairFlags = physx::PxPairFlag::eTRIGGER_DEFAULT;
-            return physx::PxFilterFlag::eDEFAULT;
+    void Physics3D::Init() { PXPhysicsWrappers::Initialize(); }
+
+    void Physics3D::Shutdown() { PXPhysicsWrappers::Shutdown(); }
+
+    void Physics3D::CreateScene(const SceneParams &params) {
+        MND_CORE_ASSERT(s_Scene == nullptr, "Scene already has a Physics Scene!");
+        s_Scene = PXPhysicsWrappers::CreateScene(params);
+    }
+
+    void Physics3D::CreateActor(Entity e, int entityCount) {
+        if (!e.HasComponent<RigidBodyComponent>()) {
+            MND_CORE_WARN("Trying to create PhysX actor from a non-rigidbody actor!");
+            return;
         }
 
-        pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
-
-        if ((filterData0.word0 & filterData1.word1) || (filterData1.word0 & filterData0.word1)) {
-            pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
-            pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_LOST;
+        if (!e.HasComponent<PhysicsMaterialComponent>()) {
+            MND_CORE_WARN("Trying to create PhysX actor without a PhysicsMaterialComponent!");
+            return;
         }
 
-        return physx::PxFilterFlag::eDEFAULT;
-    }
+        RigidBodyComponent &rigidbody = e.GetComponent<RigidBodyComponent>();
 
-    void Physics3D::Init() {
-        MND_CORE_ASSERT(!s_PXFoundation, "PhysXManager::Init shouldn't be called more than once!");
+        if (s_EntityStorageBuffer == nullptr)
+            s_EntityStorageBuffer = new Entity[entityCount];
 
-        s_PXFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, s_PXAllocator, s_PXErrorCallback);
-        MND_CORE_ASSERT(s_PXFoundation, "PxCreateFoundation Failed!");
+        // Create Actor Body
+        physx::PxRigidActor *actor = PXPhysicsWrappers::CreateActor(rigidbody, e.Transform());
+        s_SimulatedEntities.push_back(e);
+        Entity *entityStorage = &s_EntityStorageBuffer[s_EntityStorageBufferPosition++];
+        *entityStorage = e;
+        actor->userData = (void *)entityStorage;
+        rigidbody.RuntimeActor = actor;
 
-#if PHYSX_DEBUGGER
-        s_PXPvd = PxCreatePvd(*s_PXFoundation);
-        physx::PxPvdTransport *transport = physx::PxDefaultPvdSocketTransportCreate("localhost", 5425, 10);
-        s_PXPvd->connect(*transport, physx::PxPvdInstrumentationFlag::eALL);
-#endif
-        s_PXPhysicsFactory =
-            PxCreatePhysics(PX_PHYSICS_VERSION, *s_PXFoundation, physx::PxTolerancesScale(), true, s_PXPvd);
-        MND_CORE_ASSERT(s_PXPhysicsFactory, "PxCreatePhysics Failed!");
+        // Physics Material
+        physx::PxMaterial *material = PXPhysicsWrappers::CreateMaterial(e.GetComponent<PhysicsMaterialComponent>());
 
-        s_PXCookingFactory =
-            PxCreateCooking(PX_PHYSICS_VERSION, *s_PXFoundation, s_PXPhysicsFactory->getTolerancesScale());
-        MND_CORE_ASSERT(s_PXCookingFactory, "PxCreatePhysics Failed!");
-    }
-
-    void Physics3D::Shutdown() {
-        s_PXPhysicsFactory->release();
-        s_PXFoundation->release();
-    }
-
-    physx::PxSceneDesc Physics3D::CreateSceneDesc() {
-        physx::PxSceneDesc sceneDesc(s_PXPhysicsFactory->getTolerancesScale());
-        if (!sceneDesc.cpuDispatcher) {
-            physx::PxDefaultCpuDispatcher *mCpuDispatcher = physx::PxDefaultCpuDispatcherCreate(1);
-            if (!mCpuDispatcher)
-                MND_CORE_ASSERT(false);
-            sceneDesc.cpuDispatcher = mCpuDispatcher;
+        // Add all colliders
+        if (e.HasComponent<BoxColliderComponent>()) {
+            BoxColliderComponent &collider = e.GetComponent<BoxColliderComponent>();
+            PXPhysicsWrappers::AddBoxCollider(*actor, *material, collider);
         }
 
-        if (!sceneDesc.filterShader)
-            sceneDesc.filterShader = HazelFilterShader;
+        if (e.HasComponent<SphereColliderComponent>()) {
+            SphereColliderComponent &collider = e.GetComponent<SphereColliderComponent>();
+            PXPhysicsWrappers::AddSphereCollider(*actor, *material, collider);
+        }
 
-        return sceneDesc;
-    }
+        if (e.HasComponent<CapsuleColliderComponent>()) {
+            CapsuleColliderComponent &collider = e.GetComponent<CapsuleColliderComponent>();
+            PXPhysicsWrappers::AddCapsuleCollider(*actor, *material, collider);
+        }
 
-    physx::PxScene *Physics3D::CreateScene(const physx::PxSceneDesc &sceneDesc) {
-        return s_PXPhysicsFactory->createScene(sceneDesc);
-    }
+        if (e.HasComponent<MeshColliderComponent>()) {
+            MeshColliderComponent &collider = e.GetComponent<MeshColliderComponent>();
+            PXPhysicsWrappers::AddMeshCollider(*actor, *material, collider);
+        }
 
-    physx::PxRigidActor *Physics3D::CreateAndAddActor(physx::PxScene *scene, const RigidBodyComponent &rigidbody,
-                                                      const glm::mat4 &transform) {
-        physx::PxRigidActor *actor = nullptr;
-
+        // Set collision filters
         if (rigidbody.BodyType == RigidBodyComponent::Type::Static) {
-            actor = s_PXPhysicsFactory->createRigidStatic(CreatePose(transform));
+            PXPhysicsWrappers::SetCollisionFilters(*actor, (uint32_t)FilterGroup::Static, (uint32_t)FilterGroup::All);
         } else if (rigidbody.BodyType == RigidBodyComponent::Type::Dynamic) {
-            physx::PxRigidDynamic *dynamicActor = s_PXPhysicsFactory->createRigidDynamic(CreatePose(transform));
-            physx::PxRigidBodyExt::updateMassAndInertia(*dynamicActor, rigidbody.Mass);
-
-            dynamicActor->setRigidDynamicLockFlag(physx::PxRigidDynamicLockFlag::eLOCK_LINEAR_X,
-                                                  rigidbody.LockPositionX);
-            dynamicActor->setRigidDynamicLockFlag(physx::PxRigidDynamicLockFlag::eLOCK_LINEAR_Y,
-                                                  rigidbody.LockPositionY);
-            dynamicActor->setRigidDynamicLockFlag(physx::PxRigidDynamicLockFlag::eLOCK_LINEAR_Z,
-                                                  rigidbody.LockPositionZ);
-            dynamicActor->setRigidDynamicLockFlag(physx::PxRigidDynamicLockFlag::eLOCK_ANGULAR_X,
-                                                  rigidbody.LockRotationX);
-            dynamicActor->setRigidDynamicLockFlag(physx::PxRigidDynamicLockFlag::eLOCK_ANGULAR_Y,
-                                                  rigidbody.LockRotationY);
-            dynamicActor->setRigidDynamicLockFlag(physx::PxRigidDynamicLockFlag::eLOCK_ANGULAR_Z,
-                                                  rigidbody.LockRotationZ);
-
-            actor = dynamicActor;
+            PXPhysicsWrappers::SetCollisionFilters(*actor, (uint32_t)FilterGroup::Dynamic, (uint32_t)FilterGroup::All);
         }
 
-        scene->addActor(*actor);
-
-        return actor;
+        s_Scene->addActor(*actor);
     }
 
-    physx::PxMaterial *Physics3D::CreateMaterial(float staticFriction, float dynamicFriction, float restitution) {
-        return s_PXPhysicsFactory->createMaterial(staticFriction, dynamicFriction, restitution);
-    }
+    void Physics3D::Simulate() {
+        constexpr float stepSize = 0.016666660f;
+        s_Scene->simulate(stepSize);
+        s_Scene->fetchResults(true);
 
-    physx::PxConvexMesh *Physics3D::CreateMeshCollider(const Ref<Mesh> &mesh) {
-        const auto &vertices = mesh->GetStaticVertices();
-        const auto &indices = mesh->GetIndices();
+        for (Entity &e : s_SimulatedEntities) {
+            auto &transform = e.Transform();
+            // TODO: Come up with a better solution for scale
+            auto [p, r, scale] = GetTransformDecomposition(transform);
+            RigidBodyComponent &rb = e.GetComponent<RigidBodyComponent>();
+            physx::PxRigidActor *actor = static_cast<physx::PxRigidActor *>(rb.RuntimeActor);
 
-        physx::PxConvexMeshDesc convexDesc;
-        convexDesc.points.count = vertices.size();
-        convexDesc.points.stride = sizeof(Vertex);
-        convexDesc.points.data = vertices.data();
-        convexDesc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX;
-
-        physx::PxDefaultMemoryOutputStream buf;
-        physx::PxConvexMeshCookingResult::Enum result;
-        if (!s_PXCookingFactory->cookConvexMesh(convexDesc, buf, &result))
-            return nullptr;
-
-        physx::PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
-        return s_PXPhysicsFactory->createConvexMesh(input);
-    }
-
-    /*physx::PxTriangleMesh* Physics3D::CreateMeshCollider(const Ref<Mesh>& mesh)
-    {
-            const auto& vertices = mesh->GetStaticVertices();
-            const auto& indices = mesh->GetIndices();
-
-            physx::PxTriangleMeshDesc meshDesc;
-            meshDesc.points.count = vertices.size();
-            meshDesc.points.stride = sizeof(Vertex);
-            meshDesc.points.data = vertices.data();
-
-            meshDesc.triangles.count = indices.size();
-            meshDesc.triangles.stride = sizeof(Index);
-            meshDesc.triangles.data = indices.data();
-
-            physx::PxDefaultMemoryOutputStream writeBuffer;
-            physx::PxTriangleMeshCookingResult::Enum result;
-            bool status = s_PXCookingFactory->cookTriangleMesh(meshDesc, writeBuffer, &result);
-            if (!status)
-                    return nullptr;
-
-            physx::PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
-            return s_PXPhysicsFactory->createTriangleMesh(readBuffer);
-    }*/
-
-    physx::PxTransform Physics3D::CreatePose(const glm::mat4 &transform) {
-        auto [translation, rotationQuat, scale] = GetTransformDecomposition(transform);
-        glm::vec3 rotation = glm::eulerAngles(rotationQuat);
-
-        physx::PxTransform physxTransform(physx::PxVec3(translation.x, translation.y, translation.z));
-        physxTransform.rotate(physx::PxVec3(rotation.x, rotation.y, rotation.z));
-        return physxTransform;
-    }
-
-    void Physics3D::SetCollisionFilters(physx::PxRigidActor *actor, uint32_t filterGroup, uint32_t filterMask) {
-        physx::PxFilterData filterData;
-        filterData.word0 = filterGroup; // word0 = own ID
-        filterData.word1 = filterMask;  // word1 = ID mask to filter pairs that trigger a
-                                        // contact callback;
-        const physx::PxU32 numShapes = actor->getNbShapes();
-        physx::PxShape **shapes =
-            (physx::PxShape **)s_PXAllocator.allocate(sizeof(physx::PxShape *) * numShapes, "", "", 0);
-        actor->getShapes(shapes, numShapes);
-        for (physx::PxU32 i = 0; i < numShapes; i++) {
-            physx::PxShape *shape = shapes[i];
-            shape->setSimulationFilterData(filterData);
+            if (rb.BodyType == RigidBodyComponent::Type::Dynamic) {
+                transform = FromPhysXTransform(actor->getGlobalPose()) * glm::scale(glm::mat4(1.0F), scale);
+            } else if (rb.BodyType == RigidBodyComponent::Type::Static) {
+                actor->setGlobalPose(ToPhysXTransform(transform));
+            }
         }
-        s_PXAllocator.deallocate(shapes);
     }
 
-    physx::PxDefaultErrorCallback Physics3D::s_PXErrorCallback;
-    physx::PxDefaultAllocator Physics3D::s_PXAllocator;
-    physx::PxFoundation *Physics3D::s_PXFoundation;
-    physx::PxPhysics *Physics3D::s_PXPhysicsFactory;
-    physx::PxPvd *Physics3D::s_PXPvd;
-    physx::PxCooking *Physics3D::s_PXCookingFactory;
+    void Physics3D::DestroyScene() {
+        delete[] s_EntityStorageBuffer;
+        s_SimulatedEntities.clear();
+        s_Scene->release();
+        s_Scene = nullptr;
+    }
+
+    void Physics3D::ConnectVisualDebugger() { PXPhysicsWrappers::ConnectVisualDebugger(); }
+
+    void Physics3D::DisconnectVisualDebugger() { PXPhysicsWrappers::DisconnectVisualDebugger(); }
 
 } // namespace Monado

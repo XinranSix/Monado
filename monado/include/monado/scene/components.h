@@ -114,9 +114,10 @@ namespace Monado {
     };
 
     struct RigidBodyComponent {
-        enum class Type { Static, Dynamic, Kinematic };
+        enum class Type { Static, Dynamic };
         Type BodyType;
         float Mass = 1.0F;
+        bool IsKinematic = false;
 
         bool LockPositionX = false;
         bool LockPositionY = false;

@@ -370,6 +370,11 @@ namespace Monado {
         }
     }
 
+    bool ScriptEngine::IsEntityModuleValid(Entity entity) {
+        return entity.HasComponent<ScriptComponent>() &&
+               ModuleExists(entity.GetComponent<ScriptComponent>().ModuleName);
+    }
+
     void ScriptEngine::OnScriptComponentDestroyed(UUID sceneID, UUID entityID) {
         MND_CORE_ASSERT(s_EntityInstanceMap.find(sceneID) != s_EntityInstanceMap.end());
         auto &entityMap = s_EntityInstanceMap.at(sceneID);

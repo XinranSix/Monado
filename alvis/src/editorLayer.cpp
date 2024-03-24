@@ -9,6 +9,7 @@
 #include "monado/core/input.h"
 #include "monado/script/scriptEngine.h"
 #include "monado/core/math/ray.h"
+#include "monado/physics/physics3D.h"
 
 #include "editorLayer.h"
 
@@ -101,7 +102,7 @@ namespace Monado {
         m_CheckerboardTex = Texture2D::Create("alvis/assets/editor/Checkerboard.tga");
         m_PlayButtonTex = Texture2D::Create("alvis/assets/editor/PlayButton.png");
 
-        m_EditorScene = Ref<Scene>::Create();
+        m_EditorScene = Ref<Scene>::Create("EditorScene", true);
         UpdateWindowTitle("Untitled Scene");
         ScriptEngine::SetSceneContext(m_EditorScene);
         m_SceneHierarchyPanel = CreateScope<SceneHierarchyPanel>(m_EditorScene);
@@ -111,11 +112,10 @@ namespace Monado {
             std::bind(&EditorLayer::OnEntityDeleted, this, std::placeholders::_1));
 
         SceneSerializer serializer(m_EditorScene);
-        // serializer.Deserialize("alvis/assets/scenes/levels/Physics2D-Game.msc");
-        serializer.Deserialize("assets/assets/scenes/Physics3DTest.msc");
+        serializer.Deserialize("alvis/assets/scenes/Physics3DTest.msc");
     }
 
-    void EditorLayer::OnDetach() { m_EditorScene->OnShutdown(); }
+    void EditorLayer::OnDetach() {}
 
     void EditorLayer::OnScenePlay() {
         m_SelectionContext.clear();
@@ -645,6 +645,14 @@ namespace Monado {
                     ScriptEngine::ReloadAssembly("ExampleApp.dll");
 
                 ImGui::MenuItem("Reload assembly on play", nullptr, &m_ReloadScriptOnPlay);
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Debug")) {
+                if (ImGui::MenuItem("Connect To PVD")) {
+                    Physics3D::ConnectVisualDebugger();
+                }
+
                 ImGui::EndMenu();
             }
 

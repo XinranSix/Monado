@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 using Monado;
 
@@ -22,9 +18,12 @@ namespace Example
 
         private bool Colliding => m_CollisionCounter > 0;
 
+        private TransformComponent m_Transform;
+
         void OnCreate()
         {
             m_PhysicsBody = GetComponent<RigidBodyComponent>();
+            m_Transform = GetComponent<TransformComponent>();
 
             MeshComponent meshComponent = GetComponent<MeshComponent>();
             m_MeshMaterial = meshComponent.Mesh.GetMaterial(0);
@@ -53,22 +52,18 @@ namespace Example
                 movementForce *= 0.4f;
             }
 
-            Vector3 forward = GetForwardDirection();
-            Vector3 right = GetRightDirection();
-			Vector3 up = GetUpDirection();
-
 			if (Input.IsKeyPressed(KeyCode.W))
-				m_PhysicsBody.AddForce(forward * movementForce);
+				m_PhysicsBody.AddForce(m_Transform.Forward * movementForce);
 			else if (Input.IsKeyPressed(KeyCode.S))
-				m_PhysicsBody.AddForce(forward * -movementForce);
+				m_PhysicsBody.AddForce(m_Transform.Forward * -movementForce);
 
 			if (Input.IsKeyPressed(KeyCode.D))
-				m_PhysicsBody.AddForce(right * movementForce);
+				m_PhysicsBody.AddForce(m_Transform.Right * movementForce);
 			else if (Input.IsKeyPressed(KeyCode.A))
-				m_PhysicsBody.AddForce(right * -movementForce);
+				m_PhysicsBody.AddForce(m_Transform.Right * -movementForce);
 
 			if (Colliding && Input.IsKeyPressed(KeyCode.Space))
-                m_PhysicsBody.AddForce(up * JumpForce);
+                m_PhysicsBody.AddForce(m_Transform.Up * JumpForce);
 
             if (Colliding)
                 m_MeshMaterial.Set("u_AlbedoColor", new Vector3(1.0f, 0.0f, 0.0f));
