@@ -2,6 +2,7 @@
 #include "monado/core/log.h"
 #include "monado/renderer/renderer.h"
 #include "monado/renderer/vertexBuffer.h"
+#include "monado/physics/physicsUtil.h"
 
 #include "imgui.h"
 
@@ -240,7 +241,7 @@ namespace Monado {
                 MND_MESH_LOG("    ROUGHNESS = {0}", roughness);
                 bool hasAlbedoMap = aiMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiTexPath) == AI_SUCCESS;
                 if (hasAlbedoMap) {
-                    // TODO: Temp - this should be handled by Hazel's filesystem
+                    // TODO: Temp - this should be handled by Monado's filesystem
                     std::filesystem::path path = filename;
                     auto parentPath = path.parent_path();
                     parentPath /= std::string(aiTexPath.data);
@@ -264,7 +265,7 @@ namespace Monado {
                 // Normal maps
                 mi->Set("u_NormalTexToggle", 0.0f);
                 if (aiMaterial->GetTexture(aiTextureType_NORMALS, 0, &aiTexPath) == AI_SUCCESS) {
-                    // TODO: Temp - this should be handled by Hazel's filesystem
+                    // TODO: Temp - this should be handled by Monado's filesystem
                     std::filesystem::path path = filename;
                     auto parentPath = path.parent_path();
                     parentPath /= std::string(aiTexPath.data);
@@ -285,7 +286,7 @@ namespace Monado {
                 // mi->Set("u_Roughness", 1.0f);
                 // mi->Set("u_RoughnessTexToggle", 0.0f);
                 if (aiMaterial->GetTexture(aiTextureType_SHININESS, 0, &aiTexPath) == AI_SUCCESS) {
-                    // TODO: Temp - this should be handled by Hazel's filesystem
+                    // TODO: Temp - this should be handled by Monado's filesystem
                     std::filesystem::path path = filename;
                     auto parentPath = path.parent_path();
                     parentPath /= std::string(aiTexPath.data);
@@ -307,7 +308,7 @@ namespace Monado {
 				// Metalness map (or is it??)
 				if (aiMaterial->Get("$raw.ReflectionFactor|file", aiPTI_String, 0, aiTexPath) == AI_SUCCESS)
 				{
-					// TODO: Temp - this should be handled by Hazel's filesystem
+					// TODO: Temp - this should be handled by Monado's filesystem
 					std::filesystem::path path = filename;
 					auto parentPath = path.parent_path();
 					parentPath /= std::string(aiTexPath.data);
@@ -369,7 +370,7 @@ namespace Monado {
                         if (key == "$raw.ReflectionFactor|file") {
                             metalnessTextureFound = true;
 
-                            // TODO: Temp - this should be handled by Hazel's filesystem
+                            // TODO: Temp - this should be handled by Monado's filesystem
                             std::filesystem::path path = filename;
                             auto parentPath = path.parent_path();
                             parentPath /= str;
@@ -422,6 +423,27 @@ namespace Monado {
 
         PipelineSpecification pipelineSpecification;
         pipelineSpecification.Layout = vertexLayout;
+        m_Pipeline = Pipeline::Create(pipelineSpecification);
+    }
+
+    Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<Index> &indices)
+        : m_StaticVertices(vertices), m_Indices(indices), m_IsAnimated(false) {
+        Submesh submesh;
+        submesh.BaseVertex = 0;
+        submesh.BaseIndex = 0;
+        submesh.IndexCount = indices.size() * 3;
+        submesh.Transform = glm::mat4(1.0F);
+        m_Submeshes.push_back(submesh);
+
+        m_VertexBuffer = VertexBuffer::Create(m_StaticVertices.data(), m_StaticVertices.size() * sizeof(Vertex));
+        m_IndexBuffer = IndexBuffer::Create(m_Indices.data(), m_Indices.size() * sizeof(Index));
+
+        PipelineSpecification pipelineSpecification;
+        pipelineSpecification.Layout = {
+            { ShaderDataType::Float3, "a_Position" }, { ShaderDataType::Float3, "a_Normal" },
+            { ShaderDataType::Float3, "a_Tangent" },  { ShaderDataType::Float3, "a_Binormal" },
+            { ShaderDataType::Float2, "a_TexCoord" },
+        };
         m_Pipeline = Pipeline::Create(pipelineSpecification);
     }
 

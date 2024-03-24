@@ -11,6 +11,8 @@
 #include "monado/script/scriptEngine.h"
 #include "monado/core/uuid.h"
 #include "monado/core/application.h"
+#include "monado/physics/pxPhysicsWrappers.h"
+#include "monado/renderer/meshFactory.h"
 
 namespace Monado {
 
@@ -818,7 +820,10 @@ namespace Monado {
         DrawComponent<BoxColliderComponent>("Box Collider", entity, [](BoxColliderComponent &bcc) {
             BeginPropertyGrid();
 
-            Property("Size", bcc.Size);
+            if (Property("Size", bcc.Size)) {
+                bcc.DebugMesh = MeshFactory::CreateBox(bcc.Size);
+            }
+
             // Property("Offset", bcc.Offset);
             Property("Is Trigger", bcc.IsTrigger);
 
@@ -828,7 +833,10 @@ namespace Monado {
         DrawComponent<SphereColliderComponent>("Sphere Collider", entity, [](SphereColliderComponent &scc) {
             BeginPropertyGrid();
 
-            Property("Radius", scc.Radius);
+            if (Property("Radius", scc.Radius)) {
+                scc.DebugMesh = MeshFactory::CreateSphere(scc.Radius);
+            }
+
             Property("Is Trigger", scc.IsTrigger);
 
             EndPropertyGrid();
@@ -837,14 +845,24 @@ namespace Monado {
         DrawComponent<CapsuleColliderComponent>("Capsule Collider", entity, [](CapsuleColliderComponent &ccc) {
             BeginPropertyGrid();
 
-            Property("Radius", ccc.Radius);
-            Property("Height", ccc.Height);
+            bool changed = false;
+
+            if (Property("Radius", ccc.Radius))
+                changed = true;
+
+            if (Property("Height", ccc.Height))
+                changed = true;
             Property("Is Trigger", ccc.IsTrigger);
+
+            if (changed) {
+                ccc.DebugMesh = MeshFactory::CreateCapsule(ccc.Radius, ccc.Height);
+            }
 
             EndPropertyGrid();
         });
 
         DrawComponent<MeshColliderComponent>("Mesh Collider", entity, [](MeshColliderComponent &mcc) {
+            BeginPropertyGrid();
             ImGui::Columns(3);
             ImGui::SetColumnWidth(0, 100);
             ImGui::SetColumnWidth(1, 300);
@@ -861,11 +879,14 @@ namespace Monado {
             ImGui::NextColumn();
             if (ImGui::Button("...##openmesh")) {
                 std::string file = Application::Get().OpenFile();
-                if (!file.empty())
+                if (!file.empty()) {
                     mcc.CollisionMesh = Ref<Mesh>::Create(file);
+                    PXPhysicsWrappers::CreateConvexMesh(mcc);
+                }
             }
 
             Property("Is Trigger", mcc.IsTrigger);
+            EndPropertyGrid();
         });
     }
 

@@ -118,6 +118,7 @@ namespace Monado {
     class Mesh : public RefCounted {
     public:
         Mesh(const std::string &filename);
+        Mesh(const std::vector<Vertex> &vertices, const std::vector<Index> &indices);
         ~Mesh();
 
         void OnUpdate(Timestep ts);

@@ -2,6 +2,8 @@
 #include "monado/scene/entity.h"
 #include "monado/scene/components.h"
 #include "monado/script/scriptEngine.h"
+#include "monado/physics/pxPhysicsWrappers.h"
+#include "monado/renderer/meshFactory.h"
 
 #include "yaml-cpp/yaml.h"
 
@@ -604,6 +606,7 @@ namespace Monado {
                     component.Size = boxColliderComponent["Size"].as<glm::vec3>();
                     component.IsTrigger =
                         boxColliderComponent["IsTrigger"] ? boxColliderComponent["IsTrigger"].as<bool>() : false;
+                    component.DebugMesh = MeshFactory::CreateBox(component.Size);
                 }
 
                 auto sphereColliderComponent = entity["SphereColliderComponent"];
@@ -612,6 +615,7 @@ namespace Monado {
                     component.Radius = sphereColliderComponent["Radius"].as<float>();
                     component.IsTrigger =
                         sphereColliderComponent["IsTrigger"] ? sphereColliderComponent["IsTrigger"].as<bool>() : false;
+                    component.DebugMesh = MeshFactory::CreateSphere(component.Radius);
                 }
 
                 auto capsuleColliderComponent = entity["CapsuleColliderComponent"];
@@ -622,6 +626,7 @@ namespace Monado {
                     component.IsTrigger = capsuleColliderComponent["IsTrigger"]
                                               ? capsuleColliderComponent["IsTrigger"].as<bool>()
                                               : false;
+                    component.DebugMesh = MeshFactory::CreateCapsule(component.Radius, component.Height);
                 }
 
                 auto meshColliderComponent = entity["MeshColliderComponent"];
@@ -631,6 +636,7 @@ namespace Monado {
                         deserializedEntity.AddComponent<MeshColliderComponent>(Ref<Mesh>::Create(meshPath));
                     component.IsTrigger =
                         meshColliderComponent["IsTrigger"] ? meshColliderComponent["IsTrigger"].as<bool>() : false;
+                    PXPhysicsWrappers::CreateConvexMesh(component);
 
                     MND_CORE_INFO("  Mesh Collider Asset Path: {0}", meshPath);
                 }

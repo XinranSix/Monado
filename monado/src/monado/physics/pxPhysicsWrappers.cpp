@@ -80,9 +80,18 @@ namespace Monado {
     }
 
     void PXPhysicsWrappers::AddBoxCollider(physx::PxRigidActor &actor, const physx::PxMaterial &material,
-                                           const BoxColliderComponent &collider) {
+                                           const BoxColliderComponent &collider, const glm::vec3 &size) {
+        glm::vec3 colliderSize = collider.Size;
+
+        if (size.x != 0.0F)
+            colliderSize.x *= size.x;
+        if (size.y != 0.0F)
+            colliderSize.y *= size.y;
+        if (size.z != 0.0F)
+            colliderSize.z *= size.z;
+
         physx::PxBoxGeometry boxGeometry =
-            physx::PxBoxGeometry(collider.Size.x / 2.0F, collider.Size.y / 2.0F, collider.Size.z / 2.0F);
+            physx::PxBoxGeometry(colliderSize.x / 2.0F, colliderSize.y / 2.0F, colliderSize.z / 2.0F);
         physx::PxShape *shape = physx::PxRigidActorExt::createExclusiveShape(actor, boxGeometry, material);
         shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, !collider.IsTrigger);
         shape->setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, collider.IsTrigger);
@@ -90,16 +99,30 @@ namespace Monado {
     }
 
     void PXPhysicsWrappers::AddSphereCollider(physx::PxRigidActor &actor, const physx::PxMaterial &material,
-                                              const SphereColliderComponent &collider) {
-        physx::PxSphereGeometry sphereGeometry = physx::PxSphereGeometry(collider.Radius);
+                                              const SphereColliderComponent &collider, const glm::vec3 &size) {
+        float colliderRadius = collider.Radius;
+
+        if (size.x != 0.0F)
+            colliderRadius *= size.x;
+
+        physx::PxSphereGeometry sphereGeometry = physx::PxSphereGeometry(colliderRadius);
         physx::PxShape *shape = physx::PxRigidActorExt::createExclusiveShape(actor, sphereGeometry, material);
         shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, !collider.IsTrigger);
         shape->setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, collider.IsTrigger);
     }
 
     void PXPhysicsWrappers::AddCapsuleCollider(physx::PxRigidActor &actor, const physx::PxMaterial &material,
-                                               const CapsuleColliderComponent &collider) {
-        physx::PxCapsuleGeometry capsuleGeometry = physx::PxCapsuleGeometry(collider.Radius, collider.Height / 2.0F);
+                                               const CapsuleColliderComponent &collider, const glm::vec3 &size) {
+        float colliderRadius = collider.Radius;
+        float colliderHeight = collider.Height;
+
+        if (size.x != 0.0F)
+            colliderRadius *= size.x;
+
+        if (size.y != 0.0F)
+            colliderHeight *= size.y;
+
+        physx::PxCapsuleGeometry capsuleGeometry = physx::PxCapsuleGeometry(colliderRadius, colliderHeight / 2.0F);
         physx::PxShape *shape = physx::PxRigidActorExt::createExclusiveShape(actor, capsuleGeometry, material);
         shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, !collider.IsTrigger);
         shape->setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, collider.IsTrigger);
@@ -107,9 +130,17 @@ namespace Monado {
     }
 
     void PXPhysicsWrappers::AddMeshCollider(physx::PxRigidActor &actor, const physx::PxMaterial &material,
-                                            const MeshColliderComponent &collider) {
+                                            MeshColliderComponent &collider, const glm::vec3 &size) {
         // TODO: Possibly take a look at https://github.com/kmammou/v-hacd for computing convex meshes from triangle
         // meshes...
+        physx::PxConvexMeshGeometry triangleGeometry = physx::PxConvexMeshGeometry(CreateConvexMesh(collider));
+        triangleGeometry.meshFlags = physx::PxConvexMeshGeometryFlag::eTIGHT_BOUNDS;
+        physx::PxShape *shape = physx::PxRigidActorExt::createExclusiveShape(actor, triangleGeometry, material);
+        shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, !collider.IsTrigger);
+        shape->setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, collider.IsTrigger);
+    }
+
+    physx::PxConvexMesh *PXPhysicsWrappers::CreateConvexMesh(MeshColliderComponent &collider) {
         const auto &vertices = collider.CollisionMesh->GetStaticVertices();
         const auto &indices = collider.CollisionMesh->GetIndices();
 
@@ -126,11 +157,56 @@ namespace Monado {
 
         physx::PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
         physx::PxConvexMesh *mesh = s_Physics->createConvexMesh(input);
-        physx::PxConvexMeshGeometry triangleGeometry = physx::PxConvexMeshGeometry(mesh);
-        triangleGeometry.meshFlags = physx::PxConvexMeshGeometryFlag::eTIGHT_BOUNDS;
-        physx::PxShape *shape = physx::PxRigidActorExt::createExclusiveShape(actor, triangleGeometry, material);
-        shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, !collider.IsTrigger);
-        shape->setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, collider.IsTrigger);
+
+        if (!collider.ProcessedMesh) {
+            // Based On:
+            // https://github.com/EpicGames/UnrealEngine/blob/08ee319f80ef47dbf0988e14b546b65214838ec4/Engine/Source/ThirdParty/PhysX3/NvCloth/samples/SampleBase/renderer/ConvexRenderMesh.cpp
+
+            const uint32_t nbPolygons = mesh->getNbPolygons();
+            const physx::PxVec3 *convexVertices = mesh->getVertices();
+            const physx::PxU8 *convexIndices = mesh->getIndexBuffer();
+
+            uint32_t nbVertices = 0;
+            uint32_t nbFaces = 0;
+
+            for (uint32_t i = 0; i < nbPolygons; i++) {
+                physx::PxHullPolygon polygon;
+                mesh->getPolygonData(i, polygon);
+                nbVertices += polygon.mNbVerts;
+                nbFaces += (polygon.mNbVerts - 2) * 3;
+            }
+
+            std::vector<Vertex> collisionVertices;
+            std::vector<Index> collisionIndices;
+
+            collisionVertices.resize(nbVertices);
+            collisionIndices.resize(nbFaces / 3);
+
+            uint32_t vertCounter = 0;
+            uint32_t indexCounter = 0;
+            for (uint32_t i = 0; i < nbPolygons; i++) {
+                physx::PxHullPolygon polygon;
+                mesh->getPolygonData(i, polygon);
+
+                uint32_t vI0 = vertCounter;
+                for (uint32_t vI = 0; vI < polygon.mNbVerts; vI++) {
+                    collisionVertices[vertCounter].Position =
+                        FromPhysXVector(convexVertices[convexIndices[polygon.mIndexBase + vI]]);
+                    vertCounter++;
+                }
+
+                for (uint32_t vI = 1; vI < uint32_t(polygon.mNbVerts) - 1; vI++) {
+                    collisionIndices[indexCounter].V1 = uint32_t(vI0);
+                    collisionIndices[indexCounter].V2 = uint32_t(vI0 + vI + 1);
+                    collisionIndices[indexCounter].V3 = uint32_t(vI0 + vI);
+                    indexCounter++;
+                }
+            }
+
+            collider.ProcessedMesh = Ref<Mesh>::Create(collisionVertices, collisionIndices);
+        }
+
+        return mesh;
     }
 
     physx::PxMaterial *PXPhysicsWrappers::CreateMaterial(const PhysicsMaterialComponent &material) {
@@ -163,6 +239,9 @@ namespace Monado {
 
     void PXPhysicsWrappers::ConnectVisualDebugger() {
 #if PHYSX_DEBUGGER
+        if (s_VisualDebugger->isConnected(false))
+            s_VisualDebugger->disconnect();
+
         physx::PxPvdTransport *transport = physx::PxDefaultPvdSocketTransportCreate("localhost", 5425, 10);
         s_VisualDebugger->connect(*transport, physx::PxPvdInstrumentationFlag::eALL);
 #endif

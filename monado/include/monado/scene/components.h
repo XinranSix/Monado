@@ -148,13 +148,19 @@ namespace Monado {
 
         bool IsTrigger = false;
 
+        // The mesh that will be drawn in the editor to show the collision bounds
+        Ref<Mesh> DebugMesh;
+
         BoxColliderComponent() = default;
         BoxColliderComponent(const BoxColliderComponent &other) = default;
     };
 
     struct SphereColliderComponent {
-        float Radius = 1.0F;
+        float Radius = 0.5F;
         bool IsTrigger = false;
+
+        // The mesh that will be drawn in the editor to show the collision bounds
+        Ref<Mesh> DebugMesh;
 
         SphereColliderComponent() = default;
         SphereColliderComponent(const SphereColliderComponent &other) = default;
@@ -165,12 +171,15 @@ namespace Monado {
         float Height = 1.0F;
         bool IsTrigger = false;
 
+        Ref<Mesh> DebugMesh;
+
         CapsuleColliderComponent() = default;
         CapsuleColliderComponent(const CapsuleColliderComponent &other) = default;
     };
 
     struct MeshColliderComponent {
         Ref<Monado::Mesh> CollisionMesh;
+        Ref<Monado::Mesh> ProcessedMesh;
         bool IsTrigger = false;
 
         MeshColliderComponent() = default;
