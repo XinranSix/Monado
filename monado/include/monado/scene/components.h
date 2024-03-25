@@ -32,7 +32,7 @@ namespace Monado {
     struct TransformComponent {
         glm::vec3 Translation = { 0.0F, 0.0F, 0.0F };
         glm::vec3 Rotation = { 0.0F, 0.0F, 0.0F };
-        glm::vec3 Scale = { 0.0F, 0.0F, 0.0F };
+        glm::vec3 Scale = { 1.0F, 1.0F, 1.0F };
 
         TransformComponent() = default;
         TransformComponent(const TransformComponent &other) = default;

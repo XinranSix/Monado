@@ -132,9 +132,8 @@ namespace Monado {
 
         s_ActiveScenes[m_SceneID] = this;
 
-        if (!isEditorScene) {
+        if (!isEditorScene)
             Physics::CreateScene();
-        }
 
         Init();
     }
@@ -462,6 +461,8 @@ namespace Monado {
     }
 
     void Scene::OnRuntimeStop() {
+        Input::SetCursorMode(CursorMode::Normal);
+
         delete[] m_Physics2DBodyEntityBuffer;
         Physics::DestroyScene();
         m_IsPlaying = false;

@@ -119,13 +119,15 @@ namespace FPSExample
 				m_RigidBody.AddForce(m_CameraTransform.Transform.Right * m_CurrentSpeed);
 
 			if (Input.IsKeyPressed(KeyCode.Space) && m_Colliding)
+			{
 				m_RigidBody.AddForce(Vector3.Up * JumpForce);
+			}
 		}
 
 		private void UpdateCameraTransform()
 		{
 			Vector3 position = m_Transform.Position;
-			position.Y += 1.5F;
+			position.Y = m_Transform.Position.Y + 0.75F;
 			m_CameraTransform.Position = position;
 		}
 	}
