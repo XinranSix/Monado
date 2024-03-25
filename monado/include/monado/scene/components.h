@@ -139,7 +139,6 @@ namespace Monado {
         bool LockRotationY = false;
         bool LockRotationZ = false;
 
-        void *RuntimeActor = nullptr;
         int32_t EntityBufferIndex = -1;
 
         RigidBodyComponent() = default;

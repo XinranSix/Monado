@@ -6,6 +6,8 @@
 
 namespace Monado {
 
+    class PhysicsActor;
+
     enum class ForceMode : uint16_t { Force = 0, Impulse, VelocityChange, Acceleration };
 
     enum class FilterGroup : uint32_t {
@@ -52,6 +54,8 @@ namespace Monado {
 
         static void CreateScene();
         static void CreateActor(Entity e);
+
+        static Ref<PhysicsActor> GetActorForEntity(Entity entity);
 
         static void Simulate(Timestep ts);
 

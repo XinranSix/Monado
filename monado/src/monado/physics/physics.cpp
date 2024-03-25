@@ -40,11 +40,8 @@ namespace Monado {
             for (uint32_t i = 0; i < s_EntityBufferCount; i++) {
                 Entity &e = s_EntityStorageBuffer[i];
                 RigidBodyComponent &rb = e.GetComponent<RigidBodyComponent>();
-
-                if (rb.RuntimeActor) {
-                    physx::PxRigidActor *actor = static_cast<physx::PxRigidActor *>(rb.RuntimeActor);
-                    actor->userData = &temp[rb.EntityBufferIndex];
-                }
+                Ref<PhysicsActor> actor = GetActorForEntity(e);
+                actor->SetUserData(&temp[rb.EntityBufferIndex]);
             }
 
             delete[] s_EntityStorageBuffer;
@@ -97,12 +94,28 @@ namespace Monado {
 
         Entity *entityStorage = &s_EntityStorageBuffer[s_EntityStorageBufferPosition];
         *entityStorage = e;
-        actor->SetRuntimeDataInternal((void *)entityStorage, s_EntityStorageBufferPosition);
+        actor->SetUserData((void *)entityStorage);
+        actor->m_RigidBody.EntityBufferIndex = s_EntityStorageBufferPosition;
         s_EntityStorageBufferPosition++;
+    }
+
+    Ref<PhysicsActor> Physics::GetActorForEntity(Entity entity) {
+        for (auto &actor : s_StaticActors) {
+            if (actor->GetEntity() == entity)
+                return actor;
+        }
+
+        for (auto &actor : s_SimulatedActors) {
+            if (actor->GetEntity() == entity)
+                return actor;
+        }
+
+        return nullptr;
     }
 
     PhysicsSettings &Physics::GetSettings() { return s_Settings; }
 
+    // TODO: Physics Thread
     void Physics::Simulate(Timestep ts) {
         s_SimulationTime += ts.GetMilliseconds();
 

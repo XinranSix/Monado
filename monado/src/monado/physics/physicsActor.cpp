@@ -7,18 +7,153 @@
 
 #include "PxPhysicsAPI.h"
 
+#include <glm/gtx/compatibility.hpp>
+
 namespace Monado {
 
     PhysicsActor::PhysicsActor(Entity entity)
-        : m_Entity(entity), m_RigidBody(entity.GetComponent<RigidBodyComponent>()) {
-        m_Material = entity.GetComponent<PhysicsMaterialComponent>();
-
+        : m_Entity(entity), m_RigidBody(entity.GetComponent<RigidBodyComponent>()),
+          m_Material(entity.GetComponent<PhysicsMaterialComponent>()) {
         Create();
     }
 
-    PhysicsActor::~PhysicsActor() {
-        m_ActorInternal->release();
-        m_ActorInternal = nullptr;
+    PhysicsActor::~PhysicsActor() { m_ActorInternal->release(); }
+
+    glm::vec3 PhysicsActor::GetPosition() { return FromPhysXVector(m_ActorInternal->getGlobalPose().p); }
+
+    glm::quat PhysicsActor::GetRotation() { return FromPhysXQuat(m_ActorInternal->getGlobalPose().q); }
+
+    void PhysicsActor::Rotate(const glm::vec3 &rotation) {
+        physx::PxTransform transform = m_ActorInternal->getGlobalPose();
+        transform.q *= (physx::PxQuat(glm::radians(rotation.x), { 1.0F, 0.0F, 0.0F }) *
+                        physx::PxQuat(glm::radians(rotation.y), { 0.0F, 1.0F, 0.0F }) *
+                        physx::PxQuat(glm::radians(rotation.z), { 0.0F, 0.0F, 1.0F }));
+        m_ActorInternal->setGlobalPose(transform);
+    }
+
+    float PhysicsActor::GetMass() const {
+        if (!IsDynamic()) {
+            MND_CORE_WARN("Trying to set mass of non-dynamic PhysicsActor.");
+            return 0.0F;
+        }
+
+        physx::PxRigidDynamic *actor = (physx::PxRigidDynamic *)m_ActorInternal;
+        return actor->getMass();
+    }
+
+    void PhysicsActor::SetMass(float mass) {
+        if (!IsDynamic()) {
+            MND_CORE_WARN("Trying to set mass of non-dynamic PhysicsActor.");
+            return;
+        }
+
+        physx::PxRigidDynamic *actor = (physx::PxRigidDynamic *)m_ActorInternal;
+        physx::PxRigidBodyExt::setMassAndUpdateInertia(*actor, mass);
+        m_RigidBody.Mass = mass;
+    }
+
+    void PhysicsActor::AddForce(const glm::vec3 &force, ForceMode forceMode) {
+        if (!IsDynamic()) {
+            MND_CORE_WARN("Trying to add force to non-dynamic PhysicsActor.");
+            return;
+        }
+
+        physx::PxRigidDynamic *actor = (physx::PxRigidDynamic *)m_ActorInternal;
+        actor->addForce(ToPhysXVector(force), (physx::PxForceMode::Enum)forceMode);
+    }
+
+    void PhysicsActor::AddTorque(const glm::vec3 &torque, ForceMode forceMode) {
+        if (!IsDynamic()) {
+            MND_CORE_WARN("Trying to add torque to non-dynamic PhysicsActor.");
+            return;
+        }
+
+        physx::PxRigidDynamic *actor = (physx::PxRigidDynamic *)m_ActorInternal;
+        actor->addTorque(ToPhysXVector(torque), (physx::PxForceMode::Enum)forceMode);
+    }
+
+    glm::vec3 PhysicsActor::GetLinearVelocity() const {
+        if (!IsDynamic()) {
+            MND_CORE_WARN("Trying to get velocity of non-dynamic PhysicsActor.");
+            return glm::vec3(0.0F);
+        }
+
+        physx::PxRigidDynamic *actor = (physx::PxRigidDynamic *)m_ActorInternal;
+        return FromPhysXVector(actor->getLinearVelocity());
+    }
+
+    void PhysicsActor::SetLinearVelocity(const glm::vec3 &velocity) {
+        if (!IsDynamic()) {
+            MND_CORE_WARN("Trying to set velocity of non-dynamic PhysicsActor.");
+            return;
+        }
+
+        if (!glm::all(glm::isfinite(velocity)))
+            return;
+
+        physx::PxRigidDynamic *actor = (physx::PxRigidDynamic *)m_ActorInternal;
+        actor->setLinearVelocity(ToPhysXVector(velocity));
+    }
+
+    glm::vec3 PhysicsActor::GetAngularVelocity() const {
+        if (!IsDynamic()) {
+            MND_CORE_WARN("Trying to get angular velocity of non-dynamic PhysicsActor.");
+            return glm::vec3(0.0F);
+        }
+
+        physx::PxRigidDynamic *actor = (physx::PxRigidDynamic *)m_ActorInternal;
+        return FromPhysXVector(actor->getAngularVelocity());
+    }
+
+    void PhysicsActor::SetAngularVelocity(const glm::vec3 &velocity) {
+        if (!IsDynamic()) {
+            MND_CORE_WARN("Trying to set angular velocity of non-dynamic PhysicsActor.");
+            return;
+        }
+
+        if (!glm::all(glm::isfinite(velocity)))
+            return;
+
+        physx::PxRigidDynamic *actor = (physx::PxRigidDynamic *)m_ActorInternal;
+        actor->setAngularVelocity(ToPhysXVector(velocity));
+    }
+
+    void PhysicsActor::SetLinearDrag(float drag) const {
+        if (!IsDynamic())
+            return;
+
+        physx::PxRigidDynamic *actor = (physx::PxRigidDynamic *)m_ActorInternal;
+        actor->setLinearDamping(drag);
+    }
+
+    void PhysicsActor::SetAngularDrag(float drag) const {
+        if (!IsDynamic())
+            return;
+
+        physx::PxRigidDynamic *actor = (physx::PxRigidDynamic *)m_ActorInternal;
+        actor->setAngularDamping(drag);
+    }
+
+    void PhysicsActor::SetLayer(uint32_t layerId) {
+        physx::PxAllocatorCallback &allocator = PXPhysicsWrappers::GetAllocator();
+        const PhysicsLayer &layerInfo = PhysicsLayerManager::GetLayer(layerId);
+
+        if (layerInfo.CollidesWith == 0)
+            return;
+
+        physx::PxFilterData filterData;
+        filterData.word0 = layerInfo.BitValue;
+        filterData.word1 = layerInfo.CollidesWith;
+
+        const physx::PxU32 numShapes = m_ActorInternal->getNbShapes();
+        physx::PxShape **shapes =
+            (physx::PxShape **)allocator.allocate(sizeof(physx::PxShape *) * numShapes, "", "", 0);
+        m_ActorInternal->getShapes(shapes, numShapes);
+
+        for (physx::PxU32 i = 0; i < numShapes; i++)
+            shapes[i]->setSimulationFilterData(filterData);
+
+        allocator.deallocate(shapes);
     }
 
     void PhysicsActor::Create() {
@@ -42,7 +177,7 @@ namespace Monado {
             actor->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, m_RigidBody.DisableGravity);
             actor->setSolverIterationCounts(settings.SolverIterations, settings.SolverVelocityIterations);
 
-            physx::PxRigidBodyExt::updateMassAndInertia(*actor, m_RigidBody.Mass);
+            physx::PxRigidBodyExt::setMassAndUpdateInertia(*actor, m_RigidBody.Mass);
             m_ActorInternal = actor;
         }
 
@@ -65,12 +200,6 @@ namespace Monado {
         static_cast<physx::PxScene *>(Physics::GetPhysicsScene())->addActor(*m_ActorInternal);
     }
 
-    void PhysicsActor::SetRuntimeDataInternal(void *entityStorage, int storageBufferPosition) {
-        m_ActorInternal->userData = entityStorage;
-        m_RigidBody.RuntimeActor = m_ActorInternal;
-        m_RigidBody.EntityBufferIndex = storageBufferPosition;
-    }
-
     void PhysicsActor::Update(float fixedTimestep) {
         if (!ScriptEngine::IsEntityModuleValid(m_Entity))
             return;
@@ -80,34 +209,11 @@ namespace Monado {
 
     void PhysicsActor::SynchronizeTransform() {
         TransformComponent &transform = m_Entity.Transform();
-        physx::PxRigidActor *actor = static_cast<physx::PxRigidActor *>(m_RigidBody.RuntimeActor);
-        physx::PxTransform actorPose = actor->getGlobalPose();
+        physx::PxTransform actorPose = m_ActorInternal->getGlobalPose();
         transform.Translation = FromPhysXVector(actorPose.p);
         transform.Rotation = glm::eulerAngles(FromPhysXQuat(actorPose.q));
     }
 
-    void PhysicsActor::SetLayer(uint32_t layer) {
-        physx::PxAllocatorCallback &allocator = PXPhysicsWrappers::GetAllocator();
+    void PhysicsActor::SetUserData(void *userData) { m_ActorInternal->userData = userData; }
 
-        const PhysicsLayer &layerInfo = PhysicsLayerManager::GetLayer(layer);
-
-        if (layerInfo.CollidesWith == 0)
-            return;
-
-        physx::PxFilterData filterData;
-        filterData.word0 = layerInfo.BitValue;
-        filterData.word1 = layerInfo.CollidesWith;
-
-        const physx::PxU32 numShapes = m_ActorInternal->getNbShapes();
-
-        physx::PxShape **shapes =
-            (physx::PxShape **)allocator.allocate(sizeof(physx::PxShape *) * numShapes, "", "", 0);
-        m_ActorInternal->getShapes(shapes, numShapes);
-
-        for (physx::PxU32 i = 0; i < numShapes; i++)
-            shapes[i]->setSimulationFilterData(filterData);
-
-        allocator.deallocate(shapes);
-    }
-
-} // namespace Hazel
+} // namespace Monado
