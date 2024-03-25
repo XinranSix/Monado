@@ -52,7 +52,10 @@ namespace Monado {
 
         bool operator!=(const Entity &other) const { return !(*this == other); }
 
-        // FIXME: 此处不对
+        void SetParentUUID(UUID parent) { GetComponent<ParentComponent>().ParentHandle = parent; }
+        UUID GetParentUUID() { return GetComponent<ParentComponent>().ParentHandle; }
+        std::vector<UUID> &Children() { return GetComponent<ChildrenComponent>().Children; }
+
         UUID &GetUUID() { return GetComponent<IDComponent>().ID; }
         UUID GetSceneUUID() { return m_Scene->GetUUID(); }
 

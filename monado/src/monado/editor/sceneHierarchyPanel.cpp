@@ -42,13 +42,37 @@ namespace Monado {
 
     void SceneHierarchyPanel::OnImGuiRender() {
         ImGui::Begin("Scene Hierarchy");
+        ImRect windowRect = { ImGui::GetWindowContentRegionMin(), ImGui::GetWindowContentRegionMax() };
+
         if (m_Context) {
             uint32_t entityCount = 0, meshCount = 0;
             m_Context->m_Registry.each([&](auto entity) {
                 Entity e(entity, m_Context.Raw());
-                if (e.HasComponent<IDComponent>())
+                if (e.HasComponent<IDComponent>() && e.GetParentUUID() == 0)
                     DrawEntityNode(e);
             });
+
+            if (ImGui::BeginDragDropTargetCustom(windowRect, ImGui::GetCurrentWindow()->ID)) {
+                const ImGuiPayload *payload =
+                    ImGui::AcceptDragDropPayload("scene_entity_hierarchy", ImGuiDragDropFlags_AcceptNoDrawDefaultRect);
+
+                if (payload) {
+                    UUID droppedHandle = *((UUID *)payload->Data);
+                    Entity e = m_Context->FindEntityByUUID(droppedHandle);
+                    Entity previousParent = m_Context->FindEntityByUUID(e.GetParentUUID());
+
+                    if (previousParent) {
+                        auto &children = previousParent.Children();
+                        children.erase(std::remove(children.begin(), children.end(), droppedHandle), children.end());
+                    }
+
+                    e.SetParentUUID(0);
+
+                    MND_CORE_INFO("Unparented Entity!");
+                }
+
+                ImGui::EndDragDropTarget();
+            }
 
             if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight |
                                                       ImGuiPopupFlags_NoOpenOverExistingPopup)) {
@@ -129,8 +153,47 @@ namespace Monado {
 
             ImGui::EndPopup();
         }
+
+        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+            UUID entityId = entity.GetUUID();
+            ImGui::Text(entity.GetComponent<TagComponent>().Tag.c_str());
+            ImGui::SetDragDropPayload("scene_entity_hierarchy", &entityId, sizeof(UUID));
+            ImGui::EndDragDropSource();
+        }
+
+        if (ImGui::BeginDragDropTarget()) {
+            const ImGuiPayload *payload =
+                ImGui::AcceptDragDropPayload("scene_entity_hierarchy", ImGuiDragDropFlags_AcceptNoDrawDefaultRect);
+
+            if (payload) {
+                UUID droppedHandle = *((UUID *)payload->Data);
+                Entity e = m_Context->FindEntityByUUID(droppedHandle);
+
+                // Remove from previous parent
+                Entity previousParent = m_Context->FindEntityByUUID(e.GetParentUUID());
+                if (previousParent) {
+                    auto &parentChildren = previousParent.Children();
+                    parentChildren.erase(std::remove(parentChildren.begin(), parentChildren.end(), droppedHandle),
+                                         parentChildren.end());
+                }
+
+                e.SetParentUUID(entity.GetUUID());
+                auto &children = entity.Children();
+                children.push_back(droppedHandle);
+
+                MND_CORE_INFO("Dropping Entity {0} on {1}", droppedHandle, entity.GetUUID());
+            }
+
+            ImGui::EndDragDropTarget();
+        }
+
         if (opened) {
-            // TODO: Children
+            for (auto child : entity.Children()) {
+                Entity e = m_Context->FindEntityByUUID(child);
+                if (e)
+                    DrawEntityNode(e);
+            }
+
             ImGui::TreePop();
         }
 

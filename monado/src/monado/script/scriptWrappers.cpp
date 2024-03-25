@@ -668,7 +668,7 @@ namespace Monado {
 
         void *Monado_MeshFactory_CreatePlane(float width, float height) {
             // TODO: Implement properly with MeshFactory class!
-            return new Ref<Mesh>(new Mesh("alvis/assets/models/Plane1m.obj"));
+            return new Ref<Mesh>(new Mesh("assets/models/Plane1m.obj"));
         }
 
         ////////////////////////////////////////////////////////////////

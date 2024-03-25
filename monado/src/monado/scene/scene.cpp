@@ -8,6 +8,7 @@
 #include "monado/renderer/renderer2D.h"
 #include "monado/physics/physics.h"
 #include "monado/physics/physicsActor.h"
+#include "monado/math/math.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/quaternion.hpp"
@@ -148,7 +149,7 @@ namespace Monado {
     }
 
     void Scene::Init() {
-        auto skyboxShader = Shader::Create("alvis/assets/shaders/Skybox.glsl");
+        auto skyboxShader = Shader::Create("assets/shaders/Skybox.glsl");
         m_SkyboxMaterial = MaterialInstance::Create(Material::Create(skyboxShader));
         m_SkyboxMaterial->SetFlag(MaterialFlag::DepthTest, false);
     }
@@ -187,6 +188,23 @@ namespace Monado {
             }
         }
 
+        {
+            auto view = m_Registry.view<TransformComponent>();
+            for (auto entity : view) {
+                auto [transformComponent] = view.get(entity);
+                glm::mat4 transform = GetTransformRelativeToParent(Entity(entity, this));
+                glm::vec3 translation;
+                glm::vec3 rotation;
+                glm::vec3 scale;
+                Math::DecomposeTransform(transform, translation, rotation, scale);
+
+                glm::quat rotationQuat = glm::quat(rotation);
+                transformComponent.Up = glm::normalize(glm::rotate(rotationQuat, glm::vec3(0.0F, 1.0F, 0.0F)));
+                transformComponent.Right = glm::normalize(glm::rotate(rotationQuat, glm::vec3(1.0F, 0.0F, 0.0F)));
+                transformComponent.Forward = glm::normalize(glm::rotate(rotationQuat, glm::vec3(0.0F, 0.0F, -1.0F)));
+            }
+        }
+
         Physics::Simulate(ts);
     }
 
@@ -198,7 +216,7 @@ namespace Monado {
         if (!cameraEntity)
             return;
 
-        glm::mat4 cameraViewMatrix = glm::inverse(cameraEntity.Transform().GetTransform());
+        glm::mat4 cameraViewMatrix = glm::inverse(GetTransformRelativeToParent(cameraEntity));
         MND_CORE_ASSERT(cameraEntity, "Scene does not contain any cameras!");
         SceneCamera &camera = cameraEntity.GetComponent<CameraComponent>();
         camera.SetViewportSize(m_ViewportWidth, m_ViewportHeight);
@@ -239,9 +257,10 @@ namespace Monado {
             auto [transformComponent, meshComponent] = group.get<TransformComponent, MeshComponent>(entity);
             if (meshComponent.Mesh) {
                 meshComponent.Mesh->OnUpdate(ts);
+                glm::mat4 transform = GetTransformRelativeToParent(Entity(entity, this));
 
                 // TODO: Should we render (logically)
-                SceneRenderer::SubmitMesh(meshComponent, transformComponent.GetTransform());
+                SceneRenderer::SubmitMesh(meshComponent, transform);
             }
         }
         SceneRenderer::EndScene();
@@ -307,11 +326,14 @@ namespace Monado {
             if (meshComponent.Mesh) {
                 meshComponent.Mesh->OnUpdate(ts);
 
+                // TODO(Peter): Is this any good?
+                glm::mat4 transform = GetTransformRelativeToParent(Entity { entity, this });
+
                 // TODO: Should we render (logically)
                 if (m_SelectedEntity == entity)
-                    SceneRenderer::SubmitSelectedMesh(meshComponent, transformComponent.GetTransform());
+                    SceneRenderer::SubmitSelectedMesh(meshComponent, transform);
                 else
-                    SceneRenderer::SubmitMesh(meshComponent, transformComponent.GetTransform());
+                    SceneRenderer::SubmitMesh(meshComponent, transform);
             }
         }
 
@@ -319,10 +341,11 @@ namespace Monado {
             auto view = m_Registry.view<BoxColliderComponent>();
             for (auto entity : view) {
                 Entity e = { entity, this };
+                glm::mat4 transform = GetTransformRelativeToParent(e);
                 auto &collider = e.GetComponent<BoxColliderComponent>();
 
                 if (m_SelectedEntity == entity)
-                    SceneRenderer::SubmitColliderMesh(collider, e.GetComponent<TransformComponent>().GetTransform());
+                    SceneRenderer::SubmitColliderMesh(collider, transform);
             }
         }
 
@@ -330,10 +353,11 @@ namespace Monado {
             auto view = m_Registry.view<SphereColliderComponent>();
             for (auto entity : view) {
                 Entity e = { entity, this };
+                glm::mat4 transform = GetTransformRelativeToParent(e);
                 auto &collider = e.GetComponent<SphereColliderComponent>();
 
                 if (m_SelectedEntity == entity)
-                    SceneRenderer::SubmitColliderMesh(collider, e.GetComponent<TransformComponent>().GetTransform());
+                    SceneRenderer::SubmitColliderMesh(collider, transform);
             }
         }
 
@@ -341,10 +365,11 @@ namespace Monado {
             auto view = m_Registry.view<CapsuleColliderComponent>();
             for (auto entity : view) {
                 Entity e = { entity, this };
+                glm::mat4 transform = GetTransformRelativeToParent(e);
                 auto &collider = e.GetComponent<CapsuleColliderComponent>();
 
                 if (m_SelectedEntity == entity)
-                    SceneRenderer::SubmitColliderMesh(collider, e.GetComponent<TransformComponent>().GetTransform());
+                    SceneRenderer::SubmitColliderMesh(collider, transform);
             }
         }
 
@@ -352,10 +377,11 @@ namespace Monado {
             auto view = m_Registry.view<MeshColliderComponent>();
             for (auto entity : view) {
                 Entity e = { entity, this };
+                glm::mat4 transform = GetTransformRelativeToParent(e);
                 auto &collider = e.GetComponent<MeshColliderComponent>();
 
                 if (m_SelectedEntity == entity)
-                    SceneRenderer::SubmitColliderMesh(collider, e.GetComponent<TransformComponent>().GetTransform());
+                    SceneRenderer::SubmitColliderMesh(collider, transform);
             }
         }
 
@@ -525,6 +551,9 @@ namespace Monado {
         if (!name.empty())
             entity.AddComponent<TagComponent>(name);
 
+        entity.AddComponent<ParentComponent>();
+        entity.AddComponent<ChildrenComponent>();
+
         m_EntityIDMap[idComponent.ID] = entity;
         return entity;
     }
@@ -537,6 +566,9 @@ namespace Monado {
         entity.AddComponent<TransformComponent>();
         if (!name.empty())
             entity.AddComponent<TagComponent>(name);
+
+        entity.AddComponent<ParentComponent>();
+        entity.AddComponent<ChildrenComponent>();
 
         MND_CORE_ASSERT(m_EntityIDMap.find(uuid) == m_EntityIDMap.end());
         m_EntityIDMap[uuid] = entity;
@@ -578,6 +610,11 @@ namespace Monado {
             newEntity = CreateEntity();
 
         CopyComponentIfExists<TransformComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
+
+        // TODO(Peter): Should we maintain parent?
+        CopyComponentIfExists<ParentComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
+        CopyComponentIfExists<ChildrenComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
+
         CopyComponentIfExists<MeshComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
         CopyComponentIfExists<DirectionalLightComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
         CopyComponentIfExists<SkyLightComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
@@ -607,6 +644,27 @@ namespace Monado {
         return Entity {};
     }
 
+    Entity Scene::FindEntityByUUID(UUID id) {
+        auto view = m_Registry.view<IDComponent>();
+        for (auto entity : view) {
+            auto &idComponent = m_Registry.get<IDComponent>(entity);
+            if (idComponent.ID == id)
+                return Entity(entity, this);
+        }
+
+        return Entity {};
+    }
+
+    glm::mat4 Scene::GetTransformRelativeToParent(Entity entity) {
+        glm::mat4 transform(1.0F);
+
+        Entity parent = FindEntityByUUID(entity.GetParentUUID());
+        if (parent)
+            transform = GetTransformRelativeToParent(parent);
+
+        return transform * entity.Transform().GetTransform();
+    }
+
     // Copy to runtime
     void Scene::CopyTo(Ref<Scene> &target) {
         // Environment
@@ -628,6 +686,8 @@ namespace Monado {
 
         CopyComponent<TagComponent>(target->m_Registry, m_Registry, enttMap);
         CopyComponent<TransformComponent>(target->m_Registry, m_Registry, enttMap);
+        CopyComponent<ParentComponent>(target->m_Registry, m_Registry, enttMap);
+        CopyComponent<ChildrenComponent>(target->m_Registry, m_Registry, enttMap);
         CopyComponent<MeshComponent>(target->m_Registry, m_Registry, enttMap);
         CopyComponent<DirectionalLightComponent>(target->m_Registry, m_Registry, enttMap);
         CopyComponent<SkyLightComponent>(target->m_Registry, m_Registry, enttMap);

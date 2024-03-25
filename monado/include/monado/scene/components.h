@@ -29,10 +29,29 @@ namespace Monado {
         operator const std::string &() const { return Tag; }
     };
 
+    struct ParentComponent {
+        UUID ParentHandle = 0;
+
+        ParentComponent() = default;
+        ParentComponent(const ParentComponent &other) = default;
+        ParentComponent(UUID parent) : ParentHandle(parent) {}
+    };
+
+    struct ChildrenComponent {
+        std::vector<UUID> Children;
+
+        ChildrenComponent() = default;
+        ChildrenComponent(const ChildrenComponent &other) = default;
+    };
+
     struct TransformComponent {
         glm::vec3 Translation = { 0.0f, 0.0f, 0.0f };
         glm::vec3 Rotation = { 0.0f, 0.0f, 0.0f };
         glm::vec3 Scale = { 1.0f, 1.0f, 1.0f };
+
+        glm::vec3 Up = { 0.0F, 1.0F, 0.0F };
+        glm::vec3 Right = { 1.0F, 0.0F, 0.0F };
+        glm::vec3 Forward = { 0.0F, 0.0F, -1.0F };
 
         TransformComponent() = default;
         TransformComponent(const TransformComponent &other) = default;

@@ -11,6 +11,7 @@
 #include "monado/script/scriptEngine.h"
 #include "monado/core/math/ray.h"
 #include "monado/physics/physics.h"
+#include "monado/utilities/dragDropData.h"
 #include "monado/math/math.h"
 
 #include "editorLayer.h"
@@ -46,25 +47,22 @@ namespace Monado {
     EditorLayer::~EditorLayer() {}
 
     void EditorLayer::OnAttach() {
-
         using namespace glm;
 
         // Editor
-        m_CheckerboardTex = Texture2D::Create("alvis/assets/editor/Checkerboard.tga");
-        m_PlayButtonTex = Texture2D::Create("alvis/assets/editor/PlayButton.png");
+        m_CheckerboardTex = Texture2D::Create("assets/editor/Checkerboard.tga");
+        m_PlayButtonTex = Texture2D::Create("assets/editor/PlayButton.png");
 
-        m_EditorScene = Ref<Scene>::Create("EditorScene", true);
-        UpdateWindowTitle("Untitled Scene");
-        ScriptEngine::SetSceneContext(m_EditorScene);
         m_SceneHierarchyPanel = CreateScope<SceneHierarchyPanel>(m_EditorScene);
         m_SceneHierarchyPanel->SetSelectionChangedCallback(
             std::bind(&EditorLayer::SelectEntity, this, std::placeholders::_1));
         m_SceneHierarchyPanel->SetEntityDeletedCallback(
             std::bind(&EditorLayer::OnEntityDeleted, this, std::placeholders::_1));
 
-        // OpenScene("alvis/assets/scenes/LightingTest.msc");
-        // OpenScene("alvis/assets/scenes/FPSDemo.msc");
-        OpenScene("alvis/assets/scenes/levels/Physics2D-Game.msc");
+        m_AssetManagerPanel = CreateScope<AssetManagerPanel>();
+        m_ObjectsPanel = CreateScope<ObjectsPanel>();
+
+        OpenScene("assets/scenes/Physics2DTest2.msc");
         // NewScene();
     }
 
@@ -98,7 +96,7 @@ namespace Monado {
     }
 
     void EditorLayer::UpdateWindowTitle(const std::string &sceneName) {
-        std::string title = sceneName + " - Monadonut - " + Application::GetPlatformName() + " (" +
+        std::string title = sceneName + " - Hazelnut - " + Application::GetPlatformName() + " (" +
                             Application::GetConfigurationName() + ")";
         Application::Get().GetWindow().SetTitle(title);
     }
@@ -160,8 +158,21 @@ namespace Monado {
                     Renderer::BeginRenderPass(SceneRenderer::GetFinalRenderPass(), false);
                     auto viewProj = m_EditorCamera.GetViewProjection();
                     Renderer2D::BeginScene(viewProj, false);
-                    Renderer2D::DrawRotatedQuad({ transform.Translation.x, transform.Translation.y }, size * 2.0f,
-                                                transform.Rotation.z, { 1.0f, 0.0f, 1.0f, 1.0f });
+                    Renderer2D::DrawRotatedRect({ transform.Translation.x, transform.Translation.y }, size * 2.0f,
+                                                transform.Rotation.z, { 0.0f, 1.0f, 1.0f, 1.0f });
+                    Renderer2D::EndScene();
+                    Renderer::EndRenderPass();
+                }
+
+                if (selection.Entity.HasComponent<CircleCollider2DComponent>()) {
+                    const auto &size = selection.Entity.GetComponent<CircleCollider2DComponent>().Radius;
+                    const TransformComponent &transform = selection.Entity.GetComponent<TransformComponent>();
+
+                    Renderer::BeginRenderPass(SceneRenderer::GetFinalRenderPass(), false);
+                    auto viewProj = m_EditorCamera.GetViewProjection();
+                    Renderer2D::BeginScene(viewProj, false);
+                    Renderer2D::DrawCircle({ transform.Translation.x, transform.Translation.y }, size,
+                                           { 0.0f, 1.0f, 1.0f, 1.0f });
                     Renderer2D::EndScene();
                     Renderer::EndRenderPass();
                 }
@@ -324,7 +335,7 @@ namespace Monado {
 
     void EditorLayer::OpenScene() {
         auto &app = Application::Get();
-        std::string filepath = app.OpenFile("Monado Scene (*.msc)\0*.msc\0");
+        std::string filepath = app.OpenFile("Hazel Scene (*.msc)\0*.msc\0");
         if (!filepath.empty())
             OpenScene(filepath);
     }
@@ -356,7 +367,7 @@ namespace Monado {
 
     void EditorLayer::SaveSceneAs() {
         auto &app = Application::Get();
-        std::string filepath = app.SaveFile("Monado Scene (*.msc)\0*.msc\0");
+        std::string filepath = app.SaveFile("Hazel Scene (*.msc)\0*.msc\0");
         if (!filepath.empty()) {
             SceneSerializer serializer(m_EditorScene);
             serializer.Serialize(filepath);
@@ -448,6 +459,9 @@ namespace Monado {
             ShowBoundingBoxes(m_UIShowBoundingBoxes, m_UIShowBoundingBoxesOnTop);
         if (m_UIShowBoundingBoxes && Property("On Top", m_UIShowBoundingBoxesOnTop))
             ShowBoundingBoxes(m_UIShowBoundingBoxes, m_UIShowBoundingBoxesOnTop);
+
+        m_AssetManagerPanel->OnImGuiRender();
+        m_ObjectsPanel->OnImGuiRender();
 
         const char *label = m_SelectionMode == SelectionMode::Entity ? "Entity" : "Mesh";
         if (ImGui::Button(label)) {
@@ -597,6 +611,37 @@ namespace Monado {
 
                 selection.Mesh->Transform = glm::inverse(transform) * transformBase;
             }
+        }
+
+        if (ImGui::BeginDragDropTarget()) {
+            auto data = ImGui::AcceptDragDropPayload("scene_entity_objectP");
+            if (data) {
+                auto d = (DragDropData *)data->Data;
+                if (d->Type == "Mesh") {
+                    auto entity = m_EditorScene->CreateEntity(d->Name);
+                    entity.AddComponent<MeshComponent>(Ref<Mesh>::Create(d->SourcePath));
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        /* Payload Implementation For Getting Assets In The Viewport From Asset Manager */
+        if (ImGui::BeginDragDropTarget()) {
+            auto data = ImGui::AcceptDragDropPayload("scene_entity_assetsP");
+            if (data) {
+                auto d = (DragDropData *)data->Data;
+
+                if (d->Type == "HazelScene") {
+                    auto sceneName = d->SourcePath;
+                    OpenScene(sceneName);
+                }
+
+                if (d->Type == "Mesh") {
+                    auto entity = m_EditorScene->CreateEntity(d->Name);
+                    entity.AddComponent<MeshComponent>(Ref<Mesh>::Create(d->SourcePath));
+                }
+            }
+            ImGui::EndDragDropTarget();
         }
 
         ImGui::End();

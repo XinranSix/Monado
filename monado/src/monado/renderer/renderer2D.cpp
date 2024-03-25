@@ -117,7 +117,7 @@ namespace Monado {
         s_Data.WhiteTexture->GetWriteableBuffer().Write(&whiteTextureData, sizeof(uint32_t));
         s_Data.WhiteTexture->Unlock();
 
-        s_Data.TextureShader = Shader::Create("alvis/assets/shaders/Renderer2D.glsl");
+        s_Data.TextureShader = Shader::Create("assets/shaders/Renderer2D.glsl");
 
         // Set all texture slots to 0
         s_Data.TextureSlots[0] = s_Data.WhiteTexture;
@@ -129,7 +129,7 @@ namespace Monado {
 
         // Lines
         {
-            s_Data.LineShader = Shader::Create("alvis/assets/shaders/Renderer2D_Line.glsl");
+            s_Data.LineShader = Shader::Create("assets/shaders/Renderer2D_Line.glsl");
 
             PipelineSpecification pipelineSpecification;
             pipelineSpecification.Layout = { { ShaderDataType::Float3, "a_Position" },
@@ -149,7 +149,7 @@ namespace Monado {
 
         // Circles
         {
-            s_Data.CircleShader = Shader::Create("alvis/assets/shaders/Renderer2D_Circle.glsl");
+            s_Data.CircleShader = Shader::Create("assets/shaders/Renderer2D_Circle.glsl");
 
             PipelineSpecification pipelineSpecification;
             pipelineSpecification.Layout = { { ShaderDataType::Float3, "a_WorldPosition" },

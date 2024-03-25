@@ -29,8 +29,8 @@ namespace Monado {
         s_Data.m_ShaderLibrary = Ref<ShaderLibrary>::Create();
         Renderer::Submit([]() { RendererAPI::Init(); });
 
-        Renderer::GetShaderLibrary()->Load("alvis/assets/shaders/MonadoPBR_Static.glsl");
-        Renderer::GetShaderLibrary()->Load("alvis/assets/shaders/MonadoPBR_Anim.glsl");
+        Renderer::GetShaderLibrary()->Load("assets/shaders/MonadoPBR_Static.glsl");
+        Renderer::GetShaderLibrary()->Load("assets/shaders/MonadoPBR_Anim.glsl");
 
         SceneRenderer::Init();
 
@@ -180,9 +180,9 @@ namespace Monado {
                     glDisable(GL_DEPTH_TEST);
 
                 if (!material->GetFlag(MaterialFlag::TwoSided))
-                    Renderer::Submit([]() { glEnable(GL_CULL_FACE); });
+                    glEnable(GL_CULL_FACE);
                 else
-                    Renderer::Submit([]() { glDisable(GL_CULL_FACE); });
+                    glDisable(GL_CULL_FACE);
 
                 glDrawElementsBaseVertex(GL_TRIANGLES, submesh.IndexCount, GL_UNSIGNED_INT,
                                          (void *)(sizeof(uint32_t) * submesh.BaseIndex), submesh.BaseVertex);

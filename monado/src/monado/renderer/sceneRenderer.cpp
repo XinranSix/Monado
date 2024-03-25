@@ -138,13 +138,13 @@ namespace Monado {
         bloomBlendRenderPassSpec.TargetFramebuffer = Framebuffer::Create(bloomBlendFramebufferSpec);
         s_Data.BloomBlendPass = RenderPass::Create(bloomBlendRenderPassSpec);
 
-        s_Data.CompositeShader = Shader::Create("alvis/assets/shaders/SceneComposite.glsl");
-        s_Data.BloomBlurShader = Shader::Create("alvis/assets/shaders/BloomBlur.glsl");
-        s_Data.BloomBlendShader = Shader::Create("alvis/assets/shaders/BloomBlend.glsl");
-        s_Data.BRDFLUT = Texture2D::Create("alvis/assets/textures/BRDF_LUT.tga");
+        s_Data.CompositeShader = Shader::Create("assets/shaders/SceneComposite.glsl");
+        s_Data.BloomBlurShader = Shader::Create("assets/shaders/BloomBlur.glsl");
+        s_Data.BloomBlendShader = Shader::Create("assets/shaders/BloomBlend.glsl");
+        s_Data.BRDFLUT = Texture2D::Create("assets/textures/BRDF_LUT.tga");
 
         // Grid
-        auto gridShader = Shader::Create("alvis/assets/shaders/Grid.glsl");
+        auto gridShader = Shader::Create("assets/shaders/Grid.glsl");
         s_Data.GridMaterial = MaterialInstance::Create(Material::Create(gridShader));
         s_Data.GridMaterial->SetFlag(MaterialFlag::TwoSided, true);
         float gridScale = 16.025f, gridSize = 0.025f;
@@ -152,21 +152,22 @@ namespace Monado {
         s_Data.GridMaterial->Set("u_Res", gridSize);
 
         // Outline
-        auto outlineShader = Shader::Create("alvis/assets/shaders/Outline.glsl");
+        auto outlineShader = Shader::Create("assets/shaders/Outline.glsl");
         s_Data.OutlineMaterial = MaterialInstance::Create(Material::Create(outlineShader));
         s_Data.OutlineMaterial->SetFlag(MaterialFlag::DepthTest, false);
 
-        auto outlineAnimShader = Shader::Create("alvis/assets/shaders/Outline_Anim.glsl");
+        auto outlineAnimShader = Shader::Create("assets/shaders/Outline_Anim.glsl");
         s_Data.OutlineAnimMaterial = MaterialInstance::Create(Material::Create(outlineAnimShader));
         s_Data.OutlineAnimMaterial->SetFlag(MaterialFlag::DepthTest, false);
 
         // Collider
-        auto colliderShader = Shader::Create("alvis/assets/shaders/Collider.glsl");
+        auto colliderShader = Shader::Create("assets/shaders/Collider.glsl");
         s_Data.ColliderMaterial = MaterialInstance::Create(Material::Create(colliderShader));
         s_Data.ColliderMaterial->SetFlag(MaterialFlag::DepthTest, false);
 
-        s_Data.ShadowMapShader = Shader::Create("alvis/assets/shaders/ShadowMap.glsl");
-        s_Data.ShadowMapAnimShader = Shader::Create("alvis/assets/shaders/ShadowMap_Anim.glsl");
+        // Shadow Map
+        s_Data.ShadowMapShader = Shader::Create("assets/shaders/ShadowMap.glsl");
+        s_Data.ShadowMapAnimShader = Shader::Create("assets/shaders/ShadowMap_Anim.glsl");
 
         FramebufferSpecification shadowMapFramebufferSpec;
         shadowMapFramebufferSpec.Width = 4096;
@@ -257,7 +258,7 @@ namespace Monado {
 
         Ref<TextureCube> envUnfiltered = TextureCube::Create(TextureFormat::Float16, cubemapSize, cubemapSize);
         if (!equirectangularConversionShader)
-            equirectangularConversionShader = Shader::Create("alvis/assets/shaders/EquirectangularToCubeMap.glsl");
+            equirectangularConversionShader = Shader::Create("assets/shaders/EquirectangularToCubeMap.glsl");
         Ref<Texture2D> envEquirect = Texture2D::Create(filepath);
         MND_CORE_ASSERT(envEquirect->GetFormat() == TextureFormat::Float16, "Texture is not HDR!");
 
@@ -270,7 +271,7 @@ namespace Monado {
         });
 
         if (!envFilteringShader)
-            envFilteringShader = Shader::Create("alvis/assets/shaders/EnvironmentMipFilter.glsl");
+            envFilteringShader = Shader::Create("assets/shaders/EnvironmentMipFilter.glsl");
 
         Ref<TextureCube> envFiltered = TextureCube::Create(TextureFormat::Float16, cubemapSize, cubemapSize);
 
@@ -296,7 +297,7 @@ namespace Monado {
         });
 
         if (!envIrradianceShader)
-            envIrradianceShader = Shader::Create("alvis/assets/shaders/EnvironmentIrradiance.glsl");
+            envIrradianceShader = Shader::Create("assets/shaders/EnvironmentIrradiance.glsl");
 
         Ref<TextureCube> irradianceMap =
             TextureCube::Create(TextureFormat::Float16, irradianceMapSize, irradianceMapSize);
@@ -876,7 +877,6 @@ namespace Monado {
             auto id = fb->GetColorAttachmentRendererID();
 
             float size =
-                // FIXME:: 这里不太对
                 ImGui::GetContentRegionAvail().x; // (float)fb->GetWidth() * 0.5f, (float)fb->GetHeight() * 0.5f
             float w = size;
             float h = w / ((float)fb->GetWidth() / (float)fb->GetHeight());

@@ -78,6 +78,9 @@ namespace Monado {
         }
 
         Entity FindEntityByTag(const std::string &tag);
+        Entity FindEntityByUUID(UUID id);
+
+        glm::mat4 GetTransformRelativeToParent(Entity entity);
 
         const EntityMap &GetEntityMap() const { return m_EntityIDMap; }
         void CopyTo(Ref<Scene> &target);

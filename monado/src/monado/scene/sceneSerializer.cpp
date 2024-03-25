@@ -150,6 +150,24 @@ namespace Monado {
         out << YAML::Key << "Entity";
         out << YAML::Value << uuid;
 
+        if (entity.HasComponent<ParentComponent>()) {
+            auto &parent = entity.GetComponent<ParentComponent>();
+            out << YAML::Key << "Parent" << YAML::Value << parent.ParentHandle;
+        }
+
+        if (entity.HasComponent<ChildrenComponent>()) {
+            auto &childrenComponent = entity.GetComponent<ChildrenComponent>();
+            out << YAML::Key << "Children";
+            out << YAML::Value << YAML::BeginSeq;
+
+            for (auto child : childrenComponent.Children) {
+                out << YAML::BeginMap;
+                out << YAML::Key << "Handle" << YAML::Value << child;
+                out << YAML::EndMap;
+            }
+            out << YAML::EndSeq;
+        }
+
         if (entity.HasComponent<TagComponent>()) {
             out << YAML::Key << "TagComponent";
             out << YAML::BeginMap; // TagComponent
@@ -521,10 +539,21 @@ namespace Monado {
 
                 Entity deserializedEntity = m_Scene->CreateEntityWithID(uuid, name);
 
+                uint64_t parentHandle = entity["Parent"] ? entity["Parent"].as<uint64_t>() : 0;
+                deserializedEntity.GetComponent<ParentComponent>().ParentHandle = parentHandle;
+
+                auto children = entity["Children"];
+                if (children) {
+                    for (auto child : children) {
+                        uint64_t childHandle = child["Handle"].as<uint64_t>();
+                        deserializedEntity.GetComponent<ChildrenComponent>().Children.push_back(childHandle);
+                    }
+                }
+
                 auto transformComponent = entity["TransformComponent"];
                 if (transformComponent) {
                     // Entities always have transforms
-                    auto &transform = deserializedEntity.GetComponent<TransformComponent>();
+                    auto transform = deserializedEntity.GetComponent<TransformComponent>();
                     transform.Translation = transformComponent["Position"].as<glm::vec3>();
                     auto rotationNode = transformComponent["Rotation"];
                     // Rotations used to be stored as quaternions
@@ -539,11 +568,27 @@ namespace Monado {
 
                     MND_CORE_INFO("  Entity Transform:");
                     MND_CORE_INFO("    Translation: {0}, {1}, {2}", transform.Translation.x, transform.Translation.y,
-                                  transform.Translation.z);
+                                 transform.Translation.z);
                     MND_CORE_INFO("    Rotation: {0}, {1}, {2}", transform.Rotation.x, transform.Rotation.y,
-                                  transform.Rotation.z);
+                                 transform.Rotation.z);
                     MND_CORE_INFO("    Scale: {0}, {1}, {2}", transform.Scale.x, transform.Scale.y, transform.Scale.z);
                 }
+
+                /*auto parentComponent = entity["Parent"];
+                if (parentComponent)
+                {
+                        // Entities always have a ParentComponent
+                        auto& parent = deserializedEntity.GetComponent<ParentComponent>();
+                        parent.ParentHandle = parentComponent["Handle"].as<UUID>();
+                }
+
+                auto childrenComponent = entity["ChildrenC"];
+                if (parentComponent)
+                {
+                        // Entities always have a ParentComponent
+                        auto& parent = deserializedEntity.GetComponent<ParentComponent>();
+                        parent.ParentHandle = parentComponent["Handle"].as<UUID>();
+                }*/
 
                 auto scriptComponent = entity["ScriptComponent"];
                 if (scriptComponent) {
