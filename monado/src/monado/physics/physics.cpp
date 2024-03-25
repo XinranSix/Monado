@@ -15,9 +15,6 @@ namespace Monado {
     static physx::PxScene *s_Scene;
     static std::vector<Ref<PhysicsActor>> s_SimulatedActors;
     static std::vector<Ref<PhysicsActor>> s_StaticActors;
-    static Entity *s_EntityStorageBuffer;
-    static uint32_t s_EntityBufferCount;
-    static int s_EntityStorageBufferPosition;
     static float s_SimulationTime = 0.0F;
 
     static PhysicsSettings s_Settings;
@@ -28,30 +25,6 @@ namespace Monado {
     }
 
     void Physics::Shutdown() { PXPhysicsWrappers::Shutdown(); }
-
-    // NOTE: This is future proofing for when we can spawn entities from scripts/at runtime
-    void Physics::ExpandEntityBuffer(uint32_t amount) {
-        MND_CORE_ASSERT(s_Scene);
-
-        if (s_EntityStorageBuffer != nullptr) {
-            Entity *temp = new Entity[s_EntityBufferCount + amount];
-            memcpy(temp, s_EntityStorageBuffer, s_EntityBufferCount * sizeof(Entity));
-
-            for (uint32_t i = 0; i < s_EntityBufferCount; i++) {
-                Entity &e = s_EntityStorageBuffer[i];
-                RigidBodyComponent &rb = e.GetComponent<RigidBodyComponent>();
-                Ref<PhysicsActor> actor = GetActorForEntity(e);
-                actor->SetUserData(&temp[rb.EntityBufferIndex]);
-            }
-
-            delete[] s_EntityStorageBuffer;
-            s_EntityStorageBuffer = temp;
-            s_EntityBufferCount += amount;
-        } else {
-            s_EntityStorageBuffer = new Entity[amount];
-            s_EntityBufferCount = amount;
-        }
-    }
 
     void Physics::CreateScene() {
         MND_CORE_ASSERT(s_Scene == nullptr, "Scene already has a Physics Scene!");
@@ -92,11 +65,7 @@ namespace Monado {
         else
             s_StaticActors.push_back(actor);
 
-        Entity *entityStorage = &s_EntityStorageBuffer[s_EntityStorageBufferPosition];
-        *entityStorage = e;
-        actor->SetUserData((void *)entityStorage);
-        actor->m_RigidBody.EntityBufferIndex = s_EntityStorageBufferPosition;
-        s_EntityStorageBufferPosition++;
+        actor->Spawn();
     }
 
     Ref<PhysicsActor> Physics::GetActorForEntity(Entity entity) {
@@ -137,9 +106,6 @@ namespace Monado {
     void Physics::DestroyScene() {
         MND_CORE_ASSERT(s_Scene);
 
-        delete[] s_EntityStorageBuffer;
-        s_EntityStorageBuffer = nullptr;
-        s_EntityStorageBufferPosition = 0;
         s_StaticActors.clear();
         s_SimulatedActors.clear();
         s_Scene->release();
@@ -147,5 +113,4 @@ namespace Monado {
     }
 
     void *Physics::GetPhysicsScene() { return s_Scene; }
-
 } // namespace Monado

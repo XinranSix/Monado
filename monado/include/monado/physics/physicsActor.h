@@ -39,11 +39,10 @@ namespace Monado {
         Entity &GetEntity() { return m_Entity; }
 
     private:
-        void Create();
+        void Initialize();
+        void Spawn();
         void Update(float fixedTimestep);
         void SynchronizeTransform();
-
-        void SetUserData(void *userData);
 
     private:
         Entity m_Entity;
@@ -56,5 +55,4 @@ namespace Monado {
         friend class Physics;
         friend class PXPhysicsWrappers;
     };
-
 } // namespace Monado

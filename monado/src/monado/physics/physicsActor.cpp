@@ -14,7 +14,7 @@ namespace Monado {
     PhysicsActor::PhysicsActor(Entity entity)
         : m_Entity(entity), m_RigidBody(entity.GetComponent<RigidBodyComponent>()),
           m_Material(entity.GetComponent<PhysicsMaterialComponent>()) {
-        Create();
+        Initialize();
     }
 
     PhysicsActor::~PhysicsActor() { m_ActorInternal->release(); }
@@ -156,7 +156,7 @@ namespace Monado {
         allocator.deallocate(shapes);
     }
 
-    void PhysicsActor::Create() {
+    void PhysicsActor::Initialize() {
         physx::PxPhysics &physics = PXPhysicsWrappers::GetPhysics();
 
         if (m_RigidBody.BodyType == RigidBodyComponent::Type::Static) {
@@ -196,7 +196,10 @@ namespace Monado {
             m_RigidBody.Layer = 0;
 
         SetLayer(m_RigidBody.Layer);
+        m_ActorInternal->userData = &m_Entity;
+    }
 
+    void PhysicsActor::Spawn() {
         static_cast<physx::PxScene *>(Physics::GetPhysicsScene())->addActor(*m_ActorInternal);
     }
 
@@ -213,7 +216,4 @@ namespace Monado {
         transform.Translation = FromPhysXVector(actorPose.p);
         transform.Rotation = glm::eulerAngles(FromPhysXQuat(actorPose.q));
     }
-
-    void PhysicsActor::SetUserData(void *userData) { m_ActorInternal->userData = userData; }
-
 } // namespace Monado

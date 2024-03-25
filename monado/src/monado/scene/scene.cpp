@@ -450,7 +450,6 @@ namespace Monado {
 
         {
             auto view = m_Registry.view<RigidBodyComponent>();
-            Physics::ExpandEntityBuffer(view.size());
             for (auto entity : view) {
                 Entity e = { entity, this };
                 Physics::CreateActor(e);
