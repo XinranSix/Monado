@@ -12,8 +12,15 @@
 namespace Monado {
 
     PhysicsActor::PhysicsActor(Entity entity)
-        : m_Entity(entity), m_RigidBody(entity.GetComponent<RigidBodyComponent>()),
-          m_Material(entity.GetComponent<PhysicsMaterialComponent>()) {
+        : m_Entity(entity), m_RigidBody(entity.GetComponent<RigidBodyComponent>()) {
+        if (!m_Entity.HasComponent<PhysicsMaterialComponent>()) {
+            m_Material.StaticFriction = 1.0F;
+            m_Material.DynamicFriction = 1.0F;
+            m_Material.Bounciness = 0.0F;
+        } else {
+            m_Material = entity.GetComponent<PhysicsMaterialComponent>();
+        }
+
         Initialize();
     }
 
@@ -199,9 +206,7 @@ namespace Monado {
         m_ActorInternal->userData = &m_Entity;
     }
 
-    void PhysicsActor::Spawn() {
-        static_cast<physx::PxScene *>(Physics::GetPhysicsScene())->addActor(*m_ActorInternal);
-    }
+    void PhysicsActor::Spawn() { ((physx::PxScene *)Physics::GetPhysicsScene())->addActor(*m_ActorInternal); }
 
     void PhysicsActor::Update(float fixedTimestep) {
         if (!ScriptEngine::IsEntityModuleValid(m_Entity))
@@ -211,9 +216,14 @@ namespace Monado {
     }
 
     void PhysicsActor::SynchronizeTransform() {
-        TransformComponent &transform = m_Entity.Transform();
-        physx::PxTransform actorPose = m_ActorInternal->getGlobalPose();
-        transform.Translation = FromPhysXVector(actorPose.p);
-        transform.Rotation = glm::eulerAngles(FromPhysXQuat(actorPose.q));
+        if (IsDynamic()) {
+            TransformComponent &transform = m_Entity.Transform();
+            physx::PxTransform actorPose = m_ActorInternal->getGlobalPose();
+            transform.Translation = FromPhysXVector(actorPose.p);
+            transform.Rotation = glm::eulerAngles(FromPhysXQuat(actorPose.q));
+        } else {
+            // Synchronize Physics Actor with static Entity
+            m_ActorInternal->setGlobalPose(ToPhysXTransform(m_Entity.Transform()));
+        }
     }
 } // namespace Monado

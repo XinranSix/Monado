@@ -51,7 +51,7 @@ namespace Monado {
         static void Shutdown();
 
         static void CreateScene();
-        static void CreateActor(Entity e);
+        static Ref<PhysicsActor> CreateActor(Entity e);
 
         static Ref<PhysicsActor> GetActorForEntity(Entity entity);
 
