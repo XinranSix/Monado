@@ -203,6 +203,34 @@ namespace Monado {
         SceneCamera &camera = cameraEntity.GetComponent<CameraComponent>();
         camera.SetViewportSize(m_ViewportWidth, m_ViewportHeight);
 
+        // Process lights
+        {
+            m_LightEnvironment = LightEnvironment();
+            auto lights = m_Registry.group<DirectionalLightComponent>(entt::get<TransformComponent>);
+            uint32_t directionalLightIndex = 0;
+            for (auto entity : lights) {
+                auto [transformComponent, lightComponent] =
+                    lights.get<TransformComponent, DirectionalLightComponent>(entity);
+                glm::vec3 direction = -glm::normalize(glm::mat3(transformComponent.GetTransform()) * glm::vec3(1.0f));
+                m_LightEnvironment.DirectionalLights[directionalLightIndex++] = { direction, lightComponent.Radiance,
+                                                                                  lightComponent.Intensity,
+                                                                                  lightComponent.CastShadows };
+            }
+        }
+
+        // TODO: only one sky light at the moment!
+        {
+            m_Environment = Environment();
+            auto lights = m_Registry.group<SkyLightComponent>(entt::get<TransformComponent>);
+            for (auto entity : lights) {
+                auto [transformComponent, skyLightComponent] =
+                    lights.get<TransformComponent, SkyLightComponent>(entity);
+                m_Environment = skyLightComponent.SceneEnvironment;
+                m_EnvironmentIntensity = skyLightComponent.Intensity;
+                SetSkybox(m_Environment.RadianceMap);
+            }
+        }
+
         m_SkyboxMaterial->Set("u_TextureLod", m_SkyboxLod);
 
         auto group = m_Registry.group<MeshComponent>(entt::get<TransformComponent>);
@@ -213,7 +241,7 @@ namespace Monado {
                 meshComponent.Mesh->OnUpdate(ts);
 
                 // TODO: Should we render (logically)
-                SceneRenderer::SubmitMesh(meshComponent, transformComponent.GetTransform(), nullptr);
+                SceneRenderer::SubmitMesh(meshComponent, transformComponent.GetTransform());
             }
         }
         SceneRenderer::EndScene();
@@ -638,8 +666,4 @@ namespace Monado {
         m_Registry.get<Box2DWorldComponent>(m_SceneEntity).World->SetGravity({ 0.0f, gravity });
     }
 
-    Environment Environment::Load(const std::string &filepath) {
-        auto [radiance, irradiance] = SceneRenderer::CreateEnvironmentMap(filepath);
-        return { filepath, radiance, irradiance };
-    }
 } // namespace Monado

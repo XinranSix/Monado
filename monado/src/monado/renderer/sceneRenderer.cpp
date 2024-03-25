@@ -404,8 +404,10 @@ namespace Monado {
         }
 
         if (outline || collider) {
-            glStencilFunc(GL_ALWAYS, 1, 0xff);
-            glStencilMask(0xff);
+            Renderer::Submit([]() {
+                glStencilFunc(GL_ALWAYS, 1, 0xff);
+                glStencilMask(0xff);
+            });
         }
 
         for (auto &dc : s_Data.SelectedMeshDrawList) {
@@ -427,6 +429,11 @@ namespace Monado {
             baseMaterial->Set("u_EnvRadianceTex", s_Data.SceneData.SceneEnvironment.RadianceMap);
             baseMaterial->Set("u_EnvIrradianceTex", s_Data.SceneData.SceneEnvironment.IrradianceMap);
             baseMaterial->Set("u_BRDFLUTTexture", s_Data.BRDFLUT);
+
+            baseMaterial->Set("u_LightMatrixCascade0", s_Data.LightMatrices[0]);
+            baseMaterial->Set("u_LightMatrixCascade1", s_Data.LightMatrices[1]);
+            baseMaterial->Set("u_LightMatrixCascade2", s_Data.LightMatrices[2]);
+            baseMaterial->Set("u_LightMatrixCascade3", s_Data.LightMatrices[3]);
 
             // Set lights (TODO: move to light environment and don't do per mesh)
             baseMaterial->Set("u_DirectionalLights", s_Data.SceneData.SceneLightEnvironment.DirectionalLights[0]);
