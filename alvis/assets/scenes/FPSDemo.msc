@@ -28,13 +28,19 @@ Entities:
       StoredFields:
         - Name: WalkingSpeed
           Type: 1
-          Data: 5
+          Data: 3
         - Name: RunSpeed
           Type: 1
-          Data: 10
+          Data: 5
         - Name: JumpForce
           Type: 1
-          Data: 50
+          Data: 1
+        - Name: CameraForwardOffset
+          Type: 1
+          Data: 0.200000003
+        - Name: CameraYOffset
+          Type: 1
+          Data: 0.850000024
         - Name: MouseSensitivity
           Type: 1
           Data: 2
@@ -54,7 +60,7 @@ Entities:
         LockRotationZ: true
     PhysicsMaterialComponent:
       StaticFriction: 0.100000001
-      DynamicFriction: 0.5
+      DynamicFriction: 1
       Bounciness: 0
     CapsuleColliderComponent:
       Radius: 0.5
@@ -83,7 +89,7 @@ Entities:
         LockRotationZ: false
     PhysicsMaterialComponent:
       StaticFriction: 0.5
-      DynamicFriction: 0.100000001
+      DynamicFriction: 0.25
       Bounciness: 0.100000001
     MeshColliderComponent:
       AssetPath: alvis\assets\meshes\sponza\sponza.obj

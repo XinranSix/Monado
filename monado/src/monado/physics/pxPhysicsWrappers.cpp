@@ -172,6 +172,9 @@ namespace Monado {
         } else if (rigidbody.BodyType == RigidBodyComponent::Type::Dynamic) {
             physx::PxRigidDynamic *dynamicActor = s_Physics->createRigidDynamic(ToPhysXTransform(transform));
 
+            dynamicActor->setLinearDamping(rigidbody.LinearDrag);
+            dynamicActor->setAngularDamping(rigidbody.AngularDrag);
+
             dynamicActor->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, rigidbody.IsKinematic);
 
             dynamicActor->setRigidDynamicLockFlag(physx::PxRigidDynamicLockFlag::eLOCK_LINEAR_X,
@@ -186,6 +189,8 @@ namespace Monado {
                                                   rigidbody.LockRotationY);
             dynamicActor->setRigidDynamicLockFlag(physx::PxRigidDynamicLockFlag::eLOCK_ANGULAR_Z,
                                                   rigidbody.LockRotationZ);
+
+            dynamicActor->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, rigidbody.DisableGravity);
 
             dynamicActor->setSolverIterationCounts(settings.SolverIterations, settings.SolverVelocityIterations);
 
