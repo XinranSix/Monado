@@ -1,0 +1,11 @@
+[Info]
+Version = 3
+
+[Effect]
+Obj = none
+Obj[0] = Textures\default.fx
+Obj[1] = Textures\default.fx
+Obj[2] = Sword Textures\sword.fx
+Obj[3] = Sword Textures\sword.fx
+Obj[4] = Textures\default.fx
+

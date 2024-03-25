@@ -428,7 +428,7 @@ namespace Monado {
 
             MND_CORE_ASSERT(outVelocity);
             physx::PxVec3 velocity = dynamicActor->getLinearVelocity();
-            MND_CORE_INFO("Hazel_RigidBodyComponent_GetLinearVelocity - {0}, {1}, {2}", velocity.x, velocity.y,
+            MND_CORE_INFO("Monado_RigidBodyComponent_GetLinearVelocity - {0}, {1}, {2}", velocity.x, velocity.y,
                           velocity.z);
             *outVelocity = { velocity.x, velocity.y, velocity.z };
         }
