@@ -352,7 +352,7 @@ namespace Monado {
             }
             if (!m_SelectionContext.HasComponent<MeshComponent>()) {
                 if (ImGui::Button("Mesh")) {
-                    m_SelectionContext.AddComponent<MeshComponent>();
+                    MeshComponent &component = m_SelectionContext.AddComponent<MeshComponent>();
                     ImGui::CloseCurrentPopup();
                 }
             }
@@ -430,7 +430,12 @@ namespace Monado {
             }
             if (!m_SelectionContext.HasComponent<MeshColliderComponent>()) {
                 if (ImGui::Button("Mesh Collider")) {
-                    m_SelectionContext.AddComponent<MeshColliderComponent>();
+                    MeshColliderComponent &component = m_SelectionContext.AddComponent<MeshColliderComponent>();
+                    if (m_SelectionContext.HasComponent<MeshComponent>()) {
+                        component.CollisionMesh = m_SelectionContext.GetComponent<MeshComponent>().Mesh;
+                        PXPhysicsWrappers::CreateTriangleMesh(component);
+                    }
+
                     ImGui::CloseCurrentPopup();
                 }
             }
@@ -814,42 +819,54 @@ namespace Monado {
             UI::EndPropertyGrid();
         });
 
-        DrawComponent<MeshColliderComponent>("Mesh Collider", entity, [=](MeshColliderComponent &mcc) {
-            ImGui::Columns(3);
-            ImGui::SetColumnWidth(0, 100);
-            ImGui::SetColumnWidth(1, 300);
-            ImGui::SetColumnWidth(2, 40);
-            ImGui::Text("File Path");
-            ImGui::NextColumn();
-            ImGui::PushItemWidth(-1);
-            if (mcc.CollisionMesh)
-                ImGui::InputText("##meshfilepath", (char *)mcc.CollisionMesh->GetFilePath().c_str(), 256,
-                                 ImGuiInputTextFlags_ReadOnly);
-            else
-                ImGui::InputText("##meshfilepath", (char *)"Null", 256, ImGuiInputTextFlags_ReadOnly);
-            ImGui::PopItemWidth();
-            ImGui::NextColumn();
-            if (ImGui::Button("...##openmesh")) {
-                std::string file = Application::Get().OpenFile();
-                if (!file.empty()) {
-                    mcc.CollisionMesh = Ref<Mesh>::Create(file);
-                    if (mcc.IsConvex)
-                        PXPhysicsWrappers::CreateConvexMesh(mcc, true);
-                    else
-                        PXPhysicsWrappers::CreateTriangleMesh(mcc, true);
+        DrawComponent<MeshColliderComponent>("Mesh Collider", entity, [&](MeshColliderComponent &mcc) {
+            if (mcc.OverrideMesh) {
+                ImGui::Columns(3);
+                ImGui::SetColumnWidth(0, 100);
+                ImGui::SetColumnWidth(1, 300);
+                ImGui::SetColumnWidth(2, 40);
+                ImGui::Text("File Path");
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(-1);
+                if (mcc.CollisionMesh)
+                    ImGui::InputText("##meshfilepath", (char *)mcc.CollisionMesh->GetFilePath().c_str(), 256,
+                                     ImGuiInputTextFlags_ReadOnly);
+                else
+                    ImGui::InputText("##meshfilepath", (char *)"Null", 256, ImGuiInputTextFlags_ReadOnly);
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+                if (ImGui::Button("...##openmesh")) {
+                    std::string file = Application::Get().OpenFile();
+                    if (!file.empty()) {
+                        mcc.CollisionMesh = Ref<Mesh>::Create(file);
+                        if (mcc.IsConvex)
+                            PXPhysicsWrappers::CreateConvexMesh(mcc, glm::vec3(1.0f), true);
+                        else
+                            PXPhysicsWrappers::CreateTriangleMesh(mcc, glm::vec3(1.0f), true);
+                    }
                 }
+
+                ImGui::Columns(1);
             }
-            ImGui::Columns(1);
 
             UI::BeginPropertyGrid();
             if (UI::Property("Is Convex", mcc.IsConvex)) {
                 if (mcc.IsConvex)
-                    PXPhysicsWrappers::CreateConvexMesh(mcc, true);
+                    PXPhysicsWrappers::CreateConvexMesh(mcc, glm::vec3(1.0f), true);
                 else
-                    PXPhysicsWrappers::CreateTriangleMesh(mcc, true);
+                    PXPhysicsWrappers::CreateTriangleMesh(mcc, glm::vec3(1.0f), true);
             }
-
             UI::Property("Is Trigger", mcc.IsTrigger);
+            if (UI::Property("Override Mesh", mcc.OverrideMesh)) {
+                if (!mcc.OverrideMesh && entity.HasComponent<MeshComponent>()) {
+                    mcc.CollisionMesh = entity.GetComponent<MeshComponent>().Mesh;
+
+                    if (mcc.IsConvex)
+                        PXPhysicsWrappers::CreateConvexMesh(mcc, glm::vec3(1.0f), true);
+                    else
+                        PXPhysicsWrappers::CreateTriangleMesh(mcc, glm::vec3(1.0f), true);
+                }
+            }
             UI::EndPropertyGrid();
         });
     }

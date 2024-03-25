@@ -111,6 +111,7 @@ namespace Monado {
         uint32_t VertexCount;
 
         glm::mat4 Transform;
+        glm::mat4 LocalTransform;
         AABB BoundingBox;
 
         std::string NodeName, MeshName;
@@ -119,7 +120,7 @@ namespace Monado {
     class Mesh : public RefCounted {
     public:
         Mesh(const std::string &filename);
-        Mesh(const std::vector<Vertex> &vertices, const std::vector<Index> &indices);
+        Mesh(const std::vector<Vertex> &vertices, const std::vector<Index> &indices, const glm::mat4 &transform);
         ~Mesh();
 
         void OnUpdate(Timestep ts);
@@ -196,5 +197,4 @@ namespace Monado {
         friend class Renderer;
         friend class SceneHierarchyPanel;
     };
-
 } // namespace Monado

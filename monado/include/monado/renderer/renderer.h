@@ -20,7 +20,7 @@ namespace Monado {
         static void Clear(float r, float g, float b, float a = 1.0f);
         static void SetClearColor(float r, float g, float b, float a);
 
-        static void DrawIndexed(uint32_t count, PrimitiveType type, bool depthTest = true);
+        static void DrawIndexed(uint32_t count, PrimitiveType type, bool depthTest = true, bool faceCulling = true);
 
         // For OpenGL
         static void SetLineThickness(float thickness);

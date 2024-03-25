@@ -34,7 +34,7 @@ namespace Monado {
     };
 
     // TODO: MOVE TO PHYSICS FILE!
-    class ContactListener : public b2ContactListener {
+    class ContactListener2D : public b2ContactListener {
     public:
         virtual void BeginContact(b2Contact *contact) override {
             Entity &a = *(Entity *)contact->GetFixtureA()->GetBody()->GetUserData().pointer;
@@ -92,7 +92,7 @@ namespace Monado {
         }
     };
 
-    static ContactListener s_Box2DContactListener;
+    static ContactListener2D s_Box2DContactListener;
 
     struct Box2DWorldComponent {
         std::unique_ptr<b2World> World;
@@ -308,10 +308,10 @@ namespace Monado {
                 meshComponent.Mesh->OnUpdate(ts);
 
                 // TODO: Should we render (logically)
-                SceneRenderer::SubmitMesh(meshComponent, transformComponent.GetTransform());
-
-                /*if (m_SelectedEntity == entity)
-                        SceneRenderer::SubmitSelectedMesh(meshComponent, transformComponent);*/
+                if (m_SelectedEntity == entity)
+                    SceneRenderer::SubmitSelectedMesh(meshComponent, transformComponent.GetTransform());
+                else
+                    SceneRenderer::SubmitMesh(meshComponent, transformComponent.GetTransform());
             }
         }
 
@@ -665,5 +665,4 @@ namespace Monado {
     void Scene::SetPhysics2DGravity(float gravity) {
         m_Registry.get<Box2DWorldComponent>(m_SceneEntity).World->SetGravity({ 0.0f, gravity });
     }
-
 } // namespace Monado

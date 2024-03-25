@@ -63,8 +63,8 @@ namespace Monado {
             std::bind(&EditorLayer::OnEntityDeleted, this, std::placeholders::_1));
 
         // OpenScene("alvis/assets/scenes/LightingTest.msc");
-
-        OpenScene("alvis/assets/scenes/FPSDemo.msc");
+        // OpenScene("alvis/assets/scenes/FPSDemo.msc");
+        OpenScene("alvis/assets/scenes/levels/Physics2D-Game.msc");
         // NewScene();
     }
 
@@ -334,6 +334,7 @@ namespace Monado {
         SceneSerializer serializer(newScene);
         serializer.Deserialize(filepath);
         m_EditorScene = newScene;
+        m_SceneFilePath = filepath;
 
         std::filesystem::path path = filepath;
         UpdateWindowTitle(path.filename().string());

@@ -11,6 +11,7 @@ namespace Monado {
 
     physx::PxTransform ToPhysXTransform(const TransformComponent &transform);
     physx::PxTransform ToPhysXTransform(const glm::mat4 &transform);
+    physx::PxTransform ToPhysXTransform(const glm::vec3 &translation, const glm::vec3 &rotation);
     physx::PxMat44 ToPhysXMatrix(const glm::mat4 &matrix);
     physx::PxVec3 ToPhysXVector(const glm::vec3 &vector);
     physx::PxVec4 ToPhysXVector(const glm::vec4 &vector);
@@ -33,8 +34,8 @@ namespace Monado {
         static void SerializeMesh(const std::string &filepath, const physx::PxDefaultMemoryOutputStream &data,
                                   const std::string &submeshName = "");
         static bool IsSerialized(const std::string &filepath);
-        static std::vector<physx::PxDefaultMemoryInputData> DeserializeMesh(const std::string &filepath);
-        static void CleanupDataBuffers();
+        static physx::PxDefaultMemoryInputData DeserializeMesh(const std::string &filepath,
+                                                               const std::string &submeshName);
     };
 
 } // namespace Monado

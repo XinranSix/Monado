@@ -222,7 +222,17 @@ namespace Monado {
             out << YAML::BeginMap; // CameraComponent
 
             auto &cameraComponent = entity.GetComponent<CameraComponent>();
-            out << YAML::Key << "Camera" << YAML::Value << "some camera data...";
+            auto &camera = cameraComponent.Camera;
+            out << YAML::Key << "Camera" << YAML::Value;
+            out << YAML::BeginMap; // Camera
+            out << YAML::Key << "ProjectionType" << YAML::Value << (int)camera.GetProjectionType();
+            out << YAML::Key << "PerspectiveFOV" << YAML::Value << camera.GetPerspectiveVerticalFOV();
+            out << YAML::Key << "PerspectiveNear" << YAML::Value << camera.GetPerspectiveNearClip();
+            out << YAML::Key << "PerspectiveFar" << YAML::Value << camera.GetPerspectiveFarClip();
+            out << YAML::Key << "OrthographicSize" << YAML::Value << camera.GetOrthographicSize();
+            out << YAML::Key << "OrthographicNear" << YAML::Value << camera.GetOrthographicNearClip();
+            out << YAML::Key << "OrthographicFar" << YAML::Value << camera.GetOrthographicFarClip();
+            out << YAML::EndMap; // Camera
             out << YAML::Key << "Primary" << YAML::Value << cameraComponent.Primary;
 
             out << YAML::EndMap; // CameraComponent
@@ -383,9 +393,12 @@ namespace Monado {
             out << YAML::BeginMap; // MeshColliderComponent
 
             auto &meshColliderComponent = entity.GetComponent<MeshColliderComponent>();
-            out << YAML::Key << "AssetPath" << YAML::Value << meshColliderComponent.CollisionMesh->GetFilePath();
+
+            if (meshColliderComponent.OverrideMesh)
+                out << YAML::Key << "AssetPath" << YAML::Value << meshColliderComponent.CollisionMesh->GetFilePath();
             out << YAML::Key << "IsConvex" << YAML::Value << meshColliderComponent.IsConvex;
             out << YAML::Key << "IsTrigger" << YAML::Value << meshColliderComponent.IsTrigger;
+            out << YAML::Key << "OverrideMesh" << YAML::Value << meshColliderComponent.OverrideMesh;
 
             out << YAML::EndMap; // MeshColliderComponent
         }
@@ -406,6 +419,13 @@ namespace Monado {
         out << YAML::Key << "Multiplier" << YAML::Value << light.Multiplier;
         out << YAML::EndMap; // Light
         out << YAML::EndMap; // Environment
+    }
+
+    static bool CheckPath(const std::string &path) {
+        FILE *f = fopen(path.c_str(), "rb");
+        if (f)
+            fclose(f);
+        return f != nullptr;
     }
 
     void SceneSerializer::Serialize(const std::string &filepath) {
@@ -485,6 +505,8 @@ namespace Monado {
             }
         }
 
+        std::vector<std::string> missingPaths;
+
         auto entities = data["Entities"];
         if (entities) {
             for (auto entity : entities) {
@@ -504,7 +526,15 @@ namespace Monado {
                     // Entities always have transforms
                     auto &transform = deserializedEntity.GetComponent<TransformComponent>();
                     transform.Translation = transformComponent["Position"].as<glm::vec3>();
-                    transform.Rotation = transformComponent["Rotation"].as<glm::vec3>();
+                    auto rotationNode = transformComponent["Rotation"];
+                    // Rotations used to be stored as quaternions
+                    if (rotationNode.size() == 4) {
+                        glm::quat rotation = transformComponent["Rotation"].as<glm::quat>();
+                        transform.Rotation = glm::eulerAngles(rotation);
+                    } else {
+                        MND_CORE_ASSERT(rotationNode.size() == 3);
+                        transform.Rotation = transformComponent["Rotation"].as<glm::vec3>();
+                    }
                     transform.Scale = transformComponent["Scale"].as<glm::vec3>();
 
                     MND_CORE_INFO("  Entity Transform:");
@@ -575,9 +605,17 @@ namespace Monado {
                 auto meshComponent = entity["MeshComponent"];
                 if (meshComponent) {
                     std::string meshPath = meshComponent["AssetPath"].as<std::string>();
+
                     // TEMP (because script creates mesh component...)
-                    if (!deserializedEntity.HasComponent<MeshComponent>())
-                        deserializedEntity.AddComponent<MeshComponent>(Ref<Mesh>::Create(meshPath));
+                    if (!deserializedEntity.HasComponent<MeshComponent>()) {
+                        Ref<Mesh> mesh;
+                        if (!CheckPath(meshPath))
+                            missingPaths.emplace_back(meshPath);
+                        else
+                            mesh = Ref<Mesh>::Create(meshPath);
+
+                        deserializedEntity.AddComponent<MeshComponent>(mesh);
+                    }
 
                     MND_CORE_INFO("  Mesh Asset Path: {0}", meshPath);
                 }
@@ -585,10 +623,26 @@ namespace Monado {
                 auto cameraComponent = entity["CameraComponent"];
                 if (cameraComponent) {
                     auto &component = deserializedEntity.AddComponent<CameraComponent>();
-                    component.Camera = SceneCamera();
-                    component.Primary = cameraComponent["Primary"].as<bool>();
+                    auto cameraNode = cameraComponent["Camera"];
 
-                    MND_CORE_INFO("  Primary Camera: {0}", component.Primary);
+                    component.Camera = SceneCamera();
+                    auto &camera = component.Camera;
+                    if (cameraNode["ProjectionType"])
+                        camera.SetProjectionType((SceneCamera::ProjectionType)cameraNode["ProjectionType"].as<int>());
+                    if (cameraNode["PerspectiveFOV"])
+                        camera.SetPerspectiveVerticalFOV(cameraNode["PerspectiveFOV"].as<float>());
+                    if (cameraNode["PerspectiveNear"])
+                        camera.SetPerspectiveNearClip(cameraNode["PerspectiveNear"].as<float>());
+                    if (cameraNode["PerspectiveFar"])
+                        camera.SetPerspectiveFarClip(cameraNode["PerspectiveFar"].as<float>());
+                    if (cameraNode["OrthographicSize"])
+                        camera.SetOrthographicSize(cameraNode["OrthographicSize"].as<float>());
+                    if (cameraNode["OrthographicNear"])
+                        camera.SetOrthographicNearClip(cameraNode["OrthographicNear"].as<float>());
+                    if (cameraNode["OrthographicFar"])
+                        camera.SetOrthographicFarClip(cameraNode["OrthographicFar"].as<float>());
+
+                    component.Primary = cameraComponent["Primary"].as<bool>();
                 }
 
                 auto directionalLightComponent = entity["DirectionalLightComponent"];
@@ -604,8 +658,13 @@ namespace Monado {
                 if (skyLightComponent) {
                     auto &component = deserializedEntity.AddComponent<SkyLightComponent>();
                     std::string env = skyLightComponent["EnvironmentAssetPath"].as<std::string>();
-                    if (!env.empty())
-                        component.SceneEnvironment = Environment::Load(env);
+                    if (!env.empty()) {
+                        if (!CheckPath(env)) {
+                            missingPaths.emplace_back(env);
+                        } else {
+                            component.SceneEnvironment = Environment::Load(env);
+                        }
+                    }
                     component.Intensity = skyLightComponent["Intensity"].as<float>();
                     component.Angle = skyLightComponent["Angle"].as<float>();
                 }
@@ -650,24 +709,27 @@ namespace Monado {
                 }
 
                 auto rigidBodyComponent = entity["RigidBodyComponent"];
-               if (rigidBodyComponent)
-				{
-					auto& component = deserializedEntity.AddComponent<RigidBodyComponent>();
-					component.BodyType = (RigidBodyComponent::Type)rigidBodyComponent["BodyType"].as<int>();
-					component.Mass = rigidBodyComponent["Mass"].as<float>();
-					component.LinearDrag = rigidBodyComponent["LinearDrag"] ? rigidBodyComponent["LinearDrag"].as<float>() : 0.0F;
-					component.AngularDrag = rigidBodyComponent["AngularDrag"] ? rigidBodyComponent["AngularDrag"].as<float>() : 0.05F;
-					component.DisableGravity = rigidBodyComponent["DisableGravity"] ? rigidBodyComponent["DisableGravity"].as<bool>() : false;
-					component.IsKinematic = rigidBodyComponent["IsKinematic"] ? rigidBodyComponent["IsKinematic"].as<bool>() : false;
-					component.Layer = rigidBodyComponent["Layer"] ? rigidBodyComponent["Layer"].as<uint32_t>() : 0;
+                if (rigidBodyComponent) {
+                    auto &component = deserializedEntity.AddComponent<RigidBodyComponent>();
+                    component.BodyType = (RigidBodyComponent::Type)rigidBodyComponent["BodyType"].as<int>();
+                    component.Mass = rigidBodyComponent["Mass"].as<float>();
+                    component.LinearDrag =
+                        rigidBodyComponent["LinearDrag"] ? rigidBodyComponent["LinearDrag"].as<float>() : 0.0F;
+                    component.AngularDrag =
+                        rigidBodyComponent["AngularDrag"] ? rigidBodyComponent["AngularDrag"].as<float>() : 0.05F;
+                    component.DisableGravity =
+                        rigidBodyComponent["DisableGravity"] ? rigidBodyComponent["DisableGravity"].as<bool>() : false;
+                    component.IsKinematic =
+                        rigidBodyComponent["IsKinematic"] ? rigidBodyComponent["IsKinematic"].as<bool>() : false;
+                    component.Layer = rigidBodyComponent["Layer"] ? rigidBodyComponent["Layer"].as<uint32_t>() : 0;
 
-					component.LockPositionX = rigidBodyComponent["Constraints"]["LockPositionX"].as<bool>();
-					component.LockPositionY = rigidBodyComponent["Constraints"]["LockPositionY"].as<bool>();
-					component.LockPositionZ = rigidBodyComponent["Constraints"]["LockPositionZ"].as<bool>();
-					component.LockRotationX = rigidBodyComponent["Constraints"]["LockRotationX"].as<bool>();
-					component.LockRotationY = rigidBodyComponent["Constraints"]["LockRotationY"].as<bool>();
-					component.LockRotationZ = rigidBodyComponent["Constraints"]["LockRotationZ"].as<bool>();
-				}
+                    component.LockPositionX = rigidBodyComponent["Constraints"]["LockPositionX"].as<bool>();
+                    component.LockPositionY = rigidBodyComponent["Constraints"]["LockPositionY"].as<bool>();
+                    component.LockPositionZ = rigidBodyComponent["Constraints"]["LockPositionZ"].as<bool>();
+                    component.LockRotationX = rigidBodyComponent["Constraints"]["LockRotationX"].as<bool>();
+                    component.LockRotationY = rigidBodyComponent["Constraints"]["LockRotationY"].as<bool>();
+                    component.LockRotationZ = rigidBodyComponent["Constraints"]["LockRotationZ"].as<bool>();
+                }
 
                 auto physicsMaterialComponent = entity["PhysicsMaterialComponent"];
                 if (physicsMaterialComponent) {
@@ -709,20 +771,37 @@ namespace Monado {
 
                 auto meshColliderComponent = entity["MeshColliderComponent"];
                 if (meshColliderComponent) {
-                    std::string meshPath = meshColliderComponent["AssetPath"].as<std::string>();
-                    auto &component =
-                        deserializedEntity.AddComponent<MeshColliderComponent>(Ref<Mesh>::Create(meshPath));
-                    component.IsConvex =
-                        meshColliderComponent["IsConvex"] ? meshColliderComponent["IsConvex"].as<bool>() : false;
-                    component.IsTrigger =
-                        meshColliderComponent["IsTrigger"] ? meshColliderComponent["IsTrigger"].as<bool>() : false;
+                    Ref<Mesh> collisionMesh = deserializedEntity.HasComponent<MeshComponent>()
+                                                  ? deserializedEntity.GetComponent<MeshComponent>().Mesh
+                                                  : nullptr;
+                    bool overrideMesh = meshColliderComponent["OverrideMesh"]
+                                            ? meshColliderComponent["OverrideMesh"].as<bool>()
+                                            : false;
 
-                    if (component.IsConvex)
-                        PXPhysicsWrappers::CreateConvexMesh(component);
-                    else
-                        PXPhysicsWrappers::CreateTriangleMesh(component);
+                    if (overrideMesh) {
+                        std::string meshPath = meshColliderComponent["AssetPath"].as<std::string>();
+                        if (!CheckPath(meshPath)) {
+                            missingPaths.emplace_back(meshPath);
+                        } else {
+                            collisionMesh = Ref<Mesh>::Create(meshPath);
+                        }
+                    }
 
-                    MND_CORE_INFO("  Mesh Collider Asset Path: {0}", meshPath);
+                    if (collisionMesh) {
+                        auto &component = deserializedEntity.AddComponent<MeshColliderComponent>(collisionMesh);
+                        component.IsConvex =
+                            meshColliderComponent["IsConvex"] ? meshColliderComponent["IsConvex"].as<bool>() : false;
+                        component.IsTrigger =
+                            meshColliderComponent["IsTrigger"] ? meshColliderComponent["IsTrigger"].as<bool>() : false;
+                        component.OverrideMesh = overrideMesh;
+
+                        if (component.IsConvex)
+                            PXPhysicsWrappers::CreateConvexMesh(component, deserializedEntity.Transform().Scale);
+                        else
+                            PXPhysicsWrappers::CreateTriangleMesh(component, deserializedEntity.Transform().Scale);
+                    } else {
+                        MND_CORE_WARN("MeshColliderComponent in use without valid mesh!");
+                    }
                 }
             }
         }
@@ -745,6 +824,15 @@ namespace Monado {
                     }
                 }
             }
+        }
+
+        if (missingPaths.size()) {
+            MND_CORE_ERROR("The following files could not be loaded:");
+            for (auto &path : missingPaths) {
+                MND_CORE_ERROR("  {0}", path);
+            }
+
+            return false;
         }
 
         return true;

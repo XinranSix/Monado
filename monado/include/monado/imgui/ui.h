@@ -184,7 +184,7 @@ namespace Monado::UI {
         s_IDBuffer[1] = '#';
         memset(s_IDBuffer + 2, 0, 14);
         itoa(s_Counter++, s_IDBuffer + 2, 16);
-        if (ImGui::DragFloat3(s_IDBuffer, glm::value_ptr(value), delta))
+        if (ImGui::DragFloat2(s_IDBuffer, glm::value_ptr(value), delta))
             modified = true;
 
         ImGui::PopItemWidth();
@@ -330,5 +330,4 @@ namespace Monado::UI {
         ImGui::NextColumn();
         s_CheckboxCount = 0;
     }
-
 } // namespace Monado::UI

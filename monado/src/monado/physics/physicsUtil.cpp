@@ -12,9 +12,14 @@ namespace Monado {
     }
 
     physx::PxTransform ToPhysXTransform(const glm::mat4 &transform) {
+        // TODO(Yan): I don't trust glm::toQuat because it doesn't normalize the scale
         physx::PxQuat r = ToPhysXQuat(glm::normalize(glm::toQuat(transform)));
         physx::PxVec3 p = ToPhysXVector(glm::vec3(transform[3]));
         return physx::PxTransform(p, r);
+    }
+
+    physx::PxTransform ToPhysXTransform(const glm::vec3 &translation, const glm::vec3 &rotation) {
+        return physx::PxTransform(ToPhysXVector(translation), ToPhysXQuat(glm::quat(rotation)));
     }
 
     physx::PxMat44 ToPhysXMatrix(const glm::mat4 &matrix) { return *(physx::PxMat44 *)&matrix; }
@@ -23,7 +28,10 @@ namespace Monado {
 
     physx::PxVec4 ToPhysXVector(const glm::vec4 &vector) { return *(physx::PxVec4 *)&vector; }
 
-    physx::PxQuat ToPhysXQuat(const glm::quat &quat) { return *(physx::PxQuat *)&quat; }
+    physx::PxQuat ToPhysXQuat(const glm::quat &quat) {
+        // Note: PxQuat elements are in a different order than glm::quat!
+        return physx::PxQuat(quat.x, quat.y, quat.z, quat.w);
+    }
 
     glm::mat4 FromPhysXTransform(const physx::PxTransform &transform) {
         glm::quat rotation = FromPhysXQuat(transform.q);
@@ -39,11 +47,10 @@ namespace Monado {
 
     glm::quat FromPhysXQuat(const physx::PxQuat &quat) { return *(glm::quat *)&quat; }
 
-    physx::PxFilterFlags MonadoFilterShader(physx::PxFilterObjectAttributes attributes0,
-                                            physx::PxFilterData filterData0,
-                                            physx::PxFilterObjectAttributes attributes1,
-                                            physx::PxFilterData filterData1, physx::PxPairFlags &pairFlags,
-                                            const void *constantBlock, physx::PxU32 constantBlockSize) {
+    physx::PxFilterFlags MonadoFilterShader(physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
+                                           physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
+                                           physx::PxPairFlags &pairFlags, const void *constantBlock,
+                                           physx::PxU32 constantBlockSize) {
         if (physx::PxFilterObjectIsTrigger(attributes0) || physx::PxFilterObjectIsTrigger(attributes1)) {
             pairFlags = physx::PxPairFlag::eTRIGGER_DEFAULT;
             return physx::PxFilterFlag::eDEFAULT;
@@ -109,44 +116,34 @@ namespace Monado {
         return std::filesystem::is_directory(path);
     }
 
-    static std::vector<physx::PxU8 *> s_MeshDataBuffers;
+    static physx::PxU8 *s_MeshDataBuffer;
 
-    std::vector<physx::PxDefaultMemoryInputData> PhysicsMeshSerializer::DeserializeMesh(const std::string &filepath) {
-        std::vector<physx::PxDefaultMemoryInputData> result;
-
+    physx::PxDefaultMemoryInputData PhysicsMeshSerializer::DeserializeMesh(const std::string &filepath,
+                                                                           const std::string &submeshName) {
         std::filesystem::path p = filepath;
         size_t lastDot = p.filename().string().find_first_of(".");
         lastDot = lastDot == std::string::npos ? p.filename().string().length() - 1 : lastDot;
         std::string dirName = p.filename().string().substr(0, lastDot);
         auto path = p.parent_path() / dirName;
+        if (submeshName.length() > 0)
+            path = p.parent_path() / dirName / (submeshName + ".pxm");
 
-        for (const auto &file : std::filesystem::directory_iterator(path)) {
-            MND_CORE_INFO("De-Serializing {0}", file.path().string());
+        FILE *f = fopen(path.string().c_str(), "rb");
+        uint32_t size;
 
-            FILE *f = fopen(file.path().string().c_str(), "rb");
-            uint32_t size;
+        if (f) {
+            fseek(f, 0, SEEK_END);
+            size = ftell(f);
+            fseek(f, 0, SEEK_SET);
 
-            if (f) {
-                fseek(f, 0, SEEK_END);
-                size = ftell(f);
-                fseek(f, 0, SEEK_SET);
+            if (s_MeshDataBuffer)
+                delete[] s_MeshDataBuffer;
 
-                physx::PxU8 *buffer = new physx::PxU8[size / sizeof(physx::PxU8)];
-                fread(buffer, sizeof(physx::PxU8), size / sizeof(physx::PxU8), f);
-                fclose(f);
-                s_MeshDataBuffers.push_back(buffer);
-                result.push_back(physx::PxDefaultMemoryInputData(buffer, size));
-            }
+            s_MeshDataBuffer = new physx::PxU8[size / sizeof(physx::PxU8)];
+            fread(s_MeshDataBuffer, sizeof(physx::PxU8), size / sizeof(physx::PxU8), f);
+            fclose(f);
         }
 
-        return result;
+        return physx::PxDefaultMemoryInputData(s_MeshDataBuffer, size);
     }
-
-    void PhysicsMeshSerializer::CleanupDataBuffers() {
-        for (auto buffer : s_MeshDataBuffers)
-            delete[] buffer;
-
-        s_MeshDataBuffers.clear();
-    }
-
 } // namespace Monado

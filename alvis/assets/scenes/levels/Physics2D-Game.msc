@@ -11,7 +11,7 @@ Entities:
       Tag: Directional Light
     TransformComponent:
       Position: [0, 0, 0]
-      Rotation: [0.47744444, 0.861332178, -0.0841863379, 0.151876092]
+      Rotation: [2.12930131, -0.34906584, -1.58574842e-08]
       Scale: [0.99999994, 1.00000203, 1.00000191]
     DirectionalLightComponent:
       Radiance: [1, 1, 1]
@@ -23,7 +23,7 @@ Entities:
       Tag: Sky Light
     TransformComponent:
       Position: [0, 0, 0]
-      Rotation: [1, 0, 0, 0]
+      Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
     SkyLightComponent:
       EnvironmentAssetPath: alvis\assets\env\pink_sunrise_4k.hdr
@@ -34,7 +34,7 @@ Entities:
       Tag: Box
     TransformComponent:
       Position: [-16.6143265, 4.39151001, 6.43359499e-09]
-      Rotation: [1, 0, 0, 0]
+      Rotation: [0, -0, 0]
       Scale: [3.00000024, 0.300000012, 1]
     MeshComponent:
       AssetPath: alvis\assets\meshes\Cube1m.fbx
@@ -51,7 +51,7 @@ Entities:
       Tag: Box
     TransformComponent:
       Position: [-20.766222, 2.29431438, 0]
-      Rotation: [1, 0, 0, 0]
+      Rotation: [0, -0, 0]
       Scale: [3.00000024, 0.300000012, 1]
     MeshComponent:
       AssetPath: alvis\assets\meshes\Cube1m.fbx
@@ -68,7 +68,7 @@ Entities:
       Tag: Box
     TransformComponent:
       Position: [6.12674046, 45.5617676, 0]
-      Rotation: [0.977883637, 0, 0, -0.209149569]
+      Rotation: [0, 0, -0.421410441]
       Scale: [4.47999668, 4.47999668, 4.48000002]
     MeshComponent:
       AssetPath: alvis\assets\meshes\Cube1m.fbx
@@ -85,7 +85,7 @@ Entities:
       Tag: Box
     TransformComponent:
       Position: [-29.6808929, 29.2600002, 0]
-      Rotation: [0.707106769, 0, 0, 0.707106769]
+      Rotation: [0, -0, 1.57079637]
       Scale: [58.4178085, 4.47997999, 4.48000002]
     MeshComponent:
       AssetPath: alvis\assets\meshes\Cube1m.fbx
@@ -102,7 +102,7 @@ Entities:
       Tag: Player
     TransformComponent:
       Position: [-23.6932545, 1.59184527, -1.96369365e-06]
-      Rotation: [1, 0, 0, 0]
+      Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
     ScriptComponent:
       ModuleName: Example.PlayerCube
@@ -131,7 +131,7 @@ Entities:
       Tag: Cube
     TransformComponent:
       Position: [500, 0, 0]
-      Rotation: [1, 0, 0, 0]
+      Rotation: [0, -0, 0]
       Scale: [1200, 1, 5]
     MeshComponent:
       AssetPath: alvis\assets\meshes\Cube1m.fbx
@@ -148,7 +148,7 @@ Entities:
       Tag: Camera
     TransformComponent:
       Position: [-21.7406311, 9.70659542, 15]
-      Rotation: [0.999910355, -0.0133911213, 0, 0]
+      Rotation: [-0.0267830435, 0, 0]
       Scale: [1, 1, 1]
     ScriptComponent:
       ModuleName: Example.BasicController
@@ -156,15 +156,25 @@ Entities:
         - Name: Speed
           Type: 1
           Data: 12
+        - Name: DistanceFromPlayer
+          Type: 1
+          Data: 10
     CameraComponent:
-      Camera: some camera data...
+      Camera:
+        ProjectionType: 0
+        PerspectiveFOV: 45
+        PerspectiveNear: 0.100000001
+        PerspectiveFar: 1000
+        OrthographicSize: 10
+        OrthographicNear: -1
+        OrthographicFar: 1
       Primary: true
   - Entity: 12498244675852797835
     TagComponent:
       Tag: Box
     TransformComponent:
       Position: [-12.0348625, 6.59647179, 9.60061925e-07]
-      Rotation: [1, 0, 0, 0]
+      Rotation: [0, -0, 0]
       Scale: [3.00000024, 0.300000012, 1]
     MeshComponent:
       AssetPath: alvis\assets\meshes\Cube1m.fbx
@@ -176,3 +186,5 @@ Entities:
       Size: [1.5, 0.150000006]
       Density: 1
       Friction: 1
+PhysicsLayers:
+  []

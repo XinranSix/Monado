@@ -75,7 +75,7 @@ namespace Monado {
 
     void RendererAPI::SetClearColor(float r, float g, float b, float a) { glClearColor(r, g, b, a); }
 
-    void RendererAPI::DrawIndexed(uint32_t count, PrimitiveType type, bool depthTest) {
+    void RendererAPI::DrawIndexed(uint32_t count, PrimitiveType type, bool depthTest, bool faceCulling) {
         if (!depthTest)
             glDisable(GL_DEPTH_TEST);
 
@@ -84,6 +84,11 @@ namespace Monado {
         case PrimitiveType::Triangles: glPrimitiveType = GL_TRIANGLES; break;
         case PrimitiveType::Lines: glPrimitiveType = GL_LINES; break;
         }
+
+        if (faceCulling)
+            glEnable(GL_CULL_FACE);
+        else
+            glDisable(GL_CULL_FACE);
 
         glDrawElements(glPrimitiveType, count, GL_UNSIGNED_INT, nullptr);
 

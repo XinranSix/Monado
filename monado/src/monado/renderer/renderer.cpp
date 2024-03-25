@@ -85,8 +85,8 @@ namespace Monado {
 
     void Renderer::SetClearColor(float r, float g, float b, float a) {}
 
-    void Renderer::DrawIndexed(uint32_t count, PrimitiveType type, bool depthTest) {
-        Renderer::Submit([=]() { RendererAPI::DrawIndexed(count, type, depthTest); });
+    void Renderer::DrawIndexed(uint32_t count, PrimitiveType type, bool depthTest, bool faceCulling) {
+        Renderer::Submit([=]() { RendererAPI::DrawIndexed(count, type, depthTest, faceCulling); });
     }
 
     void Renderer::SetLineThickness(float thickness) {
@@ -111,7 +111,7 @@ namespace Monado {
 
     void Renderer::EndRenderPass() {
         MND_CORE_ASSERT(s_Data.m_ActiveRenderPass,
-                       "No active render pass! Have you called Renderer::EndRenderPass twice?");
+                        "No active render pass! Have you called Renderer::EndRenderPass twice?");
         s_Data.m_ActiveRenderPass->GetSpecification().TargetFramebuffer->Unbind();
         s_Data.m_ActiveRenderPass = nullptr;
     }
@@ -128,15 +128,10 @@ namespace Monado {
             shader->SetMat4("u_Transform", transform);
         }
 
-        if (cullFace)
-            Renderer::Submit([]() { glEnable(GL_CULL_FACE); });
-        else
-            Renderer::Submit([]() { glDisable(GL_CULL_FACE); });
-
         s_Data.m_FullscreenQuadVertexBuffer->Bind();
         s_Data.m_FullscreenQuadPipeline->Bind();
         s_Data.m_FullscreenQuadIndexBuffer->Bind();
-        Renderer::DrawIndexed(6, PrimitiveType::Triangles, depthTest);
+        Renderer::DrawIndexed(6, PrimitiveType::Triangles, depthTest, cullFace);
     }
 
     void Renderer::SubmitFullscreenQuad(Ref<MaterialInstance> material) {
@@ -152,12 +147,7 @@ namespace Monado {
         s_Data.m_FullscreenQuadPipeline->Bind();
         s_Data.m_FullscreenQuadIndexBuffer->Bind();
 
-        if (cullFace)
-            Renderer::Submit([]() { glEnable(GL_CULL_FACE); });
-        else
-            Renderer::Submit([]() { glDisable(GL_CULL_FACE); });
-
-        Renderer::DrawIndexed(6, PrimitiveType::Triangles, depthTest);
+        Renderer::DrawIndexed(6, PrimitiveType::Triangles, depthTest, cullFace);
     }
 
     void Renderer::SubmitMesh(Ref<Mesh> mesh, const glm::mat4 &transform, Ref<MaterialInstance> overrideMaterial) {
