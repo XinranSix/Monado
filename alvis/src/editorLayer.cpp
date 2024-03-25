@@ -62,8 +62,8 @@ namespace Monado {
         m_AssetManagerPanel = CreateScope<AssetManagerPanel>();
         m_ObjectsPanel = CreateScope<ObjectsPanel>();
 
-        OpenScene("assets/scenes/Physics2DTest2.msc");
-        // NewScene();
+        // OpenScene("assets/scenes/Physics2DTest2.msc");
+        NewScene();
     }
 
     void EditorLayer::OnDetach() {}
@@ -96,7 +96,7 @@ namespace Monado {
     }
 
     void EditorLayer::UpdateWindowTitle(const std::string &sceneName) {
-        std::string title = sceneName + " - Hazelnut - " + Application::GetPlatformName() + " (" +
+        std::string title = sceneName + " - Monado - " + Application::GetPlatformName() + " (" +
                             Application::GetConfigurationName() + ")";
         Application::Get().GetWindow().SetTitle(title);
     }
@@ -335,7 +335,7 @@ namespace Monado {
 
     void EditorLayer::OpenScene() {
         auto &app = Application::Get();
-        std::string filepath = app.OpenFile("Hazel Scene (*.msc)\0*.msc\0");
+        std::string filepath = app.OpenFile("Monado Scene (*.msc)\0*.msc\0");
         if (!filepath.empty())
             OpenScene(filepath);
     }
@@ -367,7 +367,7 @@ namespace Monado {
 
     void EditorLayer::SaveSceneAs() {
         auto &app = Application::Get();
-        std::string filepath = app.SaveFile("Hazel Scene (*.msc)\0*.msc\0");
+        std::string filepath = app.SaveFile("Monado Scene (*.msc)\0*.msc\0");
         if (!filepath.empty()) {
             SceneSerializer serializer(m_EditorScene);
             serializer.Serialize(filepath);
@@ -631,7 +631,7 @@ namespace Monado {
             if (data) {
                 auto d = (DragDropData *)data->Data;
 
-                if (d->Type == "HazelScene") {
+                if (d->Type == "MonadoScene") {
                     auto sceneName = d->SourcePath;
                     OpenScene(sceneName);
                 }

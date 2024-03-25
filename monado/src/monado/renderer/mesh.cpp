@@ -487,6 +487,8 @@ namespace Monado {
             submesh.LocalTransform = localTransform;
         }
 
+        // MND_MESH_LOG("{0} {1}", LevelToSpaces(level), node->mName.C_Str());
+
         for (uint32_t i = 0; i < node->mNumChildren; i++)
             TraverseNodes(node->mChildren[i], transform, level + 1);
     }

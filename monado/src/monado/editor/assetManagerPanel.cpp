@@ -6,7 +6,6 @@
 #undef MoveFile
 
 namespace Monado {
-
     AssetManagerPanel::AssetManagerPanel() {
         AssetTypes::Init();
 

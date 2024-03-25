@@ -553,7 +553,7 @@ namespace Monado {
                 auto transformComponent = entity["TransformComponent"];
                 if (transformComponent) {
                     // Entities always have transforms
-                    auto transform = deserializedEntity.GetComponent<TransformComponent>();
+                    auto &transform = deserializedEntity.GetComponent<TransformComponent>();
                     transform.Translation = transformComponent["Position"].as<glm::vec3>();
                     auto rotationNode = transformComponent["Rotation"];
                     // Rotations used to be stored as quaternions
@@ -568,9 +568,9 @@ namespace Monado {
 
                     MND_CORE_INFO("  Entity Transform:");
                     MND_CORE_INFO("    Translation: {0}, {1}, {2}", transform.Translation.x, transform.Translation.y,
-                                 transform.Translation.z);
+                                  transform.Translation.z);
                     MND_CORE_INFO("    Rotation: {0}, {1}, {2}", transform.Rotation.x, transform.Rotation.y,
-                                 transform.Rotation.z);
+                                  transform.Rotation.z);
                     MND_CORE_INFO("    Scale: {0}, {1}, {2}", transform.Scale.x, transform.Scale.y, transform.Scale.z);
                 }
 

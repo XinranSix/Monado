@@ -53,7 +53,7 @@ namespace FPSExample
 
 			if (Input.IsMouseButtonPressed(MouseButton.Left) && Input.GetCursorMode() == CursorMode.Normal)
 				Input.SetCursorMode(CursorMode.Locked);
-	
+
 			m_CurrentSpeed = Input.IsKeyPressed(KeyCode.LeftControl) ? RunSpeed : WalkingSpeed;
 
 			UpdateRaycasting();
