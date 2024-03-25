@@ -256,12 +256,14 @@ namespace Monado {
             Entity entity = entityMap.at(entityID);
             TransformComponent &transform = entity.GetComponent<TransformComponent>();
 
-            glm::quat rotation = glm::quat(glm::radians(transform.Rotation));
+            glm::quat rotation = glm::quat(transform.Rotation);
             glm::vec3 right = glm::normalize(glm::rotate(rotation, glm::vec3(1.0F, 0.0F, 0.0F)));
             glm::vec3 up = glm::normalize(glm::rotate(rotation, glm::vec3(0.0F, 1.0F, 0.0F)));
             glm::vec3 forward = glm::normalize(glm::rotate(rotation, glm::vec3(0.0F, 0.0F, -1.0F)));
 
-            *outTransform = { transform.Translation, transform.Rotation, transform.Scale, up, right, forward };
+            *outTransform = {
+                transform.Translation, glm::degrees(transform.Rotation), transform.Scale, up, right, forward
+            };
         }
 
         void Monado_TransformComponent_SetTransform(uint64_t entityID, ScriptTransform *inTransform) {
@@ -274,7 +276,7 @@ namespace Monado {
             Entity entity = entityMap.at(entityID);
             TransformComponent &transform = entity.GetComponent<TransformComponent>();
             transform.Translation = inTransform->Translation;
-            transform.Rotation = inTransform->Rotation;
+            transform.Rotation = glm::radians(inTransform->Rotation);
             transform.Scale = inTransform->Scale;
         }
 

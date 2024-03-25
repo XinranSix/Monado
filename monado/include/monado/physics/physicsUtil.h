@@ -27,11 +27,14 @@ namespace Monado {
                                            physx::PxPairFlags &pairFlags, const void *constantBlock,
                                            physx::PxU32 constantBlockSize);
 
-    class ConvexMeshSerializer {
+    class PhysicsMeshSerializer {
     public:
-        static void SerializeMesh(const std::string &filepath, const physx::PxDefaultMemoryOutputStream &data);
+        static void DeleteIfSerialized(const std::string &filepath);
+        static void SerializeMesh(const std::string &filepath, const physx::PxDefaultMemoryOutputStream &data,
+                                  const std::string &submeshName = "");
         static bool IsSerialized(const std::string &filepath);
-        static physx::PxDefaultMemoryInputData DeserializeMesh(const std::string &filepath);
+        static std::vector<physx::PxDefaultMemoryInputData> DeserializeMesh(const std::string &filepath);
+        static void CleanupDataBuffers();
     };
 
 } // namespace Monado

@@ -10,7 +10,7 @@
 
 namespace Monado {
 
-    enum class MaterialFlag { None = BIT(0), DepthTest = BIT(1), Blend = BIT(2) };
+    enum class MaterialFlag { None = BIT(0), DepthTest = BIT(1), Blend = BIT(2), TwoSided = BIT(3) };
 
     class Material : public RefCounted {
         friend class MaterialInstance;
@@ -23,6 +23,8 @@ namespace Monado {
 
         uint32_t GetFlags() const { return m_MaterialFlags; }
         void SetFlag(MaterialFlag flag) { m_MaterialFlags |= (uint32_t)flag; }
+
+        Ref<Shader> GetShader() { return m_Shader; }
 
         template <typename T>
         void Set(const std::string &name, const T &value) {
@@ -63,6 +65,8 @@ namespace Monado {
             return m_Textures[slot];
         }
 
+        ShaderResourceDeclaration *FindResourceDeclaration(const std::string &name);
+
     public:
         static Ref<Material> Create(const Ref<Shader> &shader);
 
@@ -72,7 +76,6 @@ namespace Monado {
         void BindTextures();
 
         ShaderUniformDeclaration *FindUniformDeclaration(const std::string &name);
-        ShaderResourceDeclaration *FindResourceDeclaration(const std::string &name);
         Buffer &GetUniformBufferTarget(ShaderUniformDeclaration *uniformDeclaration);
 
     private:
@@ -182,5 +185,5 @@ namespace Monado {
         // TODO: This is temporary; come up with a proper system to track overrides
         std::unordered_set<std::string> m_OverriddenValues;
     };
-
+    
 } // namespace Monado

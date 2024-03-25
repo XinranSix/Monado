@@ -6,7 +6,7 @@
 namespace Monado {
 
     physx::PxTransform ToPhysXTransform(const TransformComponent &transform) {
-        physx::PxQuat r = ToPhysXQuat(glm::normalize(glm::quat(glm::radians(transform.Rotation))));
+        physx::PxQuat r = ToPhysXQuat(glm::normalize(glm::quat(transform.Rotation)));
         physx::PxVec3 p = ToPhysXVector(transform.Translation);
         return physx::PxTransform(p, r);
     }
@@ -59,55 +59,93 @@ namespace Monado {
         return physx::PxFilterFlag::eSUPPRESS;
     }
 
-    void ConvexMeshSerializer::SerializeMesh(const std::string &filepath,
-                                             const physx::PxDefaultMemoryOutputStream &data) {
+    void PhysicsMeshSerializer::DeleteIfSerialized(const std::string &filepath) {
         std::filesystem::path p = filepath;
-        auto path = p.parent_path() / (p.filename().string() + ".pxm");
+        std::filesystem::path path = p.parent_path() / (p.filename().string() + ".pxm");
+
+        size_t lastDot = path.filename().string().find_first_of(".");
+        lastDot = lastDot == std::string::npos ? path.filename().string().length() - 1 : lastDot;
+        std::string dirName = p.filename().string().substr(0, lastDot);
+
+        if (IsSerialized(filepath))
+            std::filesystem::remove(p.parent_path() / dirName);
+    }
+
+    void PhysicsMeshSerializer::SerializeMesh(const std::string &filepath,
+                                              const physx::PxDefaultMemoryOutputStream &data,
+                                              const std::string &submeshName) {
+        std::filesystem::path p = filepath;
+        std::filesystem::path path = p.parent_path() / (p.filename().string() + ".pxm");
+
+        size_t lastDot = path.filename().string().find_first_of(".");
+        lastDot = lastDot == std::string::npos ? path.filename().string().length() - 1 : lastDot;
+        std::string dirName = p.filename().string().substr(0, lastDot);
+
+        if (submeshName.length() > 0)
+            path = p.parent_path() / dirName / (submeshName + ".pxm");
+
+        std::filesystem::create_directory(p.parent_path() / dirName);
         std::string cachedFilepath = path.string();
+
+        MND_CORE_INFO("Serializing {0}", submeshName);
 
         FILE *f = fopen(cachedFilepath.c_str(), "wb");
         if (f) {
+            MND_CORE_INFO("File Created");
             fwrite(data.getData(), sizeof(physx::PxU8), data.getSize() / sizeof(physx::PxU8), f);
             fclose(f);
+        } else {
+            MND_CORE_INFO("File Already Exists");
         }
     }
 
-    bool ConvexMeshSerializer::IsSerialized(const std::string &filepath) {
+    bool PhysicsMeshSerializer::IsSerialized(const std::string &filepath) {
         std::filesystem::path p = filepath;
-        auto path = p.parent_path() / (p.filename().string() + ".pxm");
-        std::string cachedFilepath = path.string();
-
-        FILE *f = fopen(cachedFilepath.c_str(), "rb");
-        bool exists = f != nullptr;
-        if (exists)
-            fclose(f);
-        return exists;
+        size_t lastDot = p.filename().string().find_first_of(".");
+        lastDot = lastDot == std::string::npos ? p.filename().string().length() - 1 : lastDot;
+        std::string dirName = p.filename().string().substr(0, lastDot);
+        auto path = p.parent_path() / dirName;
+        return std::filesystem::is_directory(path);
     }
 
-    static physx::PxU8 *s_MeshDataBuffer;
+    static std::vector<physx::PxU8 *> s_MeshDataBuffers;
 
-    physx::PxDefaultMemoryInputData ConvexMeshSerializer::DeserializeMesh(const std::string &filepath) {
+    std::vector<physx::PxDefaultMemoryInputData> PhysicsMeshSerializer::DeserializeMesh(const std::string &filepath) {
+        std::vector<physx::PxDefaultMemoryInputData> result;
+
         std::filesystem::path p = filepath;
-        auto path = p.parent_path() / (p.filename().string() + ".pxm");
-        std::string cachedFilepath = path.string();
+        size_t lastDot = p.filename().string().find_first_of(".");
+        lastDot = lastDot == std::string::npos ? p.filename().string().length() - 1 : lastDot;
+        std::string dirName = p.filename().string().substr(0, lastDot);
+        auto path = p.parent_path() / dirName;
 
-        FILE *f = fopen(cachedFilepath.c_str(), "rb");
+        for (const auto &file : std::filesystem::directory_iterator(path)) {
+            MND_CORE_INFO("De-Serializing {0}", file.path().string());
 
-        uint32_t size;
-        if (f) {
-            fseek(f, 0, SEEK_END);
-            size = ftell(f);
-            fseek(f, 0, SEEK_SET);
+            FILE *f = fopen(file.path().string().c_str(), "rb");
+            uint32_t size;
 
-            if (s_MeshDataBuffer)
-                delete[] s_MeshDataBuffer;
+            if (f) {
+                fseek(f, 0, SEEK_END);
+                size = ftell(f);
+                fseek(f, 0, SEEK_SET);
 
-            s_MeshDataBuffer = new physx::PxU8[size / sizeof(physx::PxU8)];
-            fread(s_MeshDataBuffer, sizeof(physx::PxU8), size / sizeof(physx::PxU8), f);
-            fclose(f);
+                physx::PxU8 *buffer = new physx::PxU8[size / sizeof(physx::PxU8)];
+                fread(buffer, sizeof(physx::PxU8), size / sizeof(physx::PxU8), f);
+                fclose(f);
+                s_MeshDataBuffers.push_back(buffer);
+                result.push_back(physx::PxDefaultMemoryInputData(buffer, size));
+            }
         }
 
-        return physx::PxDefaultMemoryInputData(s_MeshDataBuffer, size);
+        return result;
+    }
+
+    void PhysicsMeshSerializer::CleanupDataBuffers() {
+        for (auto buffer : s_MeshDataBuffers)
+            delete[] buffer;
+
+        s_MeshDataBuffers.clear();
     }
 
 } // namespace Monado

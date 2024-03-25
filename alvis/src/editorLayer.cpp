@@ -23,6 +23,8 @@
 #include "glm/gtx/matrix_decompose.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+#include "EditorLayer.h"
+
 namespace Monado {
 
     static void ImGuiShowHelpMarker(const char *desc) {
@@ -36,18 +38,75 @@ namespace Monado {
         }
     }
 
-    static std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(const glm::mat4 &transform) {
-        glm::vec3 scale, translation, skew;
-        glm::vec4 perspective;
-        glm::quat orientation;
-        glm::decompose(transform, scale, orientation, translation, skew, perspective);
+    static bool GetTransformDecomposition(const glm::mat4 &transform, glm::vec3 &translation, glm::vec3 &rotation,
+                                          glm::vec3 &scale) {
+        using namespace glm;
+        using T = float;
 
-        return { translation, orientation, scale };
+        mat4 LocalMatrix(transform);
+
+        // Normalize the matrix.
+        if (epsilonEqual(LocalMatrix[3][3], static_cast<float>(0), epsilon<T>()))
+            return false;
+
+        // First, isolate perspective.  This is the messiest.
+        if (epsilonNotEqual(LocalMatrix[0][3], static_cast<T>(0), epsilon<T>()) ||
+            epsilonNotEqual(LocalMatrix[1][3], static_cast<T>(0), epsilon<T>()) ||
+            epsilonNotEqual(LocalMatrix[2][3], static_cast<T>(0), epsilon<T>())) {
+            // Clear the perspective partition
+            LocalMatrix[0][3] = LocalMatrix[1][3] = LocalMatrix[2][3] = static_cast<T>(0);
+            LocalMatrix[3][3] = static_cast<T>(1);
+        }
+
+        // Next take care of translation (easy).
+        translation = vec3(LocalMatrix[3]);
+        LocalMatrix[3] = vec4(0, 0, 0, LocalMatrix[3].w);
+
+        vec3 Row[3], Pdum3;
+
+        // Now get scale and shear.
+        for (length_t i = 0; i < 3; ++i)
+            for (length_t j = 0; j < 3; ++j)
+                Row[i][j] = LocalMatrix[i][j];
+
+        // Compute X scale factor and normalize first row.
+        scale.x = length(Row[0]);
+        Row[0] = detail::scale(Row[0], static_cast<T>(1));
+        scale.y = length(Row[1]);
+        Row[1] = detail::scale(Row[1], static_cast<T>(1));
+        scale.z = length(Row[2]);
+        Row[2] = detail::scale(Row[2], static_cast<T>(1));
+
+        // At this point, the matrix (in rows[]) is orthonormal.
+        // Check for a coordinate system flip.  If the determinant
+        // is -1, then negate the matrix and the scaling factors.
+#if 0
+		Pdum3 = cross(Row[1], Row[2]); // v3Cross(row[1], row[2], Pdum3);
+		if (dot(Row[0], Pdum3) < 0)
+		{
+			for (length_t i = 0; i < 3; i++)
+			{
+				scale[i] *= static_cast<T>(-1);
+				Row[i] *= static_cast<T>(-1);
+			}
+		}
+#endif
+
+        rotation.y = asin(-Row[0][2]);
+        if (cos(rotation.y) != 0) {
+            rotation.x = atan2(Row[1][2], Row[2][2]);
+            rotation.z = atan2(Row[0][1], Row[0][0]);
+        } else {
+            rotation.x = atan2(-Row[2][0], Row[1][1]);
+            rotation.z = 0;
+        }
+
+        return true;
     }
 
     EditorLayer::EditorLayer()
         : m_SceneType(SceneType::Model),
-          m_EditorCamera(glm::perspectiveFov(glm::radians(45.0f), 1280.0f, 720.0f, 0.1f, 10000.0f)) {}
+          m_EditorCamera(glm::perspectiveFov(glm::radians(45.0f), 1280.0f, 720.0f, 0.1f, 1000.0f)) {}
 
     EditorLayer::~EditorLayer() {}
 
@@ -112,8 +171,7 @@ namespace Monado {
         m_SceneHierarchyPanel->SetEntityDeletedCallback(
             std::bind(&EditorLayer::OnEntityDeleted, this, std::placeholders::_1));
 
-        SceneSerializer serializer(m_EditorScene);
-        serializer.Deserialize("alvis/assets/scenes/FPSDemo.msc");
+        OpenScene("alvis/assets/scenes/LightingTest.msc");
     }
 
     void EditorLayer::OnDetach() {}
@@ -143,8 +201,6 @@ namespace Monado {
         m_SelectionContext.clear();
         ScriptEngine::SetSceneContext(m_EditorScene);
         m_SceneHierarchyPanel->SetContext(m_EditorScene);
-
-        Input::SetCursorMode(CursorMode::Normal);
     }
 
     void EditorLayer::UpdateWindowTitle(const std::string &sceneName) {
@@ -163,6 +219,10 @@ namespace Monado {
     }
 
     void EditorLayer::OnUpdate(Timestep ts) {
+        auto [x, y] = GetMouseViewportSpace();
+
+        SceneRenderer::SetFocusPoint({ x * 0.5f + 0.5f, y * 0.5f + 0.5f });
+
         switch (m_SceneState) {
         case SceneState::Edit: {
             // if (m_ViewportPanelFocused)
@@ -358,29 +418,45 @@ namespace Monado {
         m_EditorScene->SetSelectedEntity(entity);
     }
 
+    void EditorLayer::NewScene() {
+        m_EditorScene = Ref<Scene>::Create();
+        m_SceneHierarchyPanel->SetContext(m_EditorScene);
+        ScriptEngine::SetSceneContext(m_EditorScene);
+        UpdateWindowTitle("Untitled Scene");
+        m_SceneFilePath = std::string();
+
+        m_EditorCamera = EditorCamera(glm::perspectiveFov(glm::radians(45.0f), 1280.0f, 720.0f, 0.1f, 1000.0f));
+    }
+
     void EditorLayer::OpenScene() {
         auto &app = Application::Get();
         std::string filepath = app.OpenFile("Monado Scene (*.msc)\0*.msc\0");
-        if (!filepath.empty()) {
-            Ref<Scene> newScene = Ref<Scene>::Create();
-            SceneSerializer serializer(newScene);
-            serializer.Deserialize(filepath);
-            m_EditorScene = newScene;
-            std::filesystem::path path = filepath;
-            UpdateWindowTitle(path.filename().string());
-            m_SceneHierarchyPanel->SetContext(m_EditorScene);
-            ScriptEngine::SetSceneContext(m_EditorScene);
+        if (!filepath.empty())
+            OpenScene(filepath);
+    }
 
-            m_EditorScene->SetSelectedEntity({});
-            m_SelectionContext.clear();
+    void EditorLayer::OpenScene(const std::string &filepath) {
+        Ref<Scene> newScene = Ref<Scene>::Create("New Scene", true);
+        SceneSerializer serializer(newScene);
+        serializer.Deserialize(filepath);
+        m_EditorScene = newScene;
 
-            m_SceneFilePath = filepath;
-        }
+        std::filesystem::path path = filepath;
+        UpdateWindowTitle(path.filename().string());
+        m_SceneHierarchyPanel->SetContext(m_EditorScene);
+        ScriptEngine::SetSceneContext(m_EditorScene);
+
+        m_EditorScene->SetSelectedEntity({});
+        m_SelectionContext.clear();
     }
 
     void EditorLayer::SaveScene() {
-        SceneSerializer serializer(m_EditorScene);
-        serializer.Serialize(m_SceneFilePath);
+        if (!m_SceneFilePath.empty()) {
+            SceneSerializer serializer(m_EditorScene);
+            serializer.Serialize(m_SceneFilePath);
+        } else {
+            SaveSceneAs();
+        }
     }
 
     void EditorLayer::SaveSceneAs() {
@@ -432,20 +508,19 @@ namespace Monado {
 
         // Dockspace
         ImGuiIO &io = ImGui::GetIO();
+        ImGuiStyle &style = ImGui::GetStyle();
+        float minWinSizeX = style.WindowMinSize.x;
+        style.WindowMinSize.x = 370.0f;
         if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
             ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
             ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), opt_flags);
         }
 
+        style.WindowMinSize.x = minWinSizeX;
+
         // Editor Panel ------------------------------------------------------------------------------
         ImGui::Begin("Model");
         ImGui::Begin("Environment");
-
-        if (ImGui::Button("Load Environment Map")) {
-            std::string filename = Application::Get().OpenFile("*.hdr");
-            if (filename != "")
-                m_EditorScene->SetEnvironment(Environment::Load(filename));
-        }
 
         ImGui::SliderFloat("Skybox LOD", &m_EditorScene->GetSkyboxLod(), 0.0f, 11.0f);
 
@@ -571,7 +646,7 @@ namespace Monado {
         if (m_RuntimeScene)
             m_RuntimeScene->SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
         m_EditorCamera.SetProjectionMatrix(
-            glm::perspectiveFov(glm::radians(45.0f), viewportSize.x, viewportSize.y, 0.1f, 10000.0f));
+            glm::perspectiveFov(glm::radians(45.0f), viewportSize.x, viewportSize.y, 0.1f, 1000.0f));
         m_EditorCamera.SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
         ImGui::Image((void *)SceneRenderer::GetFinalColorBufferRendererID(), viewportSize, { 0, 1 }, { 1, 0 });
 
@@ -599,27 +674,33 @@ namespace Monado {
             bool snap = Input::IsKeyPressed(MND_KEY_LEFT_CONTROL);
 
             TransformComponent &entityTransform = selection.Entity.Transform();
+            glm::mat4 transform = entityTransform.GetTransform();
             float snapValue = GetSnapValue();
             float snapValues[3] = { snapValue, snapValue, snapValue };
+
             if (m_SelectionMode == SelectionMode::Entity) {
-                glm::mat4 transform = entityTransform.GetTransform();
                 ImGuizmo::Manipulate(glm::value_ptr(m_EditorCamera.GetViewMatrix()),
                                      glm::value_ptr(m_EditorCamera.GetProjectionMatrix()),
                                      (ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform),
                                      nullptr, snap ? snapValues : nullptr);
 
-                auto [translation, rotation, scale] = GetTransformDecomposition(transform);
-                entityTransform.Translation = translation;
-                entityTransform.Rotation = glm::degrees(glm::eulerAngles(rotation));
-                entityTransform.Scale = scale;
+                if (ImGuizmo::IsUsing()) {
+                    glm::vec3 translation, rotation, scale;
+                    GetTransformDecomposition(transform, translation, rotation, scale);
+
+                    glm::vec3 deltaRotation = rotation - entityTransform.Rotation;
+                    entityTransform.Translation = translation;
+                    entityTransform.Rotation += deltaRotation;
+                    entityTransform.Scale = scale;
+                }
             } else {
-                glm::mat4 transformBase = entityTransform.GetTransform() * selection.Mesh->Transform;
+                glm::mat4 transformBase = transform * selection.Mesh->Transform;
                 ImGuizmo::Manipulate(glm::value_ptr(m_EditorCamera.GetViewMatrix()),
                                      glm::value_ptr(m_EditorCamera.GetProjectionMatrix()),
                                      (ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(transformBase),
                                      nullptr, snap ? snapValues : nullptr);
 
-                selection.Mesh->Transform = glm::inverse(entityTransform.GetTransform()) * transformBase;
+                selection.Mesh->Transform = glm::inverse(transform) * transformBase;
             }
         }
 
@@ -628,9 +709,8 @@ namespace Monado {
 
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("File")) {
-                if (ImGui::MenuItem("New Scene", "Ctrl-N")) {
-                    // TODO:
-                }
+                if (ImGui::MenuItem("New Scene", "Ctrl+N"))
+                    NewScene();
                 if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))
                     OpenScene();
                 ImGui::Separator();
@@ -647,7 +727,7 @@ namespace Monado {
 
             if (ImGui::BeginMenu("Script")) {
                 if (ImGui::MenuItem("Reload C# Assembly"))
-                    ScriptEngine::ReloadAssembly("alvis/assets/scripts/ExampleApp.dll");
+                    ScriptEngine::ReloadAssembly("ExampleApp.dll");
 
                 ImGui::MenuItem("Reload assembly on play", nullptr, &m_ReloadScriptOnPlay);
                 ImGui::EndMenu();
@@ -854,6 +934,7 @@ namespace Monado {
         ImGui::End();
 
         ScriptEngine::OnImGuiRender();
+        SceneRenderer::OnImGuiRender();
         PhysicsSettingsWindow::OnImGuiRender(m_ShowPhysicsSettings);
 
         ImGui::End();
@@ -875,13 +956,17 @@ namespace Monado {
     }
 
     bool EditorLayer::OnKeyPressedEvent(KeyPressedEvent &e) {
-        if (m_ViewportPanelFocused) {
+        if (GImGui->ActiveId == 0) {
+            if (m_ViewportPanelMouseOver) {
+                switch (e.GetKeyCode()) {
+                case KeyCode::Q: m_GizmoType = -1; break;
+                case KeyCode::W: m_GizmoType = ImGuizmo::OPERATION::TRANSLATE; break;
+                case KeyCode::E: m_GizmoType = ImGuizmo::OPERATION::ROTATE; break;
+                case KeyCode::R: m_GizmoType = ImGuizmo::OPERATION::SCALE; break;
+                }
+            }
             switch (e.GetKeyCode()) {
-            case KeyCode::Q: m_GizmoType = -1; break;
-            case KeyCode::W: m_GizmoType = ImGuizmo::OPERATION::TRANSLATE; break;
-            case KeyCode::E: m_GizmoType = ImGuizmo::OPERATION::ROTATE; break;
-            case KeyCode::R: m_GizmoType = ImGuizmo::OPERATION::SCALE; break;
-            case KeyCode::Delete:
+            case KeyCode::Delete: // TODO: this should be in the scene hierarchy panel
                 if (m_SelectionContext.size()) {
                     Entity selectedEntity = m_SelectionContext[0].Entity;
                     m_EditorScene->DestroyEntity(selectedEntity);
@@ -910,6 +995,7 @@ namespace Monado {
                 // Toggle grid
                 SceneRenderer::GetOptions().ShowGrid = !SceneRenderer::GetOptions().ShowGrid;
                 break;
+            case KeyCode::N: NewScene(); break;
             case KeyCode::O: OpenScene(); break;
             case KeyCode::S: SaveScene(); break;
             }
@@ -926,8 +1012,8 @@ namespace Monado {
 
     bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent &e) {
         auto [mx, my] = Input::GetMousePosition();
-        if (e.GetMouseButton() == MND_MOUSE_BUTTON_LEFT && !Input::IsKeyPressed(KeyCode::LeftAlt) &&
-            !ImGuizmo::IsOver() && m_SceneState != SceneState::Play) {
+        if (e.GetMouseButton() == MND_MOUSE_BUTTON_LEFT && m_ViewportPanelMouseOver &&
+            !Input::IsKeyPressed(KeyCode::LeftAlt) && !ImGuizmo::IsOver() && m_SceneState != SceneState::Play) {
             auto [mouseX, mouseY] = GetMouseViewportSpace();
             if (mouseX > -1.0f && mouseX < 1.0f && mouseY > -1.0f && mouseY < 1.0f) {
                 auto [origin, direction] = CastRay(mouseX, mouseY);

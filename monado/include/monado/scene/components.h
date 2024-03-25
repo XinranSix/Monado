@@ -9,6 +9,8 @@
 #include "monado/renderer/mesh.h"
 #include "sceneCamera.h"
 #include "monado/core/uuid.h"
+#include "monado/renderer/sceneEnvironment.h"
+#include "monado/scene/sceneCamera.h"
 
 namespace Monado {
 
@@ -27,7 +29,6 @@ namespace Monado {
         operator const std::string &() const { return Tag; }
     };
 
-    // TODO: Should the Up, Right, Forward vectors be stored here?
     struct TransformComponent {
         glm::vec3 Translation = { 0.0F, 0.0F, 0.0F };
         glm::vec3 Rotation = { 0.0F, 0.0F, 0.0F };
@@ -38,11 +39,11 @@ namespace Monado {
         TransformComponent(const glm::vec3 &translation) : Translation(translation) {}
 
         glm::mat4 GetTransform() const {
-            return glm::translate(glm::mat4(1.0F), Translation) * glm::toMat4(glm::quat(glm::radians(Rotation))) *
+            return glm::translate(glm::mat4(1.0F), Translation) * glm::toMat4(glm::quat(Rotation)) *
                    glm::scale(glm::mat4(1.0F), Scale);
         }
     };
-    
+
     struct MeshComponent {
         Ref<Monado::Mesh> Mesh;
 
@@ -189,7 +190,8 @@ namespace Monado {
 
     struct MeshColliderComponent {
         Ref<Monado::Mesh> CollisionMesh;
-        Ref<Monado::Mesh> ProcessedMesh;
+        std::vector<Ref<Monado::Mesh>> ProcessedMeshes;
+        bool IsConvex = false;
         bool IsTrigger = false;
 
         MeshColliderComponent() = default;
@@ -197,6 +199,22 @@ namespace Monado {
         MeshColliderComponent(const Ref<Monado::Mesh> &mesh) : CollisionMesh(mesh) {}
 
         operator Ref<Monado::Mesh>() { return CollisionMesh; }
+    };
+
+    enum class LightType { None = 0, Directional = 1, Point = 2, Spot = 3 };
+
+    struct DirectionalLightComponent {
+        glm::vec3 Radiance = { 1.0f, 1.0f, 1.0f };
+        float Intensity = 1.0f;
+        bool CastShadows = true;
+        bool SoftShadows = true;
+        float LightSize = 0.5f; // For PCSS
+    };
+
+    struct SkyLightComponent {
+        Environment SceneEnvironment;
+        float Intensity = 1.0f;
+        float Angle = 0.0f;
     };
 
 } // namespace Monado

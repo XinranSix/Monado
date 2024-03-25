@@ -3,6 +3,9 @@
 #include "assimp/scene.h"
 #include <cstdint>
 
+#include "imgui.h"
+#include "imgui_internal.h"
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/quaternion.hpp"
 #include "glm/gtx/matrix_decompose.hpp"
@@ -15,6 +18,7 @@
 #include "monado/core/application.h"
 #include "monado/physics/pxPhysicsWrappers.h"
 #include "monado/renderer/meshFactory.h"
+#include "monado/imGui/ui.h"
 
 namespace Monado {
 
@@ -48,8 +52,30 @@ namespace Monado {
 
             if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight |
                                                       ImGuiPopupFlags_NoOpenOverExistingPopup)) {
-                if (ImGui::MenuItem("Create Empty Entity")) {
-                    m_Context->CreateEntity("Empty Entity");
+                if (ImGui::BeginMenu("Create")) {
+                    if (ImGui::MenuItem("Empty Entity")) {
+                        auto newEntity = m_Context->CreateEntity("Empty Entity");
+                        SetSelected(newEntity);
+                    }
+                    if (ImGui::MenuItem("Mesh")) {
+                        auto newEntity = m_Context->CreateEntity("Mesh");
+                        newEntity.AddComponent<MeshComponent>();
+                        SetSelected(newEntity);
+                    }
+                    ImGui::Separator();
+                    if (ImGui::MenuItem("Directional Light")) {
+                        auto newEntity = m_Context->CreateEntity("Directional Light");
+                        newEntity.AddComponent<DirectionalLightComponent>();
+                        newEntity.GetComponent<TransformComponent>().Rotation =
+                            glm::radians(glm::vec3 { 80.0f, 10.0f, 0.0f });
+                        SetSelected(newEntity);
+                    }
+                    if (ImGui::MenuItem("Sky Light")) {
+                        auto newEntity = m_Context->CreateEntity("Sky Light");
+                        newEntity.AddComponent<SkyLightComponent>();
+                        SetSelected(newEntity);
+                    }
+                    ImGui::EndMenu();
                 }
                 ImGui::EndPopup();
             }
@@ -58,94 +84,8 @@ namespace Monado {
 
             ImGui::Begin("Properties");
 
-            if (m_SelectionContext) {
+            if (m_SelectionContext)
                 DrawComponents(m_SelectionContext);
-
-                if (ImGui::Button("Add Component"))
-                    ImGui::OpenPopup("AddComponentPanel");
-
-                if (ImGui::BeginPopup("AddComponentPanel")) {
-                    if (!m_SelectionContext.HasComponent<CameraComponent>()) {
-                        if (ImGui::Button("Camera")) {
-                            m_SelectionContext.AddComponent<CameraComponent>();
-                            ImGui::CloseCurrentPopup();
-                        }
-                    }
-                    if (!m_SelectionContext.HasComponent<MeshComponent>()) {
-                        if (ImGui::Button("Mesh")) {
-                            m_SelectionContext.AddComponent<MeshComponent>();
-                            ImGui::CloseCurrentPopup();
-                        }
-                    }
-                    if (!m_SelectionContext.HasComponent<ScriptComponent>()) {
-                        if (ImGui::Button("Script")) {
-                            m_SelectionContext.AddComponent<ScriptComponent>();
-                            ImGui::CloseCurrentPopup();
-                        }
-                    }
-                    if (!m_SelectionContext.HasComponent<SpriteRendererComponent>()) {
-                        if (ImGui::Button("Sprite Renderer")) {
-                            m_SelectionContext.AddComponent<SpriteRendererComponent>();
-                            ImGui::CloseCurrentPopup();
-                        }
-                    }
-                    if (!m_SelectionContext.HasComponent<RigidBody2DComponent>()) {
-                        if (ImGui::Button("Rigidbody 2D")) {
-                            m_SelectionContext.AddComponent<RigidBody2DComponent>();
-                            ImGui::CloseCurrentPopup();
-                        }
-                    }
-                    if (!m_SelectionContext.HasComponent<BoxCollider2DComponent>()) {
-                        if (ImGui::Button("Box Collider 2D")) {
-                            m_SelectionContext.AddComponent<BoxCollider2DComponent>();
-                            ImGui::CloseCurrentPopup();
-                        }
-                    }
-                    if (!m_SelectionContext.HasComponent<CircleCollider2DComponent>()) {
-                        if (ImGui::Button("Circle Collider 2D")) {
-                            m_SelectionContext.AddComponent<CircleCollider2DComponent>();
-                            ImGui::CloseCurrentPopup();
-                        }
-                    }
-                    if (!m_SelectionContext.HasComponent<RigidBodyComponent>()) {
-                        if (ImGui::Button("Rigidbody")) {
-                            m_SelectionContext.AddComponent<RigidBodyComponent>();
-                            ImGui::CloseCurrentPopup();
-                        }
-                    }
-                    if (!m_SelectionContext.HasComponent<PhysicsMaterialComponent>()) {
-                        if (ImGui::Button("Physics Material")) {
-                            m_SelectionContext.AddComponent<PhysicsMaterialComponent>();
-                            ImGui::CloseCurrentPopup();
-                        }
-                    }
-                    if (!m_SelectionContext.HasComponent<BoxColliderComponent>()) {
-                        if (ImGui::Button("Box Collider")) {
-                            m_SelectionContext.AddComponent<BoxColliderComponent>();
-                            ImGui::CloseCurrentPopup();
-                        }
-                    }
-                    if (!m_SelectionContext.HasComponent<SphereColliderComponent>()) {
-                        if (ImGui::Button("Sphere Collider")) {
-                            m_SelectionContext.AddComponent<SphereColliderComponent>();
-                            ImGui::CloseCurrentPopup();
-                        }
-                    }
-                    if (!m_SelectionContext.HasComponent<SphereColliderComponent>()) {
-                        if (ImGui::Button("Capsule Collider")) {
-                            m_SelectionContext.AddComponent<CapsuleColliderComponent>();
-                            ImGui::CloseCurrentPopup();
-                        }
-                    }
-                    if (!m_SelectionContext.HasComponent<MeshColliderComponent>()) {
-                        if (ImGui::Button("Mesh Collider")) {
-                            m_SelectionContext.AddComponent<MeshColliderComponent>();
-                            ImGui::CloseCurrentPopup();
-                        }
-                    }
-                    ImGui::EndPopup();
-                }
-            }
         }
         ImGui::End();
 
@@ -172,9 +112,10 @@ namespace Monado {
         if (entity.HasComponent<TagComponent>())
             name = entity.GetComponent<TagComponent>().Tag.c_str();
 
-        ImGuiTreeNodeFlags node_flags =
+        ImGuiTreeNodeFlags flags =
             (entity == m_SelectionContext ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
-        bool opened = ImGui::TreeNodeEx((void *)(uint32_t)entity, node_flags, name);
+        flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
+        bool opened = ImGui::TreeNodeEx((void *)(uint32_t)entity, flags, name);
         if (ImGui::IsItemClicked()) {
             m_SelectionContext = entity;
             if (m_SelectionChangedCallback)
@@ -189,12 +130,7 @@ namespace Monado {
             ImGui::EndPopup();
         }
         if (opened) {
-            if (entity.HasComponent<MeshComponent>()) {
-                auto mesh = entity.GetComponent<MeshComponent>().Mesh;
-                // if (mesh)
-                // 	DrawMeshNode(mesh);
-            }
-
+            // TODO: Children
             ImGui::TreePop();
         }
 
@@ -256,213 +192,31 @@ namespace Monado {
         }
     }
 
-    static int s_UIContextID = 0;
-    static uint32_t s_Counter = 0;
-    static char s_IDBuffer[16];
-
-    static void PushID() {
-        ImGui::PushID(s_UIContextID++);
-        s_Counter = 0;
-    }
-
-    static void PopID() {
-        ImGui::PopID();
-        s_UIContextID--;
-    }
-
-    static void BeginPropertyGrid() {
-        PushID();
-        ImGui::Columns(2);
-    }
-
-    static bool Property(const char *label, std::string &value, bool error = false) {
-        bool modified = false;
-
-        ImGui::Text(label);
-        ImGui::NextColumn();
-        ImGui::PushItemWidth(-1);
-
-        char buffer[256];
-        strcpy(buffer, value.c_str());
-
-        s_IDBuffer[0] = '#';
-        s_IDBuffer[1] = '#';
-        memset(s_IDBuffer + 2, 0, 14);
-        itoa(s_Counter++, s_IDBuffer + 2, 16);
-
-        if (error)
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
-        if (ImGui::InputText(s_IDBuffer, buffer, 256)) {
-            value = buffer;
-            modified = true;
-        }
-        if (error)
-            ImGui::PopStyleColor();
-        ImGui::PopItemWidth();
-        ImGui::NextColumn();
-
-        return modified;
-    }
-
-    static void Property(const char *label, const char *value) {
-        ImGui::Text(label);
-        ImGui::NextColumn();
-        ImGui::PushItemWidth(-1);
-
-        s_IDBuffer[0] = '#';
-        s_IDBuffer[1] = '#';
-        memset(s_IDBuffer + 2, 0, 14);
-        itoa(s_Counter++, s_IDBuffer + 2, 16);
-        ImGui::InputText(s_IDBuffer, (char *)value, 256, ImGuiInputTextFlags_ReadOnly);
-
-        ImGui::PopItemWidth();
-        ImGui::NextColumn();
-    }
-
-    static bool Property(const char *label, bool &value) {
-        bool modified = false;
-
-        ImGui::Text(label);
-        ImGui::NextColumn();
-        ImGui::PushItemWidth(-1);
-
-        s_IDBuffer[0] = '#';
-        s_IDBuffer[1] = '#';
-        memset(s_IDBuffer + 2, 0, 14);
-        itoa(s_Counter++, s_IDBuffer + 2, 16);
-        if (ImGui::Checkbox(s_IDBuffer, &value))
-            modified = true;
-
-        ImGui::PopItemWidth();
-        ImGui::NextColumn();
-
-        return modified;
-    }
-
-    static bool Property(const char *label, int &value) {
-        bool modified = false;
-
-        ImGui::Text(label);
-        ImGui::NextColumn();
-        ImGui::PushItemWidth(-1);
-
-        s_IDBuffer[0] = '#';
-        s_IDBuffer[1] = '#';
-        memset(s_IDBuffer + 2, 0, 14);
-        itoa(s_Counter++, s_IDBuffer + 2, 16);
-        if (ImGui::DragInt(s_IDBuffer, &value))
-            modified = true;
-
-        ImGui::PopItemWidth();
-        ImGui::NextColumn();
-
-        return modified;
-    }
-
-    static bool Property(const char *label, float &value, float delta = 0.1f) {
-        bool modified = false;
-
-        ImGui::Text(label);
-        ImGui::NextColumn();
-        ImGui::PushItemWidth(-1);
-
-        s_IDBuffer[0] = '#';
-        s_IDBuffer[1] = '#';
-        memset(s_IDBuffer + 2, 0, 14);
-        itoa(s_Counter++, s_IDBuffer + 2, 16);
-        if (ImGui::DragFloat(s_IDBuffer, &value, delta))
-            modified = true;
-
-        ImGui::PopItemWidth();
-        ImGui::NextColumn();
-
-        return modified;
-    }
-
-    static bool Property(const char *label, glm::vec2 &value, float delta = 0.1f) {
-        bool modified = false;
-
-        ImGui::Text(label);
-        ImGui::NextColumn();
-        ImGui::PushItemWidth(-1);
-
-        s_IDBuffer[0] = '#';
-        s_IDBuffer[1] = '#';
-        memset(s_IDBuffer + 2, 0, 14);
-        itoa(s_Counter++, s_IDBuffer + 2, 16);
-        if (ImGui::DragFloat2(s_IDBuffer, glm::value_ptr(value), delta))
-            modified = true;
-
-        ImGui::PopItemWidth();
-        ImGui::NextColumn();
-
-        return modified;
-    }
-
-    static bool Property(const char *label, glm::vec3 &value, float delta = 0.1f) {
-        bool modified = false;
-
-        ImGui::Text(label);
-        ImGui::NextColumn();
-        ImGui::PushItemWidth(-1);
-
-        s_IDBuffer[0] = '#';
-        s_IDBuffer[1] = '#';
-        memset(s_IDBuffer + 2, 0, 14);
-        itoa(s_Counter++, s_IDBuffer + 2, 16);
-        if (ImGui::DragFloat3(s_IDBuffer, glm::value_ptr(value), delta))
-            modified = true;
-
-        ImGui::PopItemWidth();
-        ImGui::NextColumn();
-
-        return modified;
-    }
-
-    static bool Property(const char *label, glm::vec4 &value, float delta = 0.1f) {
-        bool modified = false;
-
-        ImGui::Text(label);
-        ImGui::NextColumn();
-        ImGui::PushItemWidth(-1);
-
-        s_IDBuffer[0] = '#';
-        s_IDBuffer[1] = '#';
-        memset(s_IDBuffer + 2, 0, 14);
-        itoa(s_Counter++, s_IDBuffer + 2, 16);
-        if (ImGui::DragFloat4(s_IDBuffer, glm::value_ptr(value), delta))
-            modified = true;
-
-        ImGui::PopItemWidth();
-        ImGui::NextColumn();
-
-        return modified;
-    }
-
-    static void EndPropertyGrid() {
-        ImGui::Columns(1);
-        PopID();
-    }
-
     template <typename T, typename UIFunction>
     static void DrawComponent(const std::string &name, Entity entity, UIFunction uiFunction) {
+        const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
+                                                 ImGuiTreeNodeFlags_SpanAvailWidth |
+                                                 ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
         if (entity.HasComponent<T>()) {
-            bool removeComponent = false;
-
+            // NOTE(Peter):
+            //	This fixes an issue where the first "+" button would display the "Remove" buttons for ALL components on
+            // an Entity. 	This is due to ImGui::TreeNodeEx only pushing the id for it's children if it's actually
+            // open
+            ImGui::PushID((void *)typeid(T).hash_code());
             auto &component = entity.GetComponent<T>();
-            bool open =
-                ImGui::TreeNodeEx((void *)((uint32_t)entity | typeid(T).hash_code()),
-                                  ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap, name.c_str());
-            ImGui::SameLine();
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
-            if (ImGui::Button("+")) {
+            ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
+
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2 { 4, 4 });
+            float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+            ImGui::Separator();
+            bool open = ImGui::TreeNodeEx("##dummy_id", treeNodeFlags, name.c_str());
+            ImGui::PopStyleVar();
+            ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
+            if (ImGui::Button("+", ImVec2 { lineHeight, lineHeight })) {
                 ImGui::OpenPopup("ComponentSettings");
             }
 
-            ImGui::PopStyleColor();
-            ImGui::PopStyleColor();
-
+            bool removeComponent = false;
             if (ImGui::BeginPopup("ComponentSettings")) {
                 if (ImGui::MenuItem("Remove component"))
                     removeComponent = true;
@@ -472,15 +226,93 @@ namespace Monado {
 
             if (open) {
                 uiFunction(component);
-                ImGui::NextColumn();
-                ImGui::Columns(1);
                 ImGui::TreePop();
             }
-            ImGui::Separator();
 
             if (removeComponent)
                 entity.RemoveComponent<T>();
+
+            ImGui::PopID();
         }
+    }
+
+    static bool DrawVec3Control(const std::string &label, glm::vec3 &values, float resetValue = 0.0f,
+                                float columnWidth = 100.0f) {
+        bool modified = false;
+
+        ImGuiIO &io = ImGui::GetIO();
+        auto boldFont = io.Fonts->Fonts[0];
+
+        ImGui::PushID(label.c_str());
+
+        ImGui::Columns(2);
+        ImGui::SetColumnWidth(0, columnWidth);
+        ImGui::Text(label.c_str());
+        ImGui::NextColumn();
+
+        ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2 { 0, 0 });
+
+        float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+        ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4 { 0.8f, 0.1f, 0.15f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4 { 0.9f, 0.2f, 0.2f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4 { 0.8f, 0.1f, 0.15f, 1.0f });
+        ImGui::PushFont(boldFont);
+        if (ImGui::Button("X", buttonSize)) {
+            values.x = resetValue;
+            modified = true;
+        }
+
+        ImGui::PopFont();
+        ImGui::PopStyleColor(3);
+
+        ImGui::SameLine();
+        modified |= ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f");
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4 { 0.2f, 0.7f, 0.2f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4 { 0.3f, 0.8f, 0.3f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4 { 0.2f, 0.7f, 0.2f, 1.0f });
+        ImGui::PushFont(boldFont);
+        if (ImGui::Button("Y", buttonSize)) {
+            values.y = resetValue;
+            modified = true;
+        }
+
+        ImGui::PopFont();
+        ImGui::PopStyleColor(3);
+
+        ImGui::SameLine();
+        modified |= ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f");
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4 { 0.1f, 0.25f, 0.8f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4 { 0.2f, 0.35f, 0.9f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4 { 0.1f, 0.25f, 0.8f, 1.0f });
+        ImGui::PushFont(boldFont);
+        if (ImGui::Button("Z", buttonSize)) {
+            values.z = resetValue;
+            modified = true;
+        }
+
+        ImGui::PopFont();
+        ImGui::PopStyleColor(3);
+
+        ImGui::SameLine();
+        modified |= ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f");
+        ImGui::PopItemWidth();
+
+        ImGui::PopStyleVar();
+
+        ImGui::Columns(1);
+
+        ImGui::PopID();
+
+        return modified;
     }
 
     void SceneHierarchyPanel::DrawComponents(Entity entity) {
@@ -488,54 +320,130 @@ namespace Monado {
 
         auto id = entity.GetComponent<IDComponent>().ID;
 
+        ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
+
         if (entity.HasComponent<TagComponent>()) {
             auto &tag = entity.GetComponent<TagComponent>().Tag;
             char buffer[256];
             memset(buffer, 0, 256);
             memcpy(buffer, tag.c_str(), tag.length());
+            ImGui::PushItemWidth(contentRegionAvailable.x * 0.5f);
             if (ImGui::InputText("##Tag", buffer, 256)) {
                 tag = std::string(buffer);
             }
+            ImGui::PopItemWidth();
         }
 
         // ID
         ImGui::SameLine();
         ImGui::TextDisabled("%llx", (int64_t)id);
+        float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+        ImVec2 textSize = ImGui::CalcTextSize("Add Component");
+        ImGui::SameLine(contentRegionAvailable.x - (textSize.x + GImGui->Style.FramePadding.y));
+        if (ImGui::Button("Add Component"))
+            ImGui::OpenPopup("AddComponentPanel");
 
-        ImGui::Separator();
-
-        if (entity.HasComponent<TransformComponent>()) {
-            TransformComponent &transform = entity.GetComponent<TransformComponent>();
-            if (ImGui::TreeNodeEx((void *)((uint32_t)entity | typeid(TransformComponent).hash_code()),
-                                  ImGuiTreeNodeFlags_DefaultOpen, "Transform")) {
-                ImGui::Columns(2);
-                ImGui::Text("Translation");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-                ImGui::DragFloat3("##translation", glm::value_ptr(transform.Translation), 0.25f);
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
-
-                ImGui::Text("Rotation");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-                ImGui::DragFloat3("##rotation", glm::value_ptr(transform.Rotation), 0.25f);
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
-
-                ImGui::Text("Scale");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-                ImGui::DragFloat3("##scale", glm::value_ptr(transform.Scale), 0.25f);
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
-
-                ImGui::Columns(1);
-
-                ImGui::TreePop();
+        if (ImGui::BeginPopup("AddComponentPanel")) {
+            if (!m_SelectionContext.HasComponent<CameraComponent>()) {
+                if (ImGui::Button("Camera")) {
+                    m_SelectionContext.AddComponent<CameraComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
             }
-            ImGui::Separator();
+            if (!m_SelectionContext.HasComponent<MeshComponent>()) {
+                if (ImGui::Button("Mesh")) {
+                    m_SelectionContext.AddComponent<MeshComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            if (!m_SelectionContext.HasComponent<DirectionalLightComponent>()) {
+                if (ImGui::Button("Directional Light")) {
+                    m_SelectionContext.AddComponent<DirectionalLightComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            if (!m_SelectionContext.HasComponent<SkyLightComponent>()) {
+                if (ImGui::Button("Sky Light")) {
+                    m_SelectionContext.AddComponent<SkyLightComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            if (!m_SelectionContext.HasComponent<ScriptComponent>()) {
+                if (ImGui::Button("Script")) {
+                    m_SelectionContext.AddComponent<ScriptComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            if (!m_SelectionContext.HasComponent<SpriteRendererComponent>()) {
+                if (ImGui::Button("Sprite Renderer")) {
+                    m_SelectionContext.AddComponent<SpriteRendererComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            if (!m_SelectionContext.HasComponent<RigidBody2DComponent>()) {
+                if (ImGui::Button("Rigidbody 2D")) {
+                    m_SelectionContext.AddComponent<RigidBody2DComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            if (!m_SelectionContext.HasComponent<BoxCollider2DComponent>()) {
+                if (ImGui::Button("Box Collider 2D")) {
+                    m_SelectionContext.AddComponent<BoxCollider2DComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            if (!m_SelectionContext.HasComponent<CircleCollider2DComponent>()) {
+                if (ImGui::Button("Circle Collider 2D")) {
+                    m_SelectionContext.AddComponent<CircleCollider2DComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            if (!m_SelectionContext.HasComponent<RigidBodyComponent>()) {
+                if (ImGui::Button("Rigidbody")) {
+                    m_SelectionContext.AddComponent<RigidBodyComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            if (!m_SelectionContext.HasComponent<PhysicsMaterialComponent>()) {
+                if (ImGui::Button("Physics Material")) {
+                    m_SelectionContext.AddComponent<PhysicsMaterialComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            if (!m_SelectionContext.HasComponent<BoxColliderComponent>()) {
+                if (ImGui::Button("Box Collider")) {
+                    m_SelectionContext.AddComponent<BoxColliderComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            if (!m_SelectionContext.HasComponent<SphereColliderComponent>()) {
+                if (ImGui::Button("Sphere Collider")) {
+                    m_SelectionContext.AddComponent<SphereColliderComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            if (!m_SelectionContext.HasComponent<SphereColliderComponent>()) {
+                if (ImGui::Button("Capsule Collider")) {
+                    m_SelectionContext.AddComponent<CapsuleColliderComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            if (!m_SelectionContext.HasComponent<MeshColliderComponent>()) {
+                if (ImGui::Button("Mesh Collider")) {
+                    m_SelectionContext.AddComponent<MeshColliderComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            ImGui::EndPopup();
         }
+
+        DrawComponent<TransformComponent>("Transform", entity, [](TransformComponent &component) {
+            DrawVec3Control("Translation", component.Translation);
+            glm::vec3 rotation = glm::degrees(component.Rotation);
+            DrawVec3Control("Rotation", rotation);
+            component.Rotation = glm::radians(rotation);
+            DrawVec3Control("Scale", component.Scale, 1.0f);
+        });
 
         DrawComponent<MeshComponent>("Mesh", entity, [](MeshComponent &mc) {
             ImGui::Columns(3);
@@ -557,6 +465,7 @@ namespace Monado {
                 if (!file.empty())
                     mc.Mesh = Ref<Mesh>::Create(file);
             }
+            ImGui::Columns(1);
         });
 
         DrawComponent<CameraComponent>("Camera", entity, [](CameraComponent &cc) {
@@ -576,47 +485,84 @@ namespace Monado {
                 ImGui::EndCombo();
             }
 
-            BeginPropertyGrid();
+            UI::BeginPropertyGrid();
             // Perspective parameters
             if (cc.Camera.GetProjectionType() == SceneCamera::ProjectionType::Perspective) {
                 float verticalFOV = cc.Camera.GetPerspectiveVerticalFOV();
-                if (Property("Vertical FOV", verticalFOV))
+                if (UI::Property("Vertical FOV", verticalFOV))
                     cc.Camera.SetPerspectiveVerticalFOV(verticalFOV);
 
                 float nearClip = cc.Camera.GetPerspectiveNearClip();
-                if (Property("Near Clip", nearClip))
+                if (UI::Property("Near Clip", nearClip))
                     cc.Camera.SetPerspectiveNearClip(nearClip);
                 ImGui::SameLine();
                 float farClip = cc.Camera.GetPerspectiveFarClip();
-                if (Property("Far Clip", farClip))
+                if (UI::Property("Far Clip", farClip))
                     cc.Camera.SetPerspectiveFarClip(farClip);
             }
 
             // Orthographic parameters
             else if (cc.Camera.GetProjectionType() == SceneCamera::ProjectionType::Orthographic) {
                 float orthoSize = cc.Camera.GetOrthographicSize();
-                if (Property("Size", orthoSize))
+                if (UI::Property("Size", orthoSize))
                     cc.Camera.SetOrthographicSize(orthoSize);
 
                 float nearClip = cc.Camera.GetOrthographicNearClip();
-                if (Property("Near Clip", nearClip))
+                if (UI::Property("Near Clip", nearClip))
                     cc.Camera.SetOrthographicNearClip(nearClip);
                 ImGui::SameLine();
                 float farClip = cc.Camera.GetOrthographicFarClip();
-                if (Property("Far Clip", farClip))
+                if (UI::Property("Far Clip", farClip))
                     cc.Camera.SetOrthographicFarClip(farClip);
             }
 
-            EndPropertyGrid();
+            UI::EndPropertyGrid();
         });
 
         DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](SpriteRendererComponent &mc) {});
 
+        DrawComponent<DirectionalLightComponent>("Directional Light", entity, [](DirectionalLightComponent &dlc) {
+            UI::BeginPropertyGrid();
+            UI::PropertyColor("Radiance", dlc.Radiance);
+            UI::Property("Intensity", dlc.Intensity);
+            UI::Property("Cast Shadows", dlc.CastShadows);
+            UI::Property("Soft Shadows", dlc.SoftShadows);
+            UI::Property("Source Size", dlc.LightSize);
+            UI::EndPropertyGrid();
+        });
+
+        DrawComponent<SkyLightComponent>("Sky Light", entity, [](SkyLightComponent &slc) {
+            ImGui::Columns(3);
+            ImGui::SetColumnWidth(0, 100);
+            ImGui::SetColumnWidth(1, 300);
+            ImGui::SetColumnWidth(2, 40);
+            ImGui::Text("File Path");
+            ImGui::NextColumn();
+            ImGui::PushItemWidth(-1);
+            if (!slc.SceneEnvironment.FilePath.empty())
+                ImGui::InputText("##envfilepath", (char *)slc.SceneEnvironment.FilePath.c_str(), 256,
+                                 ImGuiInputTextFlags_ReadOnly);
+            else
+                ImGui::InputText("##envfilepath", (char *)"Empty", 256, ImGuiInputTextFlags_ReadOnly);
+            ImGui::PopItemWidth();
+            ImGui::NextColumn();
+            if (ImGui::Button("...##openenv")) {
+                std::string file = Application::Get().OpenFile("*.hdr");
+                if (!file.empty())
+                    slc.SceneEnvironment = Environment::Load(file);
+            }
+            ImGui::Columns(1);
+
+            UI::BeginPropertyGrid();
+            UI::Property("Intensity", slc.Intensity, 0.01f, 0.0f, 5.0f);
+            UI::EndPropertyGrid();
+        });
+
         DrawComponent<ScriptComponent>("Script", entity, [=](ScriptComponent &sc) mutable {
-            BeginPropertyGrid();
+            UI::BeginPropertyGrid();
             std::string oldName = sc.ModuleName;
-            if (Property("Module Name", sc.ModuleName,
-                         !ScriptEngine::ModuleExists(sc.ModuleName))) // TODO: no live edit
+            if (UI::Property("Module Name", sc.ModuleName,
+                             !ScriptEngine::ModuleExists(sc.ModuleName))) // TODO: no live edit
             {
                 // Shutdown old script
                 if (ScriptEngine::ModuleExists(oldName))
@@ -637,7 +583,7 @@ namespace Monado {
                         switch (field.Type) {
                         case FieldType::Int: {
                             int value = isRuntime ? field.GetRuntimeValue<int>() : field.GetStoredValue<int>();
-                            if (Property(field.Name.c_str(), value)) {
+                            if (UI::Property(field.Name.c_str(), value)) {
                                 if (isRuntime)
                                     field.SetRuntimeValue(value);
                                 else
@@ -647,7 +593,7 @@ namespace Monado {
                         }
                         case FieldType::Float: {
                             float value = isRuntime ? field.GetRuntimeValue<float>() : field.GetStoredValue<float>();
-                            if (Property(field.Name.c_str(), value, 0.2f)) {
+                            if (UI::Property(field.Name.c_str(), value, 0.2f)) {
                                 if (isRuntime)
                                     field.SetRuntimeValue(value);
                                 else
@@ -658,7 +604,7 @@ namespace Monado {
                         case FieldType::Vec2: {
                             glm::vec2 value =
                                 isRuntime ? field.GetRuntimeValue<glm::vec2>() : field.GetStoredValue<glm::vec2>();
-                            if (Property(field.Name.c_str(), value, 0.2f)) {
+                            if (UI::Property(field.Name.c_str(), value, 0.2f)) {
                                 if (isRuntime)
                                     field.SetRuntimeValue(value);
                                 else
@@ -669,7 +615,7 @@ namespace Monado {
                         case FieldType::Vec3: {
                             glm::vec3 value =
                                 isRuntime ? field.GetRuntimeValue<glm::vec3>() : field.GetStoredValue<glm::vec3>();
-                            if (Property(field.Name.c_str(), value, 0.2f)) {
+                            if (UI::Property(field.Name.c_str(), value, 0.2f)) {
                                 if (isRuntime)
                                     field.SetRuntimeValue(value);
                                 else
@@ -680,7 +626,7 @@ namespace Monado {
                         case FieldType::Vec4: {
                             glm::vec4 value =
                                 isRuntime ? field.GetRuntimeValue<glm::vec4>() : field.GetStoredValue<glm::vec4>();
-                            if (Property(field.Name.c_str(), value, 0.2f)) {
+                            if (UI::Property(field.Name.c_str(), value, 0.2f)) {
                                 if (isRuntime)
                                     field.SetRuntimeValue(value);
                                 else
@@ -693,7 +639,7 @@ namespace Monado {
                 }
             }
 
-            EndPropertyGrid();
+            UI::EndPropertyGrid();
 #if TODO
             if (ImGui::Button("Run Script")) {
                 ScriptEngine::OnCreateEntity(entity);
@@ -719,41 +665,39 @@ namespace Monado {
             }
 
             if (rb2dc.BodyType == RigidBody2DComponent::Type::Dynamic) {
-                BeginPropertyGrid();
-                Property("Fixed Rotation", rb2dc.FixedRotation);
-                EndPropertyGrid();
+                UI::BeginPropertyGrid();
+                UI::Property("Fixed Rotation", rb2dc.FixedRotation);
+                UI::EndPropertyGrid();
             }
         });
 
         DrawComponent<BoxCollider2DComponent>("Box Collider 2D", entity, [](BoxCollider2DComponent &bc2dc) {
-            BeginPropertyGrid();
+            UI::BeginPropertyGrid();
 
-            Property("Offset", bc2dc.Offset);
-            Property("Size", bc2dc.Size);
-            Property("Density", bc2dc.Density);
-            Property("Friction", bc2dc.Friction);
+            UI::Property("Offset", bc2dc.Offset);
+            UI::Property("Size", bc2dc.Size);
+            UI::Property("Density", bc2dc.Density);
+            UI::Property("Friction", bc2dc.Friction);
 
-            EndPropertyGrid();
+            UI::EndPropertyGrid();
         });
 
         DrawComponent<CircleCollider2DComponent>("Circle Collider 2D", entity, [](CircleCollider2DComponent &cc2dc) {
-            BeginPropertyGrid();
+            UI::BeginPropertyGrid();
 
-            Property("Offset", cc2dc.Offset);
-            Property("Radius", cc2dc.Radius);
-            Property("Density", cc2dc.Density);
-            Property("Friction", cc2dc.Friction);
+            UI::Property("Offset", cc2dc.Offset);
+            UI::Property("Radius", cc2dc.Radius);
+            UI::Property("Density", cc2dc.Density);
+            UI::Property("Friction", cc2dc.Friction);
 
-            EndPropertyGrid();
+            UI::EndPropertyGrid();
         });
 
         DrawComponent<RigidBodyComponent>("Rigidbody", entity, [](RigidBodyComponent &rbc) {
             // Rigidbody Type
             const char *rbTypeStrings[] = { "Static", "Dynamic" };
             const char *currentType = rbTypeStrings[(int)rbc.BodyType];
-            ImGui::TextUnformatted("Type");
-            ImGui::SameLine();
-            if (ImGui::BeginCombo("##TypeSelection", currentType)) {
+            if (ImGui::BeginCombo("Type", currentType)) {
                 for (int type = 0; type < 2; type++) {
                     bool is_selected = (currentType == rbTypeStrings[type]);
                     if (ImGui::Selectable(rbTypeStrings[type], is_selected)) {
@@ -772,9 +716,7 @@ namespace Monado {
 
             uint32_t currentLayer = rbc.Layer;
             const PhysicsLayer &layerInfo = PhysicsLayerManager::GetLayer(currentLayer);
-            ImGui::TextUnformatted("Layer");
-            ImGui::SameLine();
-            if (ImGui::BeginCombo("##LayerSelection", layerInfo.Name.c_str())) {
+            if (ImGui::BeginCombo("Layer", layerInfo.Name.c_str())) {
                 for (const auto &layer : PhysicsLayerManager::GetLayers()) {
                     bool is_selected = (currentLayer == layer.LayerID);
                     if (ImGui::Selectable(layer.Name.c_str(), is_selected)) {
@@ -788,83 +730,82 @@ namespace Monado {
             }
 
             if (rbc.BodyType == RigidBodyComponent::Type::Dynamic) {
-                BeginPropertyGrid();
-                Property("Mass", rbc.Mass);
-                Property("Is Kinematic", rbc.IsKinematic);
-                EndPropertyGrid();
+                UI::BeginPropertyGrid();
+                UI::Property("Mass", rbc.Mass);
+                UI::Property("Is Kinematic", rbc.IsKinematic);
+                UI::EndPropertyGrid();
 
-                if (ImGui::TreeNode("RigidBodyConstraints", "Constraints")) {
-                    BeginPropertyGrid();
-                    Property("Position: X", rbc.LockPositionX);
-                    Property("Position: Y", rbc.LockPositionY);
-                    Property("Position: Z", rbc.LockPositionZ);
-                    Property("Rotation: X", rbc.LockRotationX);
-                    Property("Rotation: Y", rbc.LockRotationY);
-                    Property("Rotation: Z", rbc.LockRotationZ);
-                    EndPropertyGrid();
+                if (UI::BeginTreeNode("Constraints", false)) {
+                    UI::BeginPropertyGrid();
+                    UI::Property("Position: X", rbc.LockPositionX);
+                    UI::Property("Position: Y", rbc.LockPositionY);
+                    UI::Property("Position: Z", rbc.LockPositionZ);
+                    UI::Property("Rotation: X", rbc.LockRotationX);
+                    UI::Property("Rotation: Y", rbc.LockRotationY);
+                    UI::Property("Rotation: Z", rbc.LockRotationZ);
+                    UI::EndPropertyGrid();
 
-                    ImGui::TreePop();
+                    UI::EndTreeNode();
                 }
             }
         });
 
         DrawComponent<PhysicsMaterialComponent>("Physics Material", entity, [](PhysicsMaterialComponent &pmc) {
-            BeginPropertyGrid();
+            UI::BeginPropertyGrid();
 
-            Property("Static Friction", pmc.StaticFriction);
-            Property("Dynamic Friction", pmc.DynamicFriction);
-            Property("Bounciness", pmc.Bounciness);
+            UI::Property("Static Friction", pmc.StaticFriction);
+            UI::Property("Dynamic Friction", pmc.DynamicFriction);
+            UI::Property("Bounciness", pmc.Bounciness);
 
-            EndPropertyGrid();
+            UI::EndPropertyGrid();
         });
 
         DrawComponent<BoxColliderComponent>("Box Collider", entity, [](BoxColliderComponent &bcc) {
-            BeginPropertyGrid();
+            UI::BeginPropertyGrid();
 
-            if (Property("Size", bcc.Size)) {
+            if (UI::Property("Size", bcc.Size)) {
                 bcc.DebugMesh = MeshFactory::CreateBox(bcc.Size);
             }
 
             // Property("Offset", bcc.Offset);
-            Property("Is Trigger", bcc.IsTrigger);
+            UI::Property("Is Trigger", bcc.IsTrigger);
 
-            EndPropertyGrid();
+            UI::EndPropertyGrid();
         });
 
         DrawComponent<SphereColliderComponent>("Sphere Collider", entity, [](SphereColliderComponent &scc) {
-            BeginPropertyGrid();
+            UI::BeginPropertyGrid();
 
-            if (Property("Radius", scc.Radius)) {
+            if (UI::Property("Radius", scc.Radius)) {
                 scc.DebugMesh = MeshFactory::CreateSphere(scc.Radius);
             }
 
-            Property("Is Trigger", scc.IsTrigger);
+            UI::Property("Is Trigger", scc.IsTrigger);
 
-            EndPropertyGrid();
+            UI::EndPropertyGrid();
         });
 
         DrawComponent<CapsuleColliderComponent>("Capsule Collider", entity, [=](CapsuleColliderComponent &ccc) {
-            BeginPropertyGrid();
+            UI::BeginPropertyGrid();
 
             bool changed = false;
 
-            if (Property("Radius", ccc.Radius))
+            if (UI::Property("Radius", ccc.Radius))
                 changed = true;
 
-            if (Property("Height", ccc.Height))
+            if (UI::Property("Height", ccc.Height))
                 changed = true;
 
-            Property("Is Trigger", ccc.IsTrigger);
+            UI::Property("Is Trigger", ccc.IsTrigger);
 
             if (changed) {
                 ccc.DebugMesh = MeshFactory::CreateCapsule(ccc.Radius, ccc.Height);
             }
 
-            EndPropertyGrid();
+            UI::EndPropertyGrid();
         });
 
         DrawComponent<MeshColliderComponent>("Mesh Collider", entity, [](MeshColliderComponent &mcc) {
-            BeginPropertyGrid();
             ImGui::Columns(3);
             ImGui::SetColumnWidth(0, 100);
             ImGui::SetColumnWidth(1, 300);
@@ -883,12 +824,24 @@ namespace Monado {
                 std::string file = Application::Get().OpenFile();
                 if (!file.empty()) {
                     mcc.CollisionMesh = Ref<Mesh>::Create(file);
-                    PXPhysicsWrappers::CreateConvexMesh(mcc);
+                    if (mcc.IsConvex)
+                        PXPhysicsWrappers::CreateConvexMesh(mcc, true);
+                    else
+                        PXPhysicsWrappers::CreateTriangleMesh(mcc, true);
                 }
             }
+            ImGui::Columns(1);
 
-            Property("Is Trigger", mcc.IsTrigger);
-            EndPropertyGrid();
+            UI::BeginPropertyGrid();
+            if (UI::Property("Is Convex", mcc.IsConvex)) {
+                if (mcc.IsConvex)
+                    PXPhysicsWrappers::CreateConvexMesh(mcc, true);
+                else
+                    PXPhysicsWrappers::CreateTriangleMesh(mcc, true);
+            }
+
+            UI::Property("Is Trigger", mcc.IsTrigger);
+            UI::EndPropertyGrid();
         });
     }
 

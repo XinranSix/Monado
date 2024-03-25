@@ -7,6 +7,7 @@
 #include "monado/renderer/texture.h"
 #include "monado/renderer/material.h"
 #include "monado/editor/editorCamera.h"
+#include "monado/renderer/sceneEnvironment.h"
 
 #include "sceneCamera.h"
 
@@ -14,19 +15,24 @@
 
 namespace Monado {
 
-    struct Environment {
-        std::string FilePath;
-        Ref<TextureCube> RadianceMap;
-        Ref<TextureCube> IrradianceMap;
-
-        static Environment Load(const std::string &filepath);
-    };
-
     struct Light {
         glm::vec3 Direction = { 0.0f, 0.0f, 0.0f };
         glm::vec3 Radiance = { 0.0f, 0.0f, 0.0f };
 
         float Multiplier = 1.0f;
+    };
+
+    struct DirectionalLight {
+        glm::vec3 Direction = { 0.0f, 0.0f, 0.0f };
+        glm::vec3 Radiance = { 0.0f, 0.0f, 0.0f };
+        float Multiplier = 0.0f;
+
+        // C++ only
+        bool CastShadows = true;
+    };
+
+    struct LightEnvironment {
+        DirectionalLight DirectionalLights[4];
     };
 
     class Entity;
@@ -50,7 +56,6 @@ namespace Monado {
 
         void SetViewportSize(uint32_t width, uint32_t height);
 
-        void SetEnvironment(const Environment &environment);
         const Environment &GetEnvironment() const { return m_Environment; }
         void SetSkybox(const Ref<TextureCube> &skybox);
 
@@ -100,7 +105,10 @@ namespace Monado {
         Light m_Light;
         float m_LightMultiplier = 0.3f;
 
+        LightEnvironment m_LightEnvironment;
+
         Environment m_Environment;
+        float m_EnvironmentIntensity = 1.0f;
         Ref<TextureCube> m_SkyboxTexture;
         Ref<MaterialInstance> m_SkyboxMaterial;
 

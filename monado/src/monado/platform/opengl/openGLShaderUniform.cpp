@@ -27,6 +27,7 @@ namespace Monado {
 
     uint32_t OpenGLShaderUniformDeclaration::SizeOfUniformType(Type type) {
         switch (type) {
+        case OpenGLShaderUniformDeclaration::Type::BOOL: return 1;
         case OpenGLShaderUniformDeclaration::Type::INT32: return 4;
         case OpenGLShaderUniformDeclaration::Type::FLOAT32: return 4;
         case OpenGLShaderUniformDeclaration::Type::VEC2: return 4 * 2;
@@ -41,6 +42,8 @@ namespace Monado {
     OpenGLShaderUniformDeclaration::Type OpenGLShaderUniformDeclaration::StringToType(const std::string &type) {
         if (type == "int")
             return Type::INT32;
+        if (type == "bool")
+            return Type::BOOL;
         if (type == "float")
             return Type::FLOAT32;
         if (type == "vec2")
@@ -60,6 +63,7 @@ namespace Monado {
     std::string OpenGLShaderUniformDeclaration::TypeToString(Type type) {
         switch (type) {
         case OpenGLShaderUniformDeclaration::Type::INT32: return "int32";
+        case OpenGLShaderUniformDeclaration::Type::BOOL: return "bool";
         case OpenGLShaderUniformDeclaration::Type::FLOAT32: return "float";
         case OpenGLShaderUniformDeclaration::Type::VEC2: return "vec2";
         case OpenGLShaderUniformDeclaration::Type::VEC3: return "vec3";

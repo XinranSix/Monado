@@ -73,7 +73,7 @@ namespace Monado {
             }
         }
 
-        virtual void write(const char *message) override { MND_CORE_ERROR("Assimp error: {0}", message); }
+        virtual void write(const char *message) override { MND_CORE_WARN("Assimp: {0}", message); }
     };
 
     Mesh::Mesh(const std::string &filename) : m_FilePath(filename) {
@@ -90,7 +90,7 @@ namespace Monado {
         m_Scene = scene;
 
         m_IsAnimated = scene->mAnimations != nullptr;
-        m_MeshShader = m_IsAnimated ? Renderer::GetShaderLibrary()->Get("MonadolPBR_Anim")
+        m_MeshShader = m_IsAnimated ? Renderer::GetShaderLibrary()->Get("MonadoPBR_Anim")
                                     : Renderer::GetShaderLibrary()->Get("MonadoPBR_Static");
         m_BaseMaterial = Ref<Material>::Create(m_MeshShader);
         // m_MaterialInstance = Ref<MaterialInstance>::Create(m_BaseMaterial);
@@ -108,9 +108,10 @@ namespace Monado {
             submesh.BaseIndex = indexCount;
             submesh.MaterialIndex = mesh->mMaterialIndex;
             submesh.IndexCount = mesh->mNumFaces * 3;
+            submesh.VertexCount = mesh->mNumVertices;
             submesh.MeshName = mesh->mName.C_Str();
 
-            vertexCount += mesh->mNumVertices;
+            vertexCount += submesh.VertexCount;
             indexCount += submesh.IndexCount;
 
             MND_CORE_ASSERT(mesh->HasPositions(), "Meshes require positions.");
