@@ -46,12 +46,6 @@ namespace Monado {
 
     Ref<PhysicsActor> Physics::CreateActor(Entity e) {
         MND_CORE_ASSERT(s_Scene);
-
-        if (!e.HasComponent<RigidBodyComponent>()) {
-            MND_CORE_WARN("Trying to create PhysX actor from a non-rigidbody actor!");
-            return nullptr;
-        }
-
         Ref<PhysicsActor> actor = Ref<PhysicsActor>::Create(e);
         s_Actors.push_back(actor);
         actor->Spawn();

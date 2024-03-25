@@ -10,7 +10,6 @@
 #include <glm/gtx/compatibility.hpp>
 
 namespace Monado {
-
     PhysicsActor::PhysicsActor(Entity entity)
         : m_Entity(entity), m_RigidBody(entity.GetComponent<RigidBodyComponent>()) {
         if (!m_Entity.HasComponent<PhysicsMaterialComponent>()) {
@@ -24,7 +23,12 @@ namespace Monado {
         Initialize();
     }
 
-    PhysicsActor::~PhysicsActor() { m_ActorInternal->release(); }
+    PhysicsActor::~PhysicsActor() {
+        if (m_ActorInternal && m_ActorInternal->isReleasable()) {
+            m_ActorInternal->release();
+            m_ActorInternal = nullptr;
+        }
+    }
 
     glm::vec3 PhysicsActor::GetPosition() { return FromPhysXVector(m_ActorInternal->getGlobalPose().p); }
 
@@ -226,4 +230,23 @@ namespace Monado {
             m_ActorInternal->setGlobalPose(ToPhysXTransform(m_Entity.Transform()));
         }
     }
+
+    void PhysicsActor::AddCollisionShape(physx::PxShape *shape) {
+        if (m_Shapes.find((int)shape->getGeometryType()) == m_Shapes.end()) {
+            m_Shapes[(int)shape->getGeometryType()] = std::vector<physx::PxShape *>();
+        }
+
+        m_Shapes[(int)shape->getGeometryType()].push_back(shape);
+    }
+
+    void PhysicsActor::RemoveCollisionsShapes(int type) {
+        if (m_Shapes.find(type) != m_Shapes.end()) {
+            for (auto shape : m_Shapes[type])
+                shape->release();
+
+            m_Shapes[type].clear();
+            m_Shapes.erase(type);
+        }
+    }
+
 } // namespace Monado

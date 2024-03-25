@@ -39,10 +39,11 @@ namespace Monado {
 
     glm::quat FromPhysXQuat(const physx::PxQuat &quat) { return *(glm::quat *)&quat; }
 
-    physx::PxFilterFlags MonadoFilterShader(physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
-                                           physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
-                                           physx::PxPairFlags &pairFlags, const void *constantBlock,
-                                           physx::PxU32 constantBlockSize) {
+    physx::PxFilterFlags MonadoFilterShader(physx::PxFilterObjectAttributes attributes0,
+                                            physx::PxFilterData filterData0,
+                                            physx::PxFilterObjectAttributes attributes1,
+                                            physx::PxFilterData filterData1, physx::PxPairFlags &pairFlags,
+                                            const void *constantBlock, physx::PxU32 constantBlockSize) {
         if (physx::PxFilterObjectIsTrigger(attributes0) || physx::PxFilterObjectIsTrigger(attributes1)) {
             pairFlags = physx::PxPairFlag::eTRIGGER_DEFAULT;
             return physx::PxFilterFlag::eDEFAULT;
@@ -68,7 +69,7 @@ namespace Monado {
         std::string dirName = p.filename().string().substr(0, lastDot);
 
         if (IsSerialized(filepath))
-            std::filesystem::remove(p.parent_path() / dirName);
+            std::filesystem::remove_all(p.parent_path() / dirName);
     }
 
     void PhysicsMeshSerializer::SerializeMesh(const std::string &filepath,

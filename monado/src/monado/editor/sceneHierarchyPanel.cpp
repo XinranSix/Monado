@@ -814,7 +814,7 @@ namespace Monado {
             UI::EndPropertyGrid();
         });
 
-        DrawComponent<MeshColliderComponent>("Mesh Collider", entity, [](MeshColliderComponent &mcc) {
+        DrawComponent<MeshColliderComponent>("Mesh Collider", entity, [=](MeshColliderComponent &mcc) {
             ImGui::Columns(3);
             ImGui::SetColumnWidth(0, 100);
             ImGui::SetColumnWidth(1, 300);

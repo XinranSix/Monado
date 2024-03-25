@@ -5,7 +5,8 @@
 
 namespace physx {
     class PxRigidActor;
-}
+    class PxShape;
+} // namespace physx
 
 namespace Monado {
 
@@ -43,6 +44,8 @@ namespace Monado {
         void Spawn();
         void Update(float fixedTimestep);
         void SynchronizeTransform();
+        void AddCollisionShape(physx::PxShape *shape);
+        void RemoveCollisionsShapes(int type);
 
     private:
         Entity m_Entity;
@@ -50,9 +53,11 @@ namespace Monado {
         PhysicsMaterialComponent m_Material;
 
         physx::PxRigidActor *m_ActorInternal;
+        std::unordered_map<int, std::vector<physx::PxShape *>> m_Shapes;
 
     private:
         friend class Physics;
         friend class PXPhysicsWrappers;
     };
+
 } // namespace Monado

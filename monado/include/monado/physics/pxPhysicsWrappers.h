@@ -43,8 +43,8 @@ namespace Monado {
 
         static std::vector<physx::PxTriangleMesh *> CreateTriangleMesh(MeshColliderComponent &collider,
                                                                        bool invalidateOld = false);
-        static std::vector<physx::PxConvexMesh *> CreateConvexMesh(MeshColliderComponent &collider,
-                                                                   bool invalidateOld = false);
+        static std::vector<physx::PxConvexMesh *>
+        CreateConvexMesh(MeshColliderComponent &collider, bool invalidateOld = false, bool *rotatedX = nullptr);
 
         static bool Raycast(const glm::vec3 &origin, const glm::vec3 &direction, float maxDistance, RaycastHit *hit);
         static bool OverlapBox(const glm::vec3 &origin, const glm::vec3 &halfSize,
