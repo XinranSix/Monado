@@ -6,6 +6,8 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/fmt/ostr.h"
 
+#include "glm/glm.hpp"
+
 namespace Monado {
 
     class Log {
@@ -21,6 +23,16 @@ namespace Monado {
     };
 
 } // namespace Monado
+
+template <typename OStream>
+OStream &operator<<(OStream &os, const glm::vec3 &vec) {
+    return os << '(' << vec.x << ", " << vec.y << ", " << vec.z << ')';
+}
+
+template <typename OStream>
+OStream &operator<<(OStream &os, const glm::vec4 &vec) {
+    return os << '(' << vec.x << ", " << vec.y << ", " << vec.z << ", " << vec.w << ')';
+}
 
 // Core Logging Macros
 #define MND_CORE_TRACE(...) Monado::Log::GetCoreLogger()->trace(__VA_ARGS__)

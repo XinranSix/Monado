@@ -2,6 +2,7 @@
 
 #include "monado/core/base.h"
 #include "monado/scene/entity.h"
+#include "monado/core/timeStep.h"
 
 namespace Monado {
 
@@ -14,8 +15,32 @@ namespace Monado {
         All = Static | Dynamic | Kinematic
     };
 
-    struct SceneParams {
+    enum class BroadphaseType {
+        SweepAndPrune,
+        MultiBoxPrune,
+        AutomaticBoxPrune
+        // TODO: GPU?
+    };
+
+    enum class FrictionType { Patch, OneDirectional, TwoDirectional };
+
+    struct PhysicsSettings {
+        float FixedTimestep = 0.02F;
         glm::vec3 Gravity = { 0.0F, -9.81F, 0.0F };
+        BroadphaseType BroadphaseAlgorithm = BroadphaseType::AutomaticBoxPrune;
+        glm::vec3 WorldBoundsMin = glm::vec3(0.0F);
+        glm::vec3 WorldBoundsMax = glm::vec3(1.0F);
+        uint32_t WorldBoundsSubdivisions = 2;
+        FrictionType FrictionModel = FrictionType::Patch;
+        uint32_t SolverIterations = 6;
+        uint32_t SolverVelocityIterations = 1;
+    };
+
+    struct RaycastHit {
+        uint64_t EntityID;
+        glm::vec3 Position;
+        glm::vec3 Normal;
+        float Distance;
     };
 
     class Physics {
@@ -23,15 +48,19 @@ namespace Monado {
         static void Init();
         static void Shutdown();
 
-        static void CreateScene(const SceneParams &params);
-        static void CreateActor(Entity e, int entityCount);
+        static void ExpandEntityBuffer(uint32_t entityCount);
 
-        static void Simulate();
+        static void CreateScene();
+        static void CreateActor(Entity e);
+
+        static void Simulate(Timestep ts);
 
         static void DestroyScene();
 
-        static void ConnectVisualDebugger();
-        static void DisconnectVisualDebugger();
+        static void *GetPhysicsScene();
+
+    public:
+        static PhysicsSettings &GetSettings();
     };
 
 } // namespace Monado

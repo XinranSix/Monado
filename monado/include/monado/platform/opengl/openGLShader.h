@@ -10,6 +10,7 @@
 // clang-format on
 
 namespace Monado {
+
     class OpenGLShader : public Shader {
     public:
         OpenGLShader() = default;
@@ -27,8 +28,10 @@ namespace Monado {
         virtual void SetVSMaterialUniformBuffer(Buffer buffer) override;
         virtual void SetPSMaterialUniformBuffer(Buffer buffer) override;
 
-        virtual void SetFloat(const std::string &name, float value) override;
         virtual void SetInt(const std::string &name, int value) override;
+        virtual void SetBool(const std::string &name, bool value) override;
+        virtual void SetFloat(const std::string &name, float value) override;
+        virtual void SetFloat2(const std::string &name, const glm::vec2 &value) override;
         virtual void SetFloat3(const std::string &name, const glm::vec3 &value) override;
         virtual void SetMat4(const std::string &name, const glm::mat4 &value) override;
         virtual void SetMat4FromRenderThread(const std::string &name, const glm::mat4 &value,

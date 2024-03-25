@@ -55,7 +55,9 @@ namespace Monado {
         void ShowBoundingBoxes(bool show, bool onTop = false);
         void SelectEntity(Entity entity);
 
+        void NewScene();
         void OpenScene();
+        void OpenScene(const std::string &filepath);
         void SaveScene();
         void SaveSceneAs();
 
@@ -150,6 +152,8 @@ namespace Monado {
 
         bool m_ViewportPanelMouseOver = false;
         bool m_ViewportPanelFocused = false;
+
+        bool m_ShowPhysicsSettings = false;
 
         enum class SceneState { Edit = 0, Play = 1, Pause = 2 };
         SceneState m_SceneState = SceneState::Edit;

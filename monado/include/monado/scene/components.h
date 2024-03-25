@@ -1,11 +1,16 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtx/quaternion.hpp"
 
 #include "monado/renderer/texture.h"
 #include "monado/renderer/mesh.h"
 #include "sceneCamera.h"
 #include "monado/core/uuid.h"
+#include "monado/renderer/sceneEnvironment.h"
+#include "monado/scene/sceneCamera.h"
 
 namespace Monado {
 
@@ -25,14 +30,18 @@ namespace Monado {
     };
 
     struct TransformComponent {
-        glm::mat4 Transform;
+        glm::vec3 Translation = { 0.0F, 0.0F, 0.0F };
+        glm::vec3 Rotation = { 0.0F, 0.0F, 0.0F };
+        glm::vec3 Scale = { 0.0F, 0.0F, 0.0F };
 
         TransformComponent() = default;
         TransformComponent(const TransformComponent &other) = default;
-        TransformComponent(const glm::mat4 &transform) : Transform(transform) {}
+        TransformComponent(const glm::vec3 &translation) : Translation(translation) {}
 
-        operator glm::mat4 &() { return Transform; }
-        operator const glm::mat4 &() const { return Transform; }
+        glm::mat4 GetTransform() const {
+            return glm::translate(glm::mat4(1.0F), Translation) * glm::toMat4(glm::quat(Rotation)) *
+                   glm::scale(glm::mat4(1.0F), Scale);
+        }
     };
 
     struct MeshComponent {
@@ -118,6 +127,7 @@ namespace Monado {
         Type BodyType;
         float Mass = 1.0F;
         bool IsKinematic = false;
+        uint32_t Layer = 0;
 
         bool LockPositionX = false;
         bool LockPositionY = false;
@@ -127,6 +137,7 @@ namespace Monado {
         bool LockRotationZ = false;
 
         void *RuntimeActor = nullptr;
+        int32_t EntityBufferIndex = -1;
 
         RigidBodyComponent() = default;
         RigidBodyComponent(const RigidBodyComponent &other) = default;
@@ -179,7 +190,8 @@ namespace Monado {
 
     struct MeshColliderComponent {
         Ref<Monado::Mesh> CollisionMesh;
-        Ref<Monado::Mesh> ProcessedMesh;
+        std::vector<Ref<Monado::Mesh>> ProcessedMeshes;
+        bool IsConvex = false;
         bool IsTrigger = false;
 
         MeshColliderComponent() = default;
@@ -187,6 +199,22 @@ namespace Monado {
         MeshColliderComponent(const Ref<Monado::Mesh> &mesh) : CollisionMesh(mesh) {}
 
         operator Ref<Monado::Mesh>() { return CollisionMesh; }
+    };
+
+    enum class LightType { None = 0, Directional = 1, Point = 2, Spot = 3 };
+
+    struct DirectionalLightComponent {
+        glm::vec3 Radiance = { 1.0f, 1.0f, 1.0f };
+        float Intensity = 1.0f;
+        bool CastShadows = true;
+        bool SoftShadows = true;
+        float LightSize = 0.5f; // For PCSS
+    };
+
+    struct SkyLightComponent {
+        Environment SceneEnvironment;
+        float Intensity = 1.0f;
+        float Angle = 0.0f;
     };
 
 } // namespace Monado

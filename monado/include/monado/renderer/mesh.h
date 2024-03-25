@@ -108,6 +108,7 @@ namespace Monado {
         uint32_t BaseIndex;
         uint32_t MaterialIndex;
         uint32_t IndexCount;
+        uint32_t VertexCount;
 
         glm::mat4 Transform;
         AABB BoundingBox;
@@ -135,6 +136,8 @@ namespace Monado {
         std::vector<Ref<MaterialInstance>> GetMaterials() { return m_Materials; }
         const std::vector<Ref<Texture2D>> &GetTextures() const { return m_Textures; }
         const std::string &GetFilePath() const { return m_FilePath; }
+
+        bool IsAnimated() const { return m_IsAnimated; }
 
         const std::vector<Triangle> GetTriangleCache(uint32_t index) const { return m_TriangleCache.at(index); }
 

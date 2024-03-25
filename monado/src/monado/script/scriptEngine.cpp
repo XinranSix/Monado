@@ -14,7 +14,6 @@
 
 #include <iostream>
 #include <chrono>
-#include <thread>
 
 #include <Windows.h>
 #include <winioctl.h>
@@ -45,6 +44,7 @@ namespace Monado {
         MonoMethod *OnCreateMethod = nullptr;
         MonoMethod *OnDestroyMethod = nullptr;
         MonoMethod *OnUpdateMethod = nullptr;
+        MonoMethod *OnPhysicsUpdateMethod = nullptr;
 
         // Physics
         MonoMethod *OnCollisionBeginMethod = nullptr;
@@ -58,6 +58,7 @@ namespace Monado {
             Constructor = GetMethod(s_CoreAssemblyImage, "Monado.Entity:.ctor(ulong)");
             OnCreateMethod = GetMethod(image, FullName + ":OnCreate()");
             OnUpdateMethod = GetMethod(image, FullName + ":OnUpdate(single)");
+            OnPhysicsUpdateMethod = GetMethod(image, FullName + ":OnPhysicsUpdate(single)");
 
             // Physics (Entity class)
             OnCollisionBeginMethod = GetMethod(s_CoreAssemblyImage, "Monado.Entity:OnCollisionBegin(single)");
@@ -120,7 +121,7 @@ namespace Monado {
     }
 
     static void InitMono() {
-        mono_set_assemblies_path("monado/assets/assets/mono/lib");
+        mono_set_assemblies_path("monado/assets/mono/lib");
         // mono_jit_set_trace_options("--verbose");
         auto domain = mono_jit_init("Monado");
 
@@ -320,6 +321,14 @@ namespace Monado {
         }
     }
 
+    void ScriptEngine::OnPhysicsUpdateEntity(Entity entity, float fixedTimeStep) {
+        EntityInstance &entityInstance = GetEntityInstanceData(entity.GetSceneUUID(), entity.GetUUID()).Instance;
+        if (entityInstance.ScriptClass->OnPhysicsUpdateMethod) {
+            void *args[] = { &fixedTimeStep };
+            CallMethod(entityInstance.GetInstance(), entityInstance.ScriptClass->OnPhysicsUpdateMethod, args);
+        }
+    }
+
     void ScriptEngine::OnCollision2DBegin(Entity entity) {
         EntityInstance &entityInstance = GetEntityInstanceData(entity.GetSceneUUID(), entity.GetUUID()).Instance;
         if (entityInstance.ScriptClass->OnCollision2DBeginMethod) {
@@ -372,6 +381,58 @@ namespace Monado {
             void *args[] = { &value };
             CallMethod(entityInstance.GetInstance(), entityInstance.ScriptClass->OnTriggerEndMethod, args);
         }
+    }
+
+    MonoObject *ScriptEngine::Construct(const std::string &fullName, bool callConstructor, void **parameters) {
+        std::string namespaceName;
+        std::string className;
+        std::string parameterList;
+
+        if (fullName.find(".") != std::string::npos) {
+            namespaceName = fullName.substr(0, fullName.find_first_of('.'));
+            className = fullName.substr(fullName.find_first_of('.') + 1,
+                                        (fullName.find_first_of(':') - fullName.find_first_of('.')) - 1);
+        }
+
+        if (fullName.find(":") != std::string::npos) {
+            parameterList = fullName.substr(fullName.find_first_of(':'));
+        }
+
+        MonoClass *clazz = mono_class_from_name(s_CoreAssemblyImage, namespaceName.c_str(), className.c_str());
+        MonoObject *obj = mono_object_new(mono_domain_get(), clazz);
+
+        if (callConstructor) {
+            MonoMethodDesc *desc = mono_method_desc_new(parameterList.c_str(), NULL);
+            MonoMethod *constructor = mono_method_desc_search_in_class(desc, clazz);
+            MonoObject *exception = nullptr;
+            mono_runtime_invoke(constructor, obj, parameters, &exception);
+        }
+
+        return obj;
+    }
+
+    static std::unordered_map<std::string, MonoClass *> s_Classes;
+    MonoClass *ScriptEngine::GetCoreClass(const std::string &fullName) {
+        if (s_Classes.find(fullName) != s_Classes.end())
+            return s_Classes[fullName];
+
+        std::string namespaceName = "";
+        std::string className;
+
+        if (fullName.find('.') != std::string::npos) {
+            namespaceName = fullName.substr(0, fullName.find_last_of('.'));
+            className = fullName.substr(fullName.find_last_of('.') + 1);
+        } else {
+            className = fullName;
+        }
+
+        MonoClass *monoClass = mono_class_from_name(s_CoreAssemblyImage, namespaceName.c_str(), className.c_str());
+        if (!monoClass)
+            std::cout << "mono_class_from_name failed" << std::endl;
+
+        s_Classes[fullName] = monoClass;
+
+        return monoClass;
     }
 
     bool ScriptEngine::IsEntityModuleValid(Entity entity) {

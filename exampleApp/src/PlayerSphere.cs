@@ -63,17 +63,17 @@ namespace Example
             }
 
 			if (Input.IsKeyPressed(KeyCode.W))
-				m_PhysicsBody.AddForce(m_Transform.Forward * movementForce);
+				m_PhysicsBody.AddForce(m_Transform.Transform.Forward * movementForce);
 			else if (Input.IsKeyPressed(KeyCode.S))
-				m_PhysicsBody.AddForce(m_Transform.Forward * -movementForce);
+				m_PhysicsBody.AddForce(m_Transform.Transform.Forward * -movementForce);
 
 			if (Input.IsKeyPressed(KeyCode.D))
-				m_PhysicsBody.AddForce(m_Transform.Right * movementForce);
+				m_PhysicsBody.AddForce(m_Transform.Transform.Right * movementForce);
 			else if (Input.IsKeyPressed(KeyCode.A))
-				m_PhysicsBody.AddForce(m_Transform.Right * -movementForce);
+				m_PhysicsBody.AddForce(m_Transform.Transform.Right * -movementForce);
 
 			if (Colliding && Input.IsKeyPressed(KeyCode.Space))
-                m_PhysicsBody.AddForce(m_Transform.Up * JumpForce);
+                m_PhysicsBody.AddForce(m_Transform.Transform.Up * JumpForce);
 
             if (Colliding)
                 m_MeshMaterial.Set("u_AlbedoColor", new Vector3(1.0f, 0.0f, 0.0f));
@@ -84,12 +84,12 @@ namespace Example
             linearVelocity.Clamp(new Vector3(-MaxSpeed.X, -1000, -MaxSpeed.Z), MaxSpeed);
             m_PhysicsBody.SetLinearVelocity(linearVelocity);
 
-            if (Input.IsKeyPressed(KeyCode.R))
+            /*if (Input.IsKeyPressed(KeyCode.R))
             {
                 Matrix4 transform = GetTransform();
                 transform.Translation = new Vector3(0.0f);
                 SetTransform(transform);
-            }
+            }*/
 
         }
 

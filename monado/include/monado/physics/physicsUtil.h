@@ -1,15 +1,16 @@
 #pragma once
 
+#include <string>
+
 #include "PxPhysicsAPI.h"
-#include "glm/glm.hpp"
-#define GLM_ENABLE_EXPERIMENTAL
-#include "glm/gtx/quaternion.hpp"
-#include "glm/gtx/matrix_decompose.hpp"
+#include "monado/scene/components.h"
+
 #include "glm/gtc/type_ptr.hpp"
 
 namespace Monado {
 
-    physx::PxTransform ToPhysXTransform(const glm::mat4 &matrix);
+    physx::PxTransform ToPhysXTransform(const TransformComponent &transform);
+    physx::PxTransform ToPhysXTransform(const glm::mat4 &transform);
     physx::PxMat44 ToPhysXMatrix(const glm::mat4 &matrix);
     physx::PxVec3 ToPhysXVector(const glm::vec3 &vector);
     physx::PxVec4 ToPhysXVector(const glm::vec4 &vector);
@@ -26,16 +27,14 @@ namespace Monado {
                                            physx::PxPairFlags &pairFlags, const void *constantBlock,
                                            physx::PxU32 constantBlockSize);
 
-    class ContactListener : public physx::PxSimulationEventCallback {
+    class PhysicsMeshSerializer {
     public:
-        virtual void onConstraintBreak(physx::PxConstraintInfo *constraints, physx::PxU32 count) override;
-        virtual void onWake(physx::PxActor **actors, physx::PxU32 count) override;
-        virtual void onSleep(physx::PxActor **actors, physx::PxU32 count) override;
-        virtual void onContact(const physx::PxContactPairHeader &pairHeader, const physx::PxContactPair *pairs,
-                               physx::PxU32 nbPairs) override;
-        virtual void onTrigger(physx::PxTriggerPair *pairs, physx::PxU32 count) override;
-        virtual void onAdvance(const physx::PxRigidBody *const *bodyBuffer, const physx::PxTransform *poseBuffer,
-                               const physx::PxU32 count) override;
+        static void DeleteIfSerialized(const std::string &filepath);
+        static void SerializeMesh(const std::string &filepath, const physx::PxDefaultMemoryOutputStream &data,
+                                  const std::string &submeshName = "");
+        static bool IsSerialized(const std::string &filepath);
+        static std::vector<physx::PxDefaultMemoryInputData> DeserializeMesh(const std::string &filepath);
+        static void CleanupDataBuffers();
     };
 
 } // namespace Monado

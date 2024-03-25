@@ -27,10 +27,12 @@ namespace Monado {
         virtual void SetVSync(bool enabled) override;
         virtual bool IsVSync() const override;
 
+        virtual void Maximize() override;
+
         virtual const std::string &GetTitle() const override { return m_Data.Title; }
         virtual void SetTitle(const std::string &title) override;
 
-        inline void *GetNativeWindow() const { return m_Window; }
+        inline void *GetNativeWindow() const override { return m_Window; }
 
     private:
         virtual void Init(const WindowProps &props);
