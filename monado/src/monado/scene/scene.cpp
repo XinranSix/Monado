@@ -7,6 +7,7 @@
 
 #include "monado/renderer/renderer2D.h"
 #include "monado/physics/physics.h"
+#include "monado/physics/physicsActor.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/quaternion.hpp"

@@ -310,6 +310,9 @@ namespace Monado {
             auto &rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
             out << YAML::Key << "BodyType" << YAML::Value << (int)rigidbodyComponent.BodyType;
             out << YAML::Key << "Mass" << YAML::Value << rigidbodyComponent.Mass;
+            out << YAML::Key << "LinearDrag" << YAML::Value << rigidbodyComponent.LinearDrag;
+            out << YAML::Key << "AngularDrag" << YAML::Value << rigidbodyComponent.AngularDrag;
+            out << YAML::Key << "DisableGravity" << YAML::Value << rigidbodyComponent.DisableGravity;
             out << YAML::Key << "IsKinematic" << YAML::Value << rigidbodyComponent.IsKinematic;
             out << YAML::Key << "Layer" << YAML::Value << rigidbodyComponent.Layer;
 
@@ -506,9 +509,9 @@ namespace Monado {
 
                     MND_CORE_INFO("  Entity Transform:");
                     MND_CORE_INFO("    Translation: {0}, {1}, {2}", transform.Translation.x, transform.Translation.y,
-                                 transform.Translation.z);
+                                  transform.Translation.z);
                     MND_CORE_INFO("    Rotation: {0}, {1}, {2}", transform.Rotation.x, transform.Rotation.y,
-                                 transform.Rotation.z);
+                                  transform.Rotation.z);
                     MND_CORE_INFO("    Scale: {0}, {1}, {2}", transform.Scale.x, transform.Scale.y, transform.Scale.z);
                 }
 
@@ -647,21 +650,24 @@ namespace Monado {
                 }
 
                 auto rigidBodyComponent = entity["RigidBodyComponent"];
-                if (rigidBodyComponent) {
-                    auto &component = deserializedEntity.AddComponent<RigidBodyComponent>();
-                    component.BodyType = (RigidBodyComponent::Type)rigidBodyComponent["BodyType"].as<int>();
-                    component.Mass = rigidBodyComponent["Mass"].as<float>();
-                    component.IsKinematic =
-                        rigidBodyComponent["IsKinematic"] ? rigidBodyComponent["IsKinematic"].as<bool>() : false;
-                    component.Layer = rigidBodyComponent["Layer"] ? rigidBodyComponent["Layer"].as<uint32_t>() : 0;
+               if (rigidBodyComponent)
+				{
+					auto& component = deserializedEntity.AddComponent<RigidBodyComponent>();
+					component.BodyType = (RigidBodyComponent::Type)rigidBodyComponent["BodyType"].as<int>();
+					component.Mass = rigidBodyComponent["Mass"].as<float>();
+					component.LinearDrag = rigidBodyComponent["LinearDrag"] ? rigidBodyComponent["LinearDrag"].as<float>() : 0.0F;
+					component.AngularDrag = rigidBodyComponent["AngularDrag"] ? rigidBodyComponent["AngularDrag"].as<float>() : 0.05F;
+					component.DisableGravity = rigidBodyComponent["DisableGravity"] ? rigidBodyComponent["DisableGravity"].as<bool>() : false;
+					component.IsKinematic = rigidBodyComponent["IsKinematic"] ? rigidBodyComponent["IsKinematic"].as<bool>() : false;
+					component.Layer = rigidBodyComponent["Layer"] ? rigidBodyComponent["Layer"].as<uint32_t>() : 0;
 
-                    component.LockPositionX = rigidBodyComponent["Constraints"]["LockPositionX"].as<bool>();
-                    component.LockPositionY = rigidBodyComponent["Constraints"]["LockPositionY"].as<bool>();
-                    component.LockPositionZ = rigidBodyComponent["Constraints"]["LockPositionZ"].as<bool>();
-                    component.LockRotationX = rigidBodyComponent["Constraints"]["LockRotationX"].as<bool>();
-                    component.LockRotationY = rigidBodyComponent["Constraints"]["LockRotationY"].as<bool>();
-                    component.LockRotationZ = rigidBodyComponent["Constraints"]["LockRotationZ"].as<bool>();
-                }
+					component.LockPositionX = rigidBodyComponent["Constraints"]["LockPositionX"].as<bool>();
+					component.LockPositionY = rigidBodyComponent["Constraints"]["LockPositionY"].as<bool>();
+					component.LockPositionZ = rigidBodyComponent["Constraints"]["LockPositionZ"].as<bool>();
+					component.LockRotationX = rigidBodyComponent["Constraints"]["LockRotationX"].as<bool>();
+					component.LockRotationY = rigidBodyComponent["Constraints"]["LockRotationY"].as<bool>();
+					component.LockRotationZ = rigidBodyComponent["Constraints"]["LockRotationZ"].as<bool>();
+				}
 
                 auto physicsMaterialComponent = entity["PhysicsMaterialComponent"];
                 if (physicsMaterialComponent) {
