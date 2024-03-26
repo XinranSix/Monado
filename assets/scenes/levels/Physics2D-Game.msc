@@ -1,6 +1,6 @@
 Scene: Scene Name
 Environment:
-  AssetPath: alvis\assets\env\pink_sunrise_4k.hdr
+  AssetPath: assets\env\pink_sunrise_4k.hdr
   Light:
     Direction: [-0.787, -0.73299998, 1]
     Radiance: [1, 1, 1]
@@ -26,7 +26,7 @@ Entities:
       Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
     SkyLightComponent:
-      EnvironmentAssetPath: alvis\assets\env\pink_sunrise_4k.hdr
+      EnvironmentAssetPath: assets\env\pink_sunrise_4k.hdr
       Intensity: 1
       Angle: 0
   - Entity: 2842299641876190180
@@ -37,7 +37,7 @@ Entities:
       Rotation: [0, -0, 0]
       Scale: [3.00000024, 0.300000012, 1]
     MeshComponent:
-      AssetPath: alvis\assets\meshes\Cube1m.fbx
+      AssetPath: assets\meshes\Cube1m.fbx
     RigidBody2DComponent:
       BodyType: 0
       FixedRotation: false
@@ -54,7 +54,7 @@ Entities:
       Rotation: [0, -0, 0]
       Scale: [3.00000024, 0.300000012, 1]
     MeshComponent:
-      AssetPath: alvis\assets\meshes\Cube1m.fbx
+      AssetPath: assets\meshes\Cube1m.fbx
     RigidBody2DComponent:
       BodyType: 0
       FixedRotation: false
@@ -71,7 +71,7 @@ Entities:
       Rotation: [0, 0, -0.421410441]
       Scale: [4.47999668, 4.47999668, 4.48000002]
     MeshComponent:
-      AssetPath: alvis\assets\meshes\Cube1m.fbx
+      AssetPath: assets\meshes\Cube1m.fbx
     RigidBody2DComponent:
       BodyType: 1
       FixedRotation: false
@@ -88,7 +88,7 @@ Entities:
       Rotation: [0, -0, 1.57079637]
       Scale: [58.4178085, 4.47997999, 4.48000002]
     MeshComponent:
-      AssetPath: alvis\assets\meshes\Cube1m.fbx
+      AssetPath: assets\meshes\Cube1m.fbx
     RigidBody2DComponent:
       BodyType: 0
       FixedRotation: false
@@ -117,7 +117,7 @@ Entities:
           Type: 1
           Data: 3
     MeshComponent:
-      AssetPath: alvis\assets\meshes\Sphere1m.fbx
+      AssetPath: assets\meshes\Sphere1m.fbx
     RigidBody2DComponent:
       BodyType: 1
       FixedRotation: false
@@ -134,7 +134,7 @@ Entities:
       Rotation: [0, -0, 0]
       Scale: [1200, 1, 5]
     MeshComponent:
-      AssetPath: alvis\assets\meshes\Cube1m.fbx
+      AssetPath: assets\meshes\Cube1m.fbx
     RigidBody2DComponent:
       BodyType: 0
       FixedRotation: false
@@ -177,7 +177,7 @@ Entities:
       Rotation: [0, -0, 0]
       Scale: [3.00000024, 0.300000012, 1]
     MeshComponent:
-      AssetPath: alvis\assets\meshes\Cube1m.fbx
+      AssetPath: assets\meshes\Cube1m.fbx
     RigidBody2DComponent:
       BodyType: 0
       FixedRotation: false

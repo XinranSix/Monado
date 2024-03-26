@@ -5,6 +5,7 @@
 #include "monado/renderer/framebuffer.h"
 #include "monado/script/scriptEngine.h"
 #include "monado/physics/physics.h"
+#include "monado/utilities/assetManager.h"
 
 // clang-format off
 #include "glad/glad.h"
@@ -40,6 +41,9 @@ namespace Monado {
 
         Renderer::Init();
         Renderer::WaitAndRender();
+
+        AssetTypes::Init();
+        AssetManager::Init();
     }
 
     Application::~Application() {

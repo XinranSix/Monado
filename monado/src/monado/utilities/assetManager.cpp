@@ -1,5 +1,6 @@
 #include "monado/utilities/assetManager.h"
 #include "monado/core/log.h"
+#include "monado/renderer/mesh.h"
 
 #include <filesystem>
 #include <fstream>
@@ -10,8 +11,9 @@ namespace Monado {
         s_Types["msc"] = AssetType::Scene;
         s_Types["fbx"] = AssetType::Mesh;
         s_Types["obj"] = AssetType::Mesh;
-        s_Types["png"] = AssetType::Image;
         s_Types["blend"] = AssetType::Mesh;
+        s_Types["png"] = AssetType::Texture;
+        s_Types["hdr"] = AssetType::EnvMap;
         s_Types["wav"] = AssetType::Audio;
         s_Types["ogg"] = AssetType::Audio;
         s_Types["cs"] = AssetType::Script;
@@ -31,8 +33,6 @@ namespace Monado {
     }
 
     std::map<std::string, AssetType> AssetTypes::s_Types;
-
-    AssetManager::AssetManager() {}
 
     std::string AssetManager::ParseFilename(const std::string &filepath, const char &delim) {
         std::vector<std::string> out;
@@ -60,15 +60,29 @@ namespace Monado {
         return out[out.size() - 1];
     }
 
-    void AssetManager::HandleAsset(const std::string &filepath) {}
+    void AssetManager::Init() {
+        FileSystemWatcher::SetChangeCallback(AssetManager::OnFileSystemChanged);
+        ReloadAssets();
+    }
 
-    void AssetManager::ProcessAsset(const std::string &assetType) {
-        std::string filename = ParseFilename(assetType, '/\\');
-        std::string filetype = ParseFileType(assetType);
+    void AssetManager::SetAssetChangeCallback(const AssetsChangeEventFn &callback) {
+        s_AssetsChangeCallback = callback;
+    }
 
-        if (filetype == "blend") {
-            ConvertAsset(assetType, "fbx");
+    DirectoryInfo &AssetManager::GetDirectoryInfo(int index) {
+        MND_CORE_ASSERT(index >= 0 && index < s_Directories.size());
+        return s_Directories[index];
+    }
+
+    std::vector<Asset> AssetManager::GetAssetsInDirectory(int dirIndex) {
+        std::vector<Asset> results;
+
+        for (auto &asset : s_LoadedAssets) {
+            if (asset.second.ParentDirectory == dirIndex)
+                results.push_back(asset.second);
         }
+
+        return results;
     }
 
     void AssetManager::ConvertAsset(const std::string &assetPath, const std::string &conversionType) {
@@ -112,62 +126,68 @@ namespace Monado {
         system(convCommand.c_str());
     }
 
-    std::vector<DirectoryInfo> AssetManager::GetFileSystemContents() {
-        std::string path = "assets";
-        std::vector<DirectoryInfo> directories;
+    void AssetManager::OnFileSystemChanged(FileSystemChangedEvent e) {
+        e.NewName = RemoveExtension(e.NewName);
+        e.OldName = RemoveExtension(e.OldName);
 
-        for (const auto &entry : std::filesystem::directory_iterator(path)) {
-            bool isDir = std::filesystem::is_directory(entry);
-
-            std::string dir_data = ParseFilename(entry.path().string(), '/\\');
-            std::string fileExt = ParseFileType(dir_data);
-            directories.emplace_back(dir_data, fileExt, entry.path().string(), !isDir);
+        if (e.Action == FileSystemAction::Added) {
+            if (!e.IsDirectory)
+                ImportAsset(e.Filepath);
         }
 
-        return directories;
-    }
+        if (e.Action == FileSystemAction::Modified) {
+            if (!e.IsDirectory)
+                ImportAsset(e.Filepath, true);
+        }
 
-    std::vector<DirectoryInfo> AssetManager::GetDirectoryContents(const std::string &filepath, bool recursive) {
-        std::vector<DirectoryInfo> directories;
-
-        if (recursive) {
-            for (const auto &entry : std::filesystem::recursive_directory_iterator(filepath)) {
-                bool isDir = std::filesystem::is_directory(entry);
-                std::string dir_data = ParseFilename(entry.path().string(), '/\\');
-                directories.emplace_back(dir_data, ".monado", entry.path().string(), !isDir);
-            }
-        } else {
-            for (const auto &entry : std::filesystem::directory_iterator(filepath)) {
-                bool isDir = std::filesystem::is_directory(entry);
-                std::string dir_data = ParseFilename(entry.path().string(), '/\\');
-                std::string fileExt = ParseFileType(dir_data);
-                directories.emplace_back(dir_data, fileExt, entry.path().string(), !isDir);
+        if (e.Action == FileSystemAction::Rename) {
+            for (auto &kv : s_LoadedAssets) {
+                if (kv.second.FileName == e.OldName)
+                    kv.second.FileName = e.NewName;
             }
         }
 
-        return directories;
+        if (e.Action == FileSystemAction::Delete) {
+            /*for (auto it = m_LoadedAssets.begin(); it != m_LoadedAssets.end(); it++)
+            {
+                    if (it->Filename != e.NewName)
+                            continue;
+
+                    m_LoadedAssets.erase(it);
+                    break;
+            }*/
+        }
+
+        s_AssetsChangeCallback();
     }
 
-    std::vector<DirectoryInfo> AssetManager::SearchFiles(const std::string &query, const std::string &searchPath) {
-        std::vector<DirectoryInfo> result;
+    SearchResults AssetManager::SearchFiles(const std::string &query, const std::string &searchPath) {
+        SearchResults results;
 
         if (!searchPath.empty()) {
-            std::vector<DirectoryInfo> contents = GetDirectoryContents(searchPath, true);
+            for (const auto &dir : s_Directories) {
+                if (dir.DirectoryName.find(query) != std::string::npos &&
+                    dir.Filepath.find(searchPath) != std::string::npos) {
+                    results.Directories.push_back(dir);
+                }
+            }
 
-            for (auto &entry : contents) {
-                if (entry.Filename.find(query) != std::string::npos)
-                    result.emplace_back(std::move(entry));
+            for (const auto &[key, asset] : s_LoadedAssets) {
+                if (asset.FileName.find(query) != std::string::npos &&
+                    asset.FilePath.find(searchPath) != std::string::npos) {
+                    results.Assets.push_back(asset);
+                }
             }
         }
 
-        return result;
+        return results;
     }
 
     std::string AssetManager::GetParentPath(const std::string &path) {
         return std::filesystem::path(path).parent_path().string();
     }
 
-    std::vector<std::string> AssetManager::GetDirectories(const std::string &filepath) {
+    std::vector<std::string> AssetManager::GetDirectoryNames(const std::string &filepath) {
         std::vector<std::string> result;
         size_t start;
         size_t end = 0;
@@ -180,11 +200,18 @@ namespace Monado {
         return result;
     }
 
-#undef MoveFile
     bool AssetManager::MoveFile(const std::string &originalPath, const std::string &dest) {
         std::filesystem::rename(originalPath, dest);
         std::string newPath = dest + "/" + ParseFilename(originalPath, '/\\');
         return std::filesystem::exists(newPath);
+    }
+
+    std::string AssetManager::RemoveExtension(const std::string &filename) {
+        std::string newName;
+        size_t end = filename.find_last_of('.');
+
+        newName = filename.substr(0, end);
+        return newName;
     }
 
     std::string AssetManager::StripExtras(const std::string &filename) {
@@ -216,5 +243,95 @@ namespace Monado {
         return newFileName;
     }
 
-    void AssetManager::ImportAsset(const std::string assetPath, const std::string &assetName) {}
+    void AssetManager::ImportAsset(const std::string &filepath, bool reimport, int parentIndex) {
+        Asset asset;
+        asset.ID = UUID();
+        asset.FilePath = filepath;
+        asset.FileName = ParseFilename(filepath, '/\\');
+        asset.Extension = ParseFileType(asset.FileName);
+        asset.Type = AssetTypes::GetAssetTypeFromExtension(asset.Extension);
+        asset.ParentDirectory = parentIndex;
+
+        switch (asset.Type) {
+        case AssetType::Scene: {
+            asset.Data = (void *)asset.FilePath.c_str();
+            break;
+        }
+        case AssetType::Mesh: {
+            if (asset.Extension == "blend")
+                break;
+
+            Ref<Mesh> mesh = Ref<Mesh>::Create(filepath);
+            // NOTE(Peter): Required to make sure that the asset doesn't get destroyed when Ref goes out of scope
+            mesh->IncRefCount();
+            asset.Data = mesh.Raw();
+            break;
+        }
+        case AssetType::Texture: {
+            Ref<Texture2D> texture = Texture2D::Create(filepath);
+            texture->IncRefCount();
+            asset.Data = texture.Raw();
+            break;
+        }
+        case AssetType::EnvMap: {
+            // TODO
+            /*Ref<TextureCube> texture = Ref<TextureCube>::Create(filepath);
+            texture->IncRefCount();
+            asset.Data = texture.Raw();*/
+            break;
+        }
+        case AssetType::Audio: {
+            break;
+        }
+        case AssetType::Script: {
+            asset.Data = &asset.FilePath;
+            break;
+        }
+        case AssetType::Other: {
+            asset.Data = &asset.FilePath;
+            break;
+        }
+        }
+
+        if (reimport) {
+            for (auto it = s_LoadedAssets.begin(); it != s_LoadedAssets.end(); it++) {
+                if (it->second.FilePath == filepath) {
+                    delete it->second.Data;
+                    it->second.Data = asset.Data;
+                    asset.Data = nullptr;
+                    return;
+                }
+            }
+        }
+
+        s_LoadedAssets[asset.ID] = asset;
+    }
+
+    int AssetManager::ProcessDirectory(const std::string &directoryPath, int parentIndex) {
+        DirectoryInfo dirInfo;
+        dirInfo.DirectoryName = std::filesystem::path(directoryPath).filename().string();
+        dirInfo.ParentIndex = parentIndex;
+        dirInfo.Filepath = directoryPath;
+        s_Directories.push_back(dirInfo);
+        int currentIndex = s_Directories.size() - 1;
+        s_Directories[currentIndex].DirectoryIndex = currentIndex;
+
+        for (auto entry : std::filesystem::directory_iterator(directoryPath)) {
+            if (entry.is_directory()) {
+                int childIndex = ProcessDirectory(entry.path().string(), currentIndex);
+                s_Directories[currentIndex].ChildrenIndices.push_back(childIndex);
+            } else {
+                ImportAsset(entry.path().string(), false, currentIndex);
+            }
+        }
+
+        return currentIndex;
+    }
+
+    void AssetManager::ReloadAssets() { ProcessDirectory("assets"); }
+
+    std::unordered_map<size_t, Asset> AssetManager::s_LoadedAssets;
+    std::vector<DirectoryInfo> AssetManager::s_Directories;
+    AssetManager::AssetsChangeEventFn AssetManager::s_AssetsChangeCallback;
+
 } // namespace Monado

@@ -14,14 +14,17 @@ namespace Monado {
         void OnImGuiRender();
 
     private:
-        void RenderFileListView(int dirIndex);
-        void RenderFileGridView(int dirIndex);
-        void HandleDragDrop(RendererID icon, int dirIndex);
+        void DrawDirectoryInfo(DirectoryInfo &dir);
+
+        void RenderFileListView(Asset &asset);
+        void RenderFileGridView(Asset &asset);
+        void HandleDragDrop(RendererID icon, Asset &asset);
         void RenderDirectoriesListView(int dirIndex);
         void RenderDirectoriesGridView(int dirIndex);
         void RenderBreadCrumbs();
-        void RenderSearch();
         void RenderBottom();
+
+        void UpdateCurrentDirectory(int dirIndex);
 
         ImGuiInputTextCallback SearchCallback(ImGuiInputTextCallbackData *data);
 
@@ -42,32 +45,30 @@ namespace Monado {
         Ref<Texture2D> m_GridView;
         Ref<Texture2D> m_ListView;
 
-        std::string m_CurrentDirPath;
-        std::string m_BaseDirPath;
-        std::string m_PrevDirPath;
         std::string m_MovePath;
 
-        std::string m_ForwardPath;
-        std::string m_BackPath;
-
-        int m_BasePathLen;
-        int m_DirDataLen;
+        int m_BaseDirIndex;
+        int m_CurrentDirIndex;
+        int m_PrevDirIndex;
+        int m_NextDirIndex;
 
         bool m_IsDragging = false;
         bool m_DisplayListView = false;
         bool m_UpdateBreadCrumbs = true;
         bool m_ShowSearchBar = false;
-        bool m_IsPathChanged = false;
+        bool m_DirectoryChanged = false;
 
         char m_InputBuffer[1024];
 
-        std::vector<DirectoryInfo> m_CurrentDir;
-        std::vector<DirectoryInfo> m_BaseProjectDir;
+        DirectoryInfo m_CurrentDir;
+        DirectoryInfo m_BaseProjectDir;
+        std::vector<DirectoryInfo> m_CurrentDirChildren;
+        std::vector<Asset> m_CurrentDirAssets;
+
+        std::vector<DirectoryInfo> m_BreadCrumbData;
 
         ImGuiInputTextCallbackData m_Data;
         std::map<size_t, Ref<Texture2D>> m_AssetIconMap;
-        // NotificationManager nManager;
-        AssetManager m_AssetManager;
     };
 
 } // namespace Monado

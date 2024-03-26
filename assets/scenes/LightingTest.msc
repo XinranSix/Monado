@@ -94,8 +94,5 @@ Entities:
       Position: [85.8089981, 208.961517, 0]
       Rotation: [-0.738274276, 1.57079637, 0]
       Scale: [0.999979556, 0.999987841, 0.999982357]
-    CameraComponent:
-      Camera: some camera data...
-      Primary: true
 PhysicsLayers:
   []
