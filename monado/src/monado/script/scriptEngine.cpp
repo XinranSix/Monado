@@ -223,7 +223,7 @@ namespace Monado {
         MonoDomain *domain = nullptr;
         bool cleanup = false;
         if (s_MonoDomain) {
-            domain = mono_domain_create_appdomain((char*)"Monado Runtime", nullptr);
+            domain = mono_domain_create_appdomain((char *)"Monado Runtime", nullptr);
             mono_domain_set(domain, false);
 
             cleanup = true;
@@ -255,7 +255,7 @@ namespace Monado {
                 for (auto &[entityID, entityInstanceData] : entityMap) {
                     const auto &entityMap = scene->GetEntityMap();
                     MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                                   "Invalid entity ID or entity doesn't exist in scene!");
+                                    "Invalid entity ID or entity doesn't exist in scene!");
                     InitScriptEntity(entityMap.at(entityID));
                 }
             }
@@ -467,6 +467,7 @@ namespace Monado {
         case MONO_TYPE_I4: return FieldType::Int;
         case MONO_TYPE_U4: return FieldType::UnsignedInt;
         case MONO_TYPE_STRING: return FieldType::String;
+        case MONO_TYPE_CLASS: return FieldType::ClassReference;
         case MONO_TYPE_VALUETYPE: {
             char *name = mono_type_get_name(monoType);
             if (strcmp(name, "Monado.Vector2") == 0)
@@ -476,7 +477,6 @@ namespace Monado {
             if (strcmp(name, "Monado.Vector4") == 0)
                 return FieldType::Vec4;
         }
-        case MONO_TYPE_CLASS: return FieldType::ClassReference;
         }
         return FieldType::None;
     }
@@ -729,7 +729,7 @@ namespace Monado {
     void ScriptEngine::OnImGuiRender() {
         ImGui::Begin("Script Engine Debug");
         for (auto &[sceneID, entityMap] : s_EntityInstanceMap) {
-            bool opened = ImGui::TreeNode((void *)(uint64_t)sceneID, "Scene (%llx)",(int64_t) sceneID);
+            bool opened = ImGui::TreeNode((void *)(uint64_t)sceneID, "Scene (%llx)", (int64_t)sceneID);
             if (opened) {
                 Ref<Scene> scene = Scene::GetScene(sceneID);
                 for (auto &[entityID, entityInstanceData] : entityMap) {
@@ -737,7 +737,8 @@ namespace Monado {
                     std::string entityName = "Unnamed Entity";
                     if (entity.HasComponent<TagComponent>())
                         entityName = entity.GetComponent<TagComponent>().Tag;
-                    opened = ImGui::TreeNode((void *)(uint64_t)entityID, "%s (%llx)", entityName.c_str(), (int64_t)entityID);
+                    opened =
+                        ImGui::TreeNode((void *)(uint64_t)entityID, "%s (%llx)", entityName.c_str(), (int64_t)entityID);
                     if (opened) {
                         for (auto &[moduleName, fieldMap] : entityInstanceData.ModuleFieldMap) {
                             opened = ImGui::TreeNode(moduleName.c_str());

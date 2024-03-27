@@ -667,18 +667,18 @@ namespace Monado {
                             }
                             break;
                         }
-                        case FieldType::ClassReference: {
-                            Ref<Asset> *asset =
-                                (Ref<Asset> *)(isRuntime ? field.GetRuntimeValueRaw() : field.GetStoredValueRaw());
-                            std::string label = field.Name + "(" + field.TypeName + ")";
-                            if (UI::PropertyAssetReference(label.c_str(), *asset)) {
-                                if (isRuntime)
-                                    field.SetRuntimeValueRaw(asset);
-                                else
-                                    field.SetStoredValueRaw(asset);
-                            }
-                            break;
-                        }
+                            /*  case FieldType::ClassReference: {
+                                 Ref<Asset> *asset =
+                                     (Ref<Asset> *)(isRuntime ? field.GetRuntimeValueRaw() : field.GetStoredValueRaw());
+                                 std::string label = field.Name + "(" + field.TypeName + ")";
+                                 if (UI::PropertyAssetReference(label.c_str(), *asset)) {
+                                     if (isRuntime)
+                                         field.SetRuntimeValueRaw(asset);
+                                     else
+                                         field.SetStoredValueRaw(asset);
+                                 }
+                                 break;
+                             } */
                         }
                     }
                 }
