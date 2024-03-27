@@ -13,7 +13,8 @@
 #include "monado/physics/physics.h"
 #include "monado/utilities/dragDropData.h"
 #include "monado/math/math.h"
-#include "monado/utilities/fileSystemWatcher.h"
+#include "monado/utilities/fileSystem.h"
+#include "monado/editor/assetEditorPanel.h"
 
 #include "editorLayer.h"
 
@@ -63,13 +64,13 @@ namespace Monado {
         m_AssetManagerPanel = CreateScope<AssetManagerPanel>();
         m_ObjectsPanel = CreateScope<ObjectsPanel>();
 
-        // OpenScene("assets/scenes/FPSDemo.hsc");
+        // OpenScene("assets/scenes/FPSDemo.msc");
         NewScene();
 
-        FileSystemWatcher::StartWatching();
+        FileSystem::StartWatching();
     }
 
-    void EditorLayer::OnDetach() { FileSystemWatcher::StopWatching(); }
+    void EditorLayer::OnDetach() { FileSystem::StopWatching(); }
 
     void EditorLayer::OnScenePlay() {
         m_SelectionContext.clear();
@@ -340,7 +341,7 @@ namespace Monado {
 
     void EditorLayer::OpenScene() {
         auto &app = Application::Get();
-        std::string filepath = app.OpenFile("Hazel Scene (*.hsc)\0*.hsc\0");
+        std::string filepath = app.OpenFile("Monado Scene (*.msc)\0*.msc\0");
         if (!filepath.empty())
             OpenScene(filepath);
     }
@@ -374,7 +375,7 @@ namespace Monado {
 
     void EditorLayer::SaveSceneAs() {
         auto &app = Application::Get();
-        std::string filepath = app.SaveFile("Hazel Scene (*.hsc)\0*.hsc\0");
+        std::string filepath = app.SaveFile("Monado Scene (*.msc)\0*.msc\0");
         if (!filepath.empty()) {
             SceneSerializer serializer(m_EditorScene);
             serializer.Serialize(filepath);
@@ -469,6 +470,7 @@ namespace Monado {
 
         m_AssetManagerPanel->OnImGuiRender();
         m_ObjectsPanel->OnImGuiRender();
+        AssetEditorPanel::OnImGuiRender();
 
         const char *label = m_SelectionMode == SelectionMode::Entity ? "Entity" : "Mesh";
         if (ImGui::Button(label)) {
@@ -622,31 +624,19 @@ namespace Monado {
         }
 
         if (ImGui::BeginDragDropTarget()) {
-            auto data = ImGui::AcceptDragDropPayload("scene_entity_objectP");
-            if (data) {
-                auto d = (DragDropData *)data->Data;
-                if (d->Type == "Mesh") {
-                    auto entity = m_EditorScene->CreateEntity(d->Name);
-                    entity.AddComponent<MeshComponent>(Ref<Mesh>::Create(d->SourcePath));
-                }
-            }
-            ImGui::EndDragDropTarget();
-        }
-
-        /* Payload Implementation For Getting Assets In The Viewport From Asset Manager */
-        if (ImGui::BeginDragDropTarget()) {
             auto data = ImGui::AcceptDragDropPayload("scene_entity_assetsP");
             if (data) {
-                UUID assetId = *(UUID *)data->Data;
-                Asset &asset = AssetManager::GetAssetFromId(assetId);
+                AssetHandle assetHandle = *(AssetHandle *)data->Data;
+                Ref<Asset> asset = AssetManager::GetAsset<Asset>(assetHandle);
 
-                if (asset.Type == AssetType::Scene) {
-                    OpenScene((char *)asset.Data);
+                if (asset->Type == AssetType::Scene) {
+                    OpenScene(asset->FilePath);
                 }
 
-                if (asset.Type == AssetType::Mesh) {
-                    Entity entity = m_EditorScene->CreateEntity(asset.FileName);
-                    entity.AddComponent<MeshComponent>(AssetManager::InstantiateAsset<Mesh>(assetId));
+                if (asset->Type == AssetType::Mesh) {
+                    Entity entity = m_EditorScene->CreateEntity(asset->FileName);
+                    entity.AddComponent<MeshComponent>(Ref<Mesh>(asset));
+                    SelectEntity(entity);
                 }
             }
             ImGui::EndDragDropTarget();
@@ -675,7 +665,7 @@ namespace Monado {
 
             if (ImGui::BeginMenu("Script")) {
                 if (ImGui::MenuItem("Reload C# Assembly"))
-                    ScriptEngine::ReloadAssembly("ExampleApp.dll");
+                    ScriptEngine::ReloadAssembly("assets/scripts/ExampleApp.dll");
 
                 ImGui::MenuItem("Reload assembly on play", nullptr, &m_ReloadScriptOnPlay);
                 ImGui::EndMenu();

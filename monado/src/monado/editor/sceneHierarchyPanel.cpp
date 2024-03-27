@@ -19,6 +19,7 @@
 #include "monado/physics/pxPhysicsWrappers.h"
 #include "monado/renderer/meshFactory.h"
 #include "monado/imGui/ui.h"
+#include "monado/asset/assetManager.h"
 
 namespace Monado {
 
@@ -467,12 +468,6 @@ namespace Monado {
                     ImGui::CloseCurrentPopup();
                 }
             }
-            if (!m_SelectionContext.HasComponent<PhysicsMaterialComponent>()) {
-                if (ImGui::Button("Physics Material")) {
-                    m_SelectionContext.AddComponent<PhysicsMaterialComponent>();
-                    ImGui::CloseCurrentPopup();
-                }
-            }
             if (!m_SelectionContext.HasComponent<BoxColliderComponent>()) {
                 if (ImGui::Button("Box Collider")) {
                     m_SelectionContext.AddComponent<BoxColliderComponent>();
@@ -514,26 +509,9 @@ namespace Monado {
         });
 
         DrawComponent<MeshComponent>("Mesh", entity, [](MeshComponent &mc) {
-            ImGui::Columns(3);
-            ImGui::SetColumnWidth(0, 100);
-            ImGui::SetColumnWidth(1, 300);
-            ImGui::SetColumnWidth(2, 40);
-            ImGui::Text("File Path");
-            ImGui::NextColumn();
-            ImGui::PushItemWidth(-1);
-            if (mc.Mesh)
-                ImGui::InputText("##meshfilepath", (char *)mc.Mesh->GetFilePath().c_str(), 256,
-                                 ImGuiInputTextFlags_ReadOnly);
-            else
-                ImGui::InputText("##meshfilepath", (char *)"Null", 256, ImGuiInputTextFlags_ReadOnly);
-            ImGui::PopItemWidth();
-            ImGui::NextColumn();
-            if (ImGui::Button("...##openmesh")) {
-                std::string file = Application::Get().OpenFile();
-                if (!file.empty())
-                    mc.Mesh = Ref<Mesh>::Create(file);
-            }
-            ImGui::Columns(1);
+            UI::BeginPropertyGrid();
+            UI::PropertyAssetReference("Mesh", mc.Mesh, AssetType::Mesh);
+            UI::EndPropertyGrid();
         });
 
         DrawComponent<CameraComponent>("Camera", entity, [](CameraComponent &cc) {
@@ -827,16 +805,6 @@ namespace Monado {
             }
         });
 
-        DrawComponent<PhysicsMaterialComponent>("Physics Material", entity, [](PhysicsMaterialComponent &pmc) {
-            UI::BeginPropertyGrid();
-
-            UI::Property("Static Friction", pmc.StaticFriction);
-            UI::Property("Dynamic Friction", pmc.DynamicFriction);
-            UI::Property("Bounciness", pmc.Bounciness);
-
-            UI::EndPropertyGrid();
-        });
-
         DrawComponent<BoxColliderComponent>("Box Collider", entity, [](BoxColliderComponent &bcc) {
             UI::BeginPropertyGrid();
 
@@ -846,6 +814,7 @@ namespace Monado {
 
             // Property("Offset", bcc.Offset);
             UI::Property("Is Trigger", bcc.IsTrigger);
+            UI::PropertyAssetReference("Material", bcc.Material, AssetType::PhysicsMat);
 
             UI::EndPropertyGrid();
         });
@@ -858,6 +827,7 @@ namespace Monado {
             }
 
             UI::Property("Is Trigger", scc.IsTrigger);
+            UI::PropertyAssetReference("Material", scc.Material, AssetType::PhysicsMat);
 
             UI::EndPropertyGrid();
         });
@@ -874,6 +844,7 @@ namespace Monado {
                 changed = true;
 
             UI::Property("Is Trigger", ccc.IsTrigger);
+            UI::PropertyAssetReference("Material", ccc.Material, AssetType::PhysicsMat);
 
             if (changed) {
                 ccc.DebugMesh = MeshFactory::CreateCapsule(ccc.Radius, ccc.Height);
@@ -883,43 +854,27 @@ namespace Monado {
         });
 
         DrawComponent<MeshColliderComponent>("Mesh Collider", entity, [&](MeshColliderComponent &mcc) {
-            if (mcc.OverrideMesh) {
-                ImGui::Columns(3);
-                ImGui::SetColumnWidth(0, 100);
-                ImGui::SetColumnWidth(1, 300);
-                ImGui::SetColumnWidth(2, 40);
-                ImGui::Text("File Path");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-                if (mcc.CollisionMesh)
-                    ImGui::InputText("##meshfilepath", (char *)mcc.CollisionMesh->GetFilePath().c_str(), 256,
-                                     ImGuiInputTextFlags_ReadOnly);
-                else
-                    ImGui::InputText("##meshfilepath", (char *)"Null", 256, ImGuiInputTextFlags_ReadOnly);
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
-                if (ImGui::Button("...##openmesh")) {
-                    std::string file = Application::Get().OpenFile();
-                    if (!file.empty()) {
-                        mcc.CollisionMesh = Ref<Mesh>::Create(file);
-                        if (mcc.IsConvex)
-                            PXPhysicsWrappers::CreateConvexMesh(mcc, glm::vec3(1.0f), true);
-                        else
-                            PXPhysicsWrappers::CreateTriangleMesh(mcc, glm::vec3(1.0f), true);
-                    }
-                }
+            UI::BeginPropertyGrid();
 
-                ImGui::Columns(1);
+            if (mcc.OverrideMesh) {
+                if (UI::PropertyAssetReference("Mesh", mcc.CollisionMesh, AssetType::Mesh)) {
+                    if (mcc.IsConvex)
+                        PXPhysicsWrappers::CreateConvexMesh(mcc, glm::vec3(1.0f), true);
+                    else
+                        PXPhysicsWrappers::CreateTriangleMesh(mcc, glm::vec3(1.0f), true);
+                }
             }
 
-            UI::BeginPropertyGrid();
             if (UI::Property("Is Convex", mcc.IsConvex)) {
                 if (mcc.IsConvex)
                     PXPhysicsWrappers::CreateConvexMesh(mcc, glm::vec3(1.0f), true);
                 else
                     PXPhysicsWrappers::CreateTriangleMesh(mcc, glm::vec3(1.0f), true);
             }
+
             UI::Property("Is Trigger", mcc.IsTrigger);
+            UI::PropertyAssetReference("Material", mcc.Material, AssetType::PhysicsMat);
+
             if (UI::Property("Override Mesh", mcc.OverrideMesh)) {
                 if (!mcc.OverrideMesh && entity.HasComponent<MeshComponent>()) {
                     mcc.CollisionMesh = entity.GetComponent<MeshComponent>().Mesh;

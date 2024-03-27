@@ -1,6 +1,6 @@
 #pragma once
 
-#include "monado/utilities/assetManager.h"
+#include "monado/asset/assetManager.h"
 #include "monado/renderer/Texture.h"
 #include "monado/imgui/ui.h"
 
@@ -16,11 +16,11 @@ namespace Monado {
     private:
         void DrawDirectoryInfo(DirectoryInfo &dir);
 
-        void RenderFileListView(Asset &asset);
-        void RenderFileGridView(Asset &asset);
-        void HandleDragDrop(RendererID icon, Asset &asset);
-        void RenderDirectoriesListView(int dirIndex);
-        void RenderDirectoriesGridView(int dirIndex);
+        void RenderFileListView(Ref<Asset> &asset);
+        void RenderFileGridView(Ref<Asset> &asset);
+        void HandleDragDrop(RendererID icon, Ref<Asset> &asset);
+        void RenderDirectoriesListView(DirectoryInfo &dirInfo);
+        void RenderDirectoriesGridView(DirectoryInfo &dirInfo);
         void RenderBreadCrumbs();
         void RenderBottom();
 
@@ -63,9 +63,11 @@ namespace Monado {
         DirectoryInfo m_CurrentDir;
         DirectoryInfo m_BaseProjectDir;
         std::vector<DirectoryInfo> m_CurrentDirChildren;
-        std::vector<Asset> m_CurrentDirAssets;
+        std::vector<Ref<Asset>> m_CurrentDirAssets;
 
         std::vector<DirectoryInfo> m_BreadCrumbData;
+
+        AssetHandle m_DraggedAssetId = 0;
 
         ImGuiInputTextCallbackData m_Data;
         std::map<size_t, Ref<Texture2D>> m_AssetIconMap;

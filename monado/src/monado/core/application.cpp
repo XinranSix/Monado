@@ -5,7 +5,7 @@
 #include "monado/renderer/framebuffer.h"
 #include "monado/script/scriptEngine.h"
 #include "monado/physics/physics.h"
-#include "monado/utilities/assetManager.h"
+#include "monado/asset/assetManager.h"
 
 // clang-format off
 #include "glad/glad.h"
@@ -52,6 +52,8 @@ namespace Monado {
 
         Physics::Shutdown();
         ScriptEngine::Shutdown();
+
+        AssetManager::Shutdown();
     }
 
     void Application::PushLayer(Layer *layer) {

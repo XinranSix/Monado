@@ -14,6 +14,7 @@
 #include "monado/Renderer/indexBuffer.h"
 #include "monado/renderer/vertexBuffer.h"
 #include "monado/renderer/shader.h"
+#include "monado/asset/assets.h"
 
 struct aiNode;
 struct aiAnimation;
@@ -55,8 +56,8 @@ namespace Monado {
 
             // TODO: Keep top weights
             MND_CORE_WARN("Vertex has more than four bones/weights affecting it, extra data will be discarded "
-                          "(BoneID={0}, Weight={1})",
-                          BoneID, Weight);
+                         "(BoneID={0}, Weight={1})",
+                         BoneID, Weight);
         }
     };
 
@@ -117,7 +118,7 @@ namespace Monado {
         std::string NodeName, MeshName;
     };
 
-    class Mesh : public RefCounted {
+    class Mesh : public Asset {
     public:
         Mesh(const std::string &filename);
         Mesh(const std::vector<Vertex> &vertices, const std::vector<Index> &indices, const glm::mat4 &transform);

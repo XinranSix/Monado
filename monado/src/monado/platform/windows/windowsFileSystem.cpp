@@ -1,31 +1,52 @@
-#include "monado/utilities/fileSystemWatcher.h"
 #include "monado/core/log.h"
+#include "monado/utilities/FileSystem.h"
+#include "monado/asset/assetManager.h"
 
 #include <Windows.h>
 #include <filesystem>
 
 namespace Monado {
 
-    FileSystemWatcher::FileSystemChangedCallbackFn FileSystemWatcher::s_Callback;
+    FileSystem::FileSystemChangedCallbackFn FileSystem::s_Callback;
 
     static bool s_Watching = true;
     static HANDLE s_WatcherThread;
 
-    void FileSystemWatcher::SetChangeCallback(const FileSystemChangedCallbackFn &callback) { s_Callback = callback; }
+    void FileSystem::SetChangeCallback(const FileSystemChangedCallbackFn &callback) { s_Callback = callback; }
 
-    static std::string wchar_to_string(wchar_t *input) {
-        std::wstring string_input(input);
-        std::string converted(string_input.begin(), string_input.end());
-        return converted;
+    bool FileSystem::CreateFolder(const std::string &filepath) {
+        BOOL created = CreateDirectoryA(filepath.c_str(), NULL);
+        if (!created) {
+            DWORD error = GetLastError();
+
+            if (error == ERROR_ALREADY_EXISTS)
+                MND_CORE_ERROR("{0} already exists!", filepath);
+
+            if (error == ERROR_PATH_NOT_FOUND)
+                MND_CORE_ERROR("{0}: One or more directories don't exist.", filepath);
+
+            return false;
+        }
+
+        return true;
     }
 
-    void FileSystemWatcher::StartWatching() {
+    bool FileSystem::Exists(const std::string &filepath) {
+        DWORD attribs = GetFileAttributesA(filepath.c_str());
+
+        if (attribs == INVALID_FILE_ATTRIBUTES)
+            return false;
+
+        return true;
+    }
+
+    void FileSystem::StartWatching() {
         DWORD threadId;
         s_WatcherThread = CreateThread(NULL, 0, Watch, 0, 0, &threadId);
         MND_CORE_ASSERT(s_WatcherThread != NULL);
     }
 
-    void FileSystemWatcher::StopWatching() {
+    void FileSystem::StopWatching() {
         s_Watching = false;
         DWORD result = WaitForSingleObject(s_WatcherThread, 5000);
         if (result == WAIT_TIMEOUT)
@@ -33,14 +54,12 @@ namespace Monado {
         CloseHandle(s_WatcherThread);
     }
 
-    unsigned long FileSystemWatcher::Watch(void *param) {
+    unsigned long FileSystem::Watch(void *param) {
         LPCWSTR filepath = L"assets";
-        char *buffer = new char[1024];
+        BYTE buffer[1024];
         OVERLAPPED overlapped = { 0 };
         HANDLE handle = NULL;
         DWORD bytesReturned = 0;
-
-        ZeroMemory(buffer, 1024);
 
         handle = CreateFileW(filepath, FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                              NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
@@ -58,7 +77,7 @@ namespace Monado {
         }
 
         while (s_Watching) {
-            DWORD status = ReadDirectoryChangesW(handle, buffer, 1024, TRUE,
+            DWORD status = ReadDirectoryChangesW(handle, buffer, sizeof(buffer), TRUE,
                                                  FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_FILE_NAME |
                                                      FILE_NOTIFY_CHANGE_DIR_NAME,
                                                  &bytesReturned, &overlapped, NULL);
@@ -66,33 +85,37 @@ namespace Monado {
             if (!status)
                 MND_CORE_ERROR(GetLastError());
 
-            // NOTE(Peter): We can't use 'INFINITE' here since that will prevent the thread from closing when we close
-            // the editor
             DWORD waitOperation = WaitForSingleObject(overlapped.hEvent, 5000);
-
-            // If nothing changed, just continue
             if (waitOperation != WAIT_OBJECT_0)
                 continue;
 
             std::string oldName;
 
+            char fileName[MAX_PATH] = "";
+
+            BYTE *current = buffer;
             for (;;) {
-                FILE_NOTIFY_INFORMATION &fni = (FILE_NOTIFY_INFORMATION &)*buffer;
-                std::filesystem::path filepath = "assets/" + wchar_to_string(fni.FileName);
+                ZeroMemory(fileName, sizeof(fileName));
+
+                FILE_NOTIFY_INFORMATION *fni = reinterpret_cast<FILE_NOTIFY_INFORMATION *>(current);
+                WideCharToMultiByte(CP_ACP, 0, fni->FileName, fni->FileNameLength / sizeof(WCHAR), fileName,
+                                    sizeof(fileName), NULL, NULL);
+                std::filesystem::path filepath = "assets/" + std::string(fileName);
 
                 FileSystemChangedEvent e;
-                e.Filepath = filepath.string();
+                e.FilePath = filepath.string();
                 e.NewName = filepath.filename().string();
                 e.OldName = filepath.filename().string();
                 e.IsDirectory = std::filesystem::is_directory(filepath);
 
-                switch (fni.Action) {
+                switch (fni->Action) {
                 case FILE_ACTION_ADDED: {
                     e.Action = FileSystemAction::Added;
                     s_Callback(e);
                     break;
                 }
                 case FILE_ACTION_REMOVED: {
+                    e.IsDirectory = AssetManager::IsDirectory(e.FilePath);
                     e.Action = FileSystemAction::Delete;
                     s_Callback(e);
                     break;
@@ -114,12 +137,10 @@ namespace Monado {
                 }
                 }
 
-                if (!fni.NextEntryOffset) {
-                    ZeroMemory(buffer, 1024);
+                if (!fni->NextEntryOffset)
                     break;
-                }
 
-                buffer += fni.NextEntryOffset;
+                current += fni->NextEntryOffset;
             }
         }
 

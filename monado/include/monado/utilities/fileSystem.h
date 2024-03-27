@@ -9,13 +9,18 @@ namespace Monado {
 
     struct FileSystemChangedEvent {
         FileSystemAction Action;
-        std::string Filepath;
+        std::string FilePath;
         std::string OldName;
         std::string NewName;
         bool IsDirectory;
     };
 
-    class FileSystemWatcher {
+    class FileSystem {
+    public:
+        static bool CreateFolder(const std::string &filepath);
+        static bool Exists(const std::string &filepath);
+        // static bool MoveFile(const std::string& filepath, const std::string& dest);
+
     public:
         using FileSystemChangedCallbackFn = std::function<void(FileSystemChangedEvent)>;
 
@@ -29,5 +34,4 @@ namespace Monado {
     private:
         static FileSystemChangedCallbackFn s_Callback;
     };
-
 } // namespace Monado

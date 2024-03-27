@@ -625,7 +625,6 @@ namespace Monado {
         CopyComponentIfExists<BoxCollider2DComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
         CopyComponentIfExists<CircleCollider2DComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
         CopyComponentIfExists<RigidBodyComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
-        CopyComponentIfExists<PhysicsMaterialComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
         CopyComponentIfExists<BoxColliderComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
         CopyComponentIfExists<SphereColliderComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
         CopyComponentIfExists<CapsuleColliderComponent>(newEntity.m_EntityHandle, entity.m_EntityHandle, m_Registry);
@@ -698,7 +697,6 @@ namespace Monado {
         CopyComponent<BoxCollider2DComponent>(target->m_Registry, m_Registry, enttMap);
         CopyComponent<CircleCollider2DComponent>(target->m_Registry, m_Registry, enttMap);
         CopyComponent<RigidBodyComponent>(target->m_Registry, m_Registry, enttMap);
-        CopyComponent<PhysicsMaterialComponent>(target->m_Registry, m_Registry, enttMap);
         CopyComponent<BoxColliderComponent>(target->m_Registry, m_Registry, enttMap);
         CopyComponent<SphereColliderComponent>(target->m_Registry, m_Registry, enttMap);
         CopyComponent<CapsuleColliderComponent>(target->m_Registry, m_Registry, enttMap);

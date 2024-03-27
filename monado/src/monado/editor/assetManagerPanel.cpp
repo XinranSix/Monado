@@ -1,7 +1,9 @@
 #include "monado/editor/assetManagerPanel.h"
 #include "monado/Core/application.h"
 #include "monado/utilities/dragDropData.h"
-#include "monado/utilities/assetManager.h"
+#include "monado/asset/assetManager.h"
+#include "monado/utilities/fileSystem.h"
+#include "monado/editor/assetEditorPanel.h"
 
 namespace Monado {
 
@@ -46,15 +48,14 @@ namespace Monado {
                 UpdateCurrentDirectory(dir.DirectoryIndex);
 
             for (int j = 0; j < dir.ChildrenIndices.size(); j++) {
-                DirectoryInfo &child = AssetManager::GetDirectoryInfo(dir.ChildrenIndices[j]);
-                DrawDirectoryInfo(child);
+                DrawDirectoryInfo(AssetManager::GetDirectoryInfo(dir.ChildrenIndices[j]));
             }
 
             ImGui::TreePop();
         }
 
         if (m_IsDragging && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem)) {
-            m_MovePath = dir.Filepath;
+            m_MovePath = dir.FilePath;
         }
     }
 
@@ -78,10 +79,11 @@ namespace Monado {
                 auto data = ImGui::AcceptDragDropPayload("selectable", ImGuiDragDropFlags_AcceptNoDrawDefaultRect);
                 if (data) {
                     std::string file = (char *)data->Data;
-                    if (AssetManager::MoveFile(file, m_MovePath)) {
-                        MND_CORE_INFO("Moved File: " + file + " to " + m_MovePath);
-                        UpdateCurrentDirectory(m_CurrentDirIndex);
-                    }
+                    /*if (AssetManager::MoveFile(file, m_MovePath))
+                    {
+                            MND_CORE_INFO("Moved File: " + file + " to " + m_MovePath);
+                            UpdateCurrentDirectory(m_CurrentDirIndex);
+                    }*/
                     m_IsDragging = false;
                 }
                 ImGui::EndDragDropTarget();
@@ -101,16 +103,19 @@ namespace Monado {
                 if (!m_DisplayListView)
                     ImGui::Columns(10, nullptr, false);
 
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0F, 0.0F, 0.0F, 0.0F));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2F, 0.205F, 0.21F, 0.25F));
+
                 for (DirectoryInfo &dir : m_CurrentDirChildren) {
                     if (m_DisplayListView)
-                        RenderDirectoriesListView(dir.DirectoryIndex);
+                        RenderDirectoriesListView(dir);
                     else
-                        RenderDirectoriesGridView(dir.DirectoryIndex);
+                        RenderDirectoriesGridView(dir);
 
                     ImGui::NextColumn();
                 }
 
-                for (Asset &asset : m_CurrentDirAssets) {
+                for (Ref<Asset> &asset : m_CurrentDirAssets) {
                     if (m_DisplayListView)
                         RenderFileListView(asset);
                     else
@@ -119,11 +124,22 @@ namespace Monado {
                     ImGui::NextColumn();
                 }
 
+                if (m_IsDragging && !ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.1F)) {
+                    m_IsDragging = false;
+                    m_DraggedAssetId = 0;
+                }
+
+                ImGui::PopStyleColor(2);
+
                 if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight |
                                                           ImGuiPopupFlags_NoOpenOverExistingPopup)) {
-                    if (ImGui::BeginMenu("New")) {
+                    if (ImGui::BeginMenu("Create")) {
                         if (ImGui::MenuItem("Folder")) {
-                            MND_CORE_INFO("Creating Folder...");
+                            bool created = FileSystem::CreateFolder(m_CurrentDir.FilePath + "/New Folder");
+
+                            if (created) {
+                                // TODO(Peter): Select folder and start renaming
+                            }
                         }
 
                         if (ImGui::MenuItem("Scene")) {
@@ -138,7 +154,21 @@ namespace Monado {
                             MND_CORE_INFO("Creating Prefab...");
                         }
 
+                        if (ImGui::MenuItem("Physics Material")) {
+                            AssetManager::CreateAsset<PhysicsMaterial>(
+                                "New Physics Material.mpm", AssetType::PhysicsMat, m_CurrentDirIndex, 0.6F, 0.6F, 0.0F);
+                            UpdateCurrentDirectory(m_CurrentDirIndex);
+                        }
+
                         ImGui::EndMenu();
+                    }
+
+                    if (ImGui::MenuItem("Import")) {
+                        // std::string filename = Application::Get().OpenFile("");
+                    }
+
+                    if (ImGui::MenuItem("Refresh")) {
+                        UpdateCurrentDirectory(m_CurrentDirIndex);
                     }
 
                     ImGui::EndPopup();
@@ -152,31 +182,14 @@ namespace Monado {
                 auto data = ImGui::AcceptDragDropPayload("selectable", ImGuiDragDropFlags_AcceptNoDrawDefaultRect);
                 if (data) {
                     std::string a = (char *)data->Data;
-
-                    if (AssetManager::MoveFile(a, m_MovePath)) {
-                        UpdateCurrentDirectory(m_CurrentDirIndex);
-                    }
+                    /*if (AssetManager::MoveFile(a, m_MovePath))
+                    {
+                            UpdateCurrentDirectory(m_CurrentDirIndex);
+                    }*/
 
                     m_IsDragging = false;
                 }
                 ImGui::EndDragDropTarget();
-            }
-
-            if (ImGui::BeginMenuBar()) {
-                if (ImGui::BeginMenu("Create")) {
-                    if (ImGui::MenuItem("Import New Asset", "Ctrl + O")) {
-                        std::string filename = Application::Get().OpenFile("");
-                        // m_AssetManager.ProcessAsset(filename);
-                    }
-
-                    if (ImGui::MenuItem("Refresh", "Ctrl + R")) {
-                        m_BaseProjectDir = AssetManager::GetDirectoryInfo(m_BaseDirIndex);
-                        UpdateCurrentDirectory(m_CurrentDirIndex);
-                    }
-
-                    ImGui::EndMenu();
-                }
-                ImGui::EndMenuBar();
             }
 
             UI::EndPropertyGrid();
@@ -184,108 +197,111 @@ namespace Monado {
         ImGui::End();
     }
 
-    void AssetManagerPanel::RenderFileListView(Asset &asset) {
-        size_t fileID = AssetTypes::GetAssetTypeID(asset.Extension);
-        RendererID iconRef = m_AssetIconMap[fileID]->GetRendererID();
-        ImGui::Image((ImTextureID)iconRef, ImVec2(20, 20));
-
+    void AssetManagerPanel::RenderDirectoriesListView(DirectoryInfo &dirInfo) {
+        ImGui::Image((ImTextureID)m_FolderTex->GetRendererID(), ImVec2(30, 30));
         ImGui::SameLine();
 
-        if (ImGui::Selectable(asset.FileName.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick)) {
-            /*if (ImGui::IsMouseDoubleClicked(0))
-                    m_AssetManager.HandleAsset(m_CurrentDir[dirIndex].AbsolutePath);*/
-        }
-
-        HandleDragDrop(iconRef, asset);
-    }
-
-    void AssetManagerPanel::RenderFileGridView(Asset &asset) {
-        ImGui::BeginGroup();
-
-        size_t fileID = AssetTypes::GetAssetTypeID(asset.Extension);
-        RendererID iconRef = m_AssetIconMap[fileID]->GetRendererID();
-        float columnWidth = ImGui::GetColumnWidth();
-
-        ImGui::ImageButton((ImTextureID)iconRef, { columnWidth - 10.0F, columnWidth - 10.0F });
-
-        HandleDragDrop(iconRef, asset);
-
-        std::string newFileName = AssetManager::StripExtras(asset.FileName);
-        ImGui::TextWrapped(newFileName.c_str());
-        ImGui::EndGroup();
-    }
-
-    void AssetManagerPanel::HandleDragDrop(RendererID icon, Asset &asset) {
-        // Drag 'n' Drop Implementation For File Moving
-        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-            ImGui::Image((ImTextureID)icon, ImVec2(20, 20));
-            ImGui::SameLine();
-            ImGui::Text(asset.FileName.c_str());
-            int size = sizeof(const char *) + strlen(asset.FilePath.c_str());
-            ImGui::SetDragDropPayload("selectable", asset.FilePath.c_str(), size);
-            m_IsDragging = true;
-            ImGui::EndDragDropSource();
-        }
-
-        // Drag 'n' Drop Implementation For Asset Handling In Scene Viewport
-        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-            ImGui::Image((ImTextureID)icon, ImVec2(20, 20));
-            ImGui::SameLine();
-            ImGui::Text(asset.FileName.c_str());
-            ImGui::SetDragDropPayload("scene_entity_assetsP", &asset.ID, sizeof(UUID));
-            m_IsDragging = true;
-
-            ImGui::EndDragDropSource();
-        }
-    }
-
-    void AssetManagerPanel::RenderDirectoriesListView(int dirIndex) {
-        ImGui::Image((ImTextureID)m_FolderTex->GetRendererID(), ImVec2(20, 20));
-        ImGui::SameLine();
-
-        auto &folderData = AssetManager::GetDirectoryInfo(dirIndex);
-
-        if (ImGui::Selectable(folderData.DirectoryName.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick)) {
+        if (ImGui::Selectable(dirInfo.DirectoryName.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick,
+                              ImVec2(0, 30))) {
             if (ImGui::IsMouseDoubleClicked(0)) {
                 m_PrevDirIndex = m_CurrentDirIndex;
-                UpdateCurrentDirectory(dirIndex);
+                UpdateCurrentDirectory(dirInfo.DirectoryIndex);
             }
         }
 
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
             ImGui::Image((ImTextureID)m_FolderTex->GetRendererID(), ImVec2(20, 20));
             ImGui::SameLine();
-            ImGui::Text(folderData.DirectoryName.c_str());
-            ImGui::SetDragDropPayload("selectable", &dirIndex, sizeof(int));
+            ImGui::Text(dirInfo.DirectoryName.c_str());
+            ImGui::SetDragDropPayload("selectable", &dirInfo.DirectoryIndex, sizeof(int));
             m_IsDragging = true;
             ImGui::EndDragDropSource();
         }
     }
 
-    void AssetManagerPanel::RenderDirectoriesGridView(int dirIndex) {
+    void AssetManagerPanel::RenderDirectoriesGridView(DirectoryInfo &dirInfo) {
         ImGui::BeginGroup();
 
         float columnWidth = ImGui::GetColumnWidth();
-        ImGui::ImageButton((ImTextureID)m_FolderTex->GetRendererID(), { columnWidth - 10.0F, columnWidth - 10.0F });
-
-        auto &folderData = AssetManager::GetDirectoryInfo(dirIndex);
+        ImGui::ImageButton((ImTextureID)m_FolderTex->GetRendererID(), { columnWidth - 15.0F, columnWidth - 15.0F });
 
         if (ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered()) {
             m_PrevDirIndex = m_CurrentDirIndex;
-            UpdateCurrentDirectory(dirIndex);
+            UpdateCurrentDirectory(dirInfo.DirectoryIndex);
         }
 
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
             ImGui::Image((ImTextureID)m_FolderTex->GetRendererID(), ImVec2(20, 20));
             ImGui::SameLine();
-            ImGui::Text(folderData.DirectoryName.c_str());
-            ImGui::SetDragDropPayload("selectable_directory", &dirIndex, sizeof(int));
+            ImGui::Text(dirInfo.DirectoryName.c_str());
+            ImGui::SetDragDropPayload("selectable_directory", &dirInfo.DirectoryIndex, sizeof(int));
             m_IsDragging = true;
             ImGui::EndDragDropSource();
         }
 
-        ImGui::TextWrapped(folderData.DirectoryName.c_str());
+        ImVec2 prevCursorPos = ImGui::GetCursorPos();
+        ImGui::SetCursorPos(ImVec2(prevCursorPos.x + 10.0F, prevCursorPos.y - 21.0F));
+        ImGui::TextWrapped(dirInfo.DirectoryName.c_str());
+        ImGui::SetCursorPos(prevCursorPos);
+
         ImGui::EndGroup();
+    }
+
+    void AssetManagerPanel::RenderFileListView(Ref<Asset> &asset) {
+        size_t fileID = AssetTypes::GetAssetTypeID(asset->Extension);
+        RendererID iconRef = m_AssetIconMap[fileID]->GetRendererID();
+        ImGui::Image((ImTextureID)iconRef, ImVec2(30, 30));
+
+        ImGui::SameLine();
+
+        ImGui::Selectable(asset->FileName.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick, ImVec2(0, 30));
+
+        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered()) {
+            AssetEditorPanel::OpenEditor(asset);
+        }
+
+        HandleDragDrop(iconRef, asset);
+    }
+
+    void AssetManagerPanel::RenderFileGridView(Ref<Asset> &asset) {
+        ImGui::BeginGroup();
+
+        size_t fileID = AssetTypes::GetAssetTypeID(asset->Extension);
+        fileID = m_AssetIconMap.find(fileID) != m_AssetIconMap.end() ? fileID : -1;
+        RendererID iconRef = m_AssetIconMap[fileID]->GetRendererID();
+        float columnWidth = ImGui::GetColumnWidth();
+
+        ImGui::ImageButton((ImTextureID)iconRef, { columnWidth - 15.0F, columnWidth - 15.0F });
+
+        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered()) {
+            AssetEditorPanel::OpenEditor(asset);
+        }
+
+        HandleDragDrop(iconRef, asset);
+
+        std::string newFileName = AssetManager::StripExtras(asset->FileName);
+        ImVec2 prevCursorPos = ImGui::GetCursorPos();
+        // ImGui::SetCursorPos(ImVec2(prevCursorPos.x + 10.0F, prevCursorPos.y - 18.0F));
+        ImGui::TextWrapped(newFileName.c_str());
+        // ImGui::SetCursorPos(prevCursorPos);
+        ImGui::EndGroup();
+    }
+
+    void AssetManagerPanel::HandleDragDrop(RendererID icon, Ref<Asset> &asset) {
+        if (m_DraggedAssetId != 0 && m_DraggedAssetId != asset->Handle)
+            return;
+
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenOverlapped) && ImGui::IsItemClicked(ImGuiMouseButton_Left))
+            m_DraggedAssetId = asset->Handle;
+
+        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+            ImGui::Image((ImTextureID)icon, ImVec2(20, 20));
+            ImGui::SameLine();
+            ImGui::Text(asset->FileName.c_str());
+            ImGui::SetDragDropPayload("scene_entity_assetsP", &m_DraggedAssetId, sizeof(AssetHandle));
+            m_IsDragging = true;
+            ImGui::EndDragDropSource();
+        }
     }
 
     void AssetManagerPanel::RenderBreadCrumbs() {
@@ -316,7 +332,7 @@ namespace Monado {
             ImGui::PushItemWidth(200);
 
             if (ImGui::InputTextWithHint("", "Search...", m_InputBuffer, 100)) {
-                SearchResults results = AssetManager::SearchFiles(m_InputBuffer, m_CurrentDir.Filepath);
+                SearchResults results = AssetManager::SearchFiles(m_InputBuffer, m_CurrentDir.FilePath);
 
                 if (strlen(m_InputBuffer) == 0) {
                     UpdateCurrentDirectory(m_CurrentDirIndex);

@@ -53,7 +53,7 @@ namespace FPSExample
 
 			if (Input.IsMouseButtonPressed(MouseButton.Left) && Input.GetCursorMode() == CursorMode.Normal)
 				Input.SetCursorMode(CursorMode.Locked);
-
+	
 			m_CurrentSpeed = Input.IsKeyPressed(KeyCode.LeftControl) ? RunSpeed : WalkingSpeed;
 
 			UpdateRaycasting();
@@ -119,15 +119,15 @@ namespace FPSExample
 			// TODO: Mouse position should be relative to the viewport
 			Vector2 currentMousePosition = Input.GetMousePosition();
 			Vector2 delta = m_LastMousePosition - currentMousePosition;
-			m_CurrentYMovement = delta.X * (MouseSensitivity * 10.0F) * ts;
-			float xRotation = delta.Y * MouseSensitivity * ts;
+			m_CurrentYMovement = delta.X * MouseSensitivity * ts;
+			float xRotation = delta.Y * (MouseSensitivity * 0.05F) * ts;
 
 			if (xRotation != 0.0F)
 			{
 				m_CameraTransform.Rotation += new Vector3(xRotation, 0.0F, 0.0F);
 			}
 
-			m_CameraTransform.Rotation = new Vector3(Mathf.Clamp(m_CameraTransform.Rotation.X, -80.0F, 80.0F), 0.0F, 0.0F);
+			m_CameraTransform.Rotation = new Vector3(Mathf.Clamp(m_CameraTransform.Rotation.X * Mathf.Rad2Deg, -80.0F, 80.0F), 0.0F, 0.0F) * Mathf.Deg2Rad;
 			m_LastMousePosition = currentMousePosition;
 		}
 

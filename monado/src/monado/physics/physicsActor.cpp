@@ -10,16 +10,9 @@
 #include <glm/gtx/compatibility.hpp>
 
 namespace Monado {
+
     PhysicsActor::PhysicsActor(Entity entity)
         : m_Entity(entity), m_RigidBody(entity.GetComponent<RigidBodyComponent>()) {
-        if (!m_Entity.HasComponent<PhysicsMaterialComponent>()) {
-            m_Material.StaticFriction = 1.0F;
-            m_Material.DynamicFriction = 1.0F;
-            m_Material.Bounciness = 0.0F;
-        } else {
-            m_Material = entity.GetComponent<PhysicsMaterialComponent>();
-        }
-
         Initialize();
     }
 
@@ -166,7 +159,6 @@ namespace Monado {
 
         allocator.deallocate(shapes);
     }
-
     void PhysicsActor::Initialize() {
         physx::PxPhysics &physics = PXPhysicsWrappers::GetPhysics();
 
@@ -195,8 +187,6 @@ namespace Monado {
             m_ActorInternal = actor;
         }
 
-        m_MaterialInternal =
-            physics.createMaterial(m_Material.StaticFriction, m_Material.DynamicFriction, m_Material.Bounciness);
         if (m_Entity.HasComponent<BoxColliderComponent>())
             PXPhysicsWrappers::AddBoxCollider(*this);
         if (m_Entity.HasComponent<SphereColliderComponent>())

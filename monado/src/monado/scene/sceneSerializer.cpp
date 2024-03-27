@@ -6,6 +6,7 @@
 #include "monado/renderer/meshFactory.h"
 #include "monado/physics/physics.h"
 #include "monado/Physics/physicsLayer.h"
+#include "monado/asset/assetManager.h"
 
 #include "yaml-cpp/yaml.h"
 
@@ -230,7 +231,7 @@ namespace Monado {
             out << YAML::BeginMap; // MeshComponent
 
             auto mesh = entity.GetComponent<MeshComponent>().Mesh;
-            out << YAML::Key << "AssetPath" << YAML::Value << mesh->GetFilePath();
+            out << YAML::Key << "AssetID" << YAML::Value << mesh->Handle;
 
             out << YAML::EndMap; // MeshComponent
         }
@@ -359,18 +360,6 @@ namespace Monado {
             out << YAML::EndMap; // RigidBodyComponent
         }
 
-        if (entity.HasComponent<PhysicsMaterialComponent>()) {
-            out << YAML::Key << "PhysicsMaterialComponent";
-            out << YAML::BeginMap; // PhysicsMaterialComponent
-
-            auto &physicsMaterial = entity.GetComponent<PhysicsMaterialComponent>();
-            out << YAML::Key << "StaticFriction" << YAML::Value << physicsMaterial.StaticFriction;
-            out << YAML::Key << "DynamicFriction" << YAML::Value << physicsMaterial.DynamicFriction;
-            out << YAML::Key << "Bounciness" << YAML::Value << physicsMaterial.Bounciness;
-
-            out << YAML::EndMap;
-        }
-
         if (entity.HasComponent<BoxColliderComponent>()) {
             out << YAML::Key << "BoxColliderComponent";
             out << YAML::BeginMap; // BoxColliderComponent
@@ -379,6 +368,7 @@ namespace Monado {
             out << YAML::Key << "Offset" << YAML::Value << boxColliderComponent.Offset;
             out << YAML::Key << "Size" << YAML::Value << boxColliderComponent.Size;
             out << YAML::Key << "IsTrigger" << YAML::Value << boxColliderComponent.IsTrigger;
+            out << YAML::Key << "Material" << YAML::Value << boxColliderComponent.Material->Handle;
 
             out << YAML::EndMap; // BoxColliderComponent
         }
@@ -390,6 +380,7 @@ namespace Monado {
             auto &sphereColliderComponent = entity.GetComponent<SphereColliderComponent>();
             out << YAML::Key << "Radius" << YAML::Value << sphereColliderComponent.Radius;
             out << YAML::Key << "IsTrigger" << YAML::Value << sphereColliderComponent.IsTrigger;
+            out << YAML::Key << "Material" << YAML::Value << sphereColliderComponent.Material->Handle;
 
             out << YAML::EndMap; // SphereColliderComponent
         }
@@ -402,6 +393,7 @@ namespace Monado {
             out << YAML::Key << "Radius" << YAML::Value << capsuleColliderComponent.Radius;
             out << YAML::Key << "Height" << YAML::Value << capsuleColliderComponent.Height;
             out << YAML::Key << "IsTrigger" << YAML::Value << capsuleColliderComponent.IsTrigger;
+            out << YAML::Key << "Material" << YAML::Value << capsuleColliderComponent.Material->Handle;
 
             out << YAML::EndMap; // CapsuleColliderComponent
         }
@@ -413,10 +405,11 @@ namespace Monado {
             auto &meshColliderComponent = entity.GetComponent<MeshColliderComponent>();
 
             if (meshColliderComponent.OverrideMesh)
-                out << YAML::Key << "AssetPath" << YAML::Value << meshColliderComponent.CollisionMesh->GetFilePath();
+                out << YAML::Key << "AssetID" << YAML::Value << meshColliderComponent.CollisionMesh->Handle;
             out << YAML::Key << "IsConvex" << YAML::Value << meshColliderComponent.IsConvex;
             out << YAML::Key << "IsTrigger" << YAML::Value << meshColliderComponent.IsTrigger;
             out << YAML::Key << "OverrideMesh" << YAML::Value << meshColliderComponent.OverrideMesh;
+            out << YAML::Key << "Material" << YAML::Value << meshColliderComponent.Material->Handle;
 
             out << YAML::EndMap; // MeshColliderComponent
         }
@@ -574,22 +567,6 @@ namespace Monado {
                     MND_CORE_INFO("    Scale: {0}, {1}, {2}", transform.Scale.x, transform.Scale.y, transform.Scale.z);
                 }
 
-                /*auto parentComponent = entity["Parent"];
-                if (parentComponent)
-                {
-                        // Entities always have a ParentComponent
-                        auto& parent = deserializedEntity.GetComponent<ParentComponent>();
-                        parent.ParentHandle = parentComponent["Handle"].as<UUID>();
-                }
-
-                auto childrenComponent = entity["ChildrenC"];
-                if (parentComponent)
-                {
-                        // Entities always have a ParentComponent
-                        auto& parent = deserializedEntity.GetComponent<ParentComponent>();
-                        parent.ParentHandle = parentComponent["Handle"].as<UUID>();
-                }*/
-
                 auto scriptComponent = entity["ScriptComponent"];
                 if (scriptComponent) {
                     std::string moduleName = scriptComponent["ModuleName"].as<std::string>();
@@ -649,20 +626,21 @@ namespace Monado {
 
                 auto meshComponent = entity["MeshComponent"];
                 if (meshComponent) {
-                    std::string meshPath = meshComponent["AssetPath"].as<std::string>();
+                    UUID assetID;
+                    if (meshComponent["AssetPath"]) {
+                        std::string filepath = meshComponent["AssetPath"].as<std::string>();
+                        assetID = AssetManager::GetAssetIDForFile(filepath);
+                    } else {
+                        assetID = meshComponent["AssetID"].as<uint64_t>();
+
+                        if (!AssetManager::IsAssetHandleValid(assetID))
+                            MND_CORE_WARN("Huh?");
+                    }
 
                     // TEMP (because script creates mesh component...)
                     if (!deserializedEntity.HasComponent<MeshComponent>()) {
-                        Ref<Mesh> mesh;
-                        if (!CheckPath(meshPath))
-                            missingPaths.emplace_back(meshPath);
-                        else
-                            mesh = Ref<Mesh>::Create(meshPath);
-
-                        deserializedEntity.AddComponent<MeshComponent>(mesh);
+                        deserializedEntity.AddComponent<MeshComponent>(AssetManager::GetAsset<Mesh>(assetID));
                     }
-
-                    MND_CORE_INFO("  Mesh Asset Path: {0}", meshPath);
                 }
 
                 auto cameraComponent = entity["CameraComponent"];
@@ -776,14 +754,6 @@ namespace Monado {
                     component.LockRotationZ = rigidBodyComponent["Constraints"]["LockRotationZ"].as<bool>();
                 }
 
-                auto physicsMaterialComponent = entity["PhysicsMaterialComponent"];
-                if (physicsMaterialComponent) {
-                    auto &component = deserializedEntity.AddComponent<PhysicsMaterialComponent>();
-                    component.StaticFriction = physicsMaterialComponent["StaticFriction"].as<float>();
-                    component.DynamicFriction = physicsMaterialComponent["DynamicFriction"].as<float>();
-                    component.Bounciness = physicsMaterialComponent["Bounciness"].as<float>();
-                }
-
                 auto boxColliderComponent = entity["BoxColliderComponent"];
                 if (boxColliderComponent) {
                     auto &component = deserializedEntity.AddComponent<BoxColliderComponent>();
@@ -791,6 +761,11 @@ namespace Monado {
                     component.Size = boxColliderComponent["Size"].as<glm::vec3>();
                     component.IsTrigger =
                         boxColliderComponent["IsTrigger"] ? boxColliderComponent["IsTrigger"].as<bool>() : false;
+
+                    auto material = boxColliderComponent["Material"];
+                    if (material)
+                        component.Material = AssetManager::GetAsset<PhysicsMaterial>(material.as<AssetHandle>());
+
                     component.DebugMesh = MeshFactory::CreateBox(component.Size);
                 }
 
@@ -800,6 +775,11 @@ namespace Monado {
                     component.Radius = sphereColliderComponent["Radius"].as<float>();
                     component.IsTrigger =
                         sphereColliderComponent["IsTrigger"] ? sphereColliderComponent["IsTrigger"].as<bool>() : false;
+
+                    auto material = sphereColliderComponent["Material"];
+                    if (material)
+                        component.Material = AssetManager::GetAsset<PhysicsMaterial>(material.as<AssetHandle>());
+
                     component.DebugMesh = MeshFactory::CreateSphere(component.Radius);
                 }
 
@@ -811,6 +791,11 @@ namespace Monado {
                     component.IsTrigger = capsuleColliderComponent["IsTrigger"]
                                               ? capsuleColliderComponent["IsTrigger"].as<bool>()
                                               : false;
+
+                    auto material = capsuleColliderComponent["Material"];
+                    if (material)
+                        component.Material = AssetManager::GetAsset<PhysicsMaterial>(material.as<AssetHandle>());
+
                     component.DebugMesh = MeshFactory::CreateCapsule(component.Radius, component.Height);
                 }
 
@@ -824,12 +809,18 @@ namespace Monado {
                                             : false;
 
                     if (overrideMesh) {
-                        std::string meshPath = meshColliderComponent["AssetPath"].as<std::string>();
-                        if (!CheckPath(meshPath)) {
-                            missingPaths.emplace_back(meshPath);
+                        UUID assetID;
+                        if (meshComponent["AssetPath"]) {
+                            std::string filepath = meshComponent["AssetPath"].as<std::string>();
+                            assetID = AssetManager::GetAssetIDForFile(filepath);
                         } else {
-                            collisionMesh = Ref<Mesh>::Create(meshPath);
+                            assetID = meshComponent["AssetID"].as<uint64_t>();
+
+                            if (!AssetManager::IsAssetHandleValid(assetID))
+                                MND_CORE_WARN("Huh?");
                         }
+
+                        collisionMesh = AssetManager::GetAsset<Mesh>(assetID);
                     }
 
                     if (collisionMesh) {
@@ -840,6 +831,10 @@ namespace Monado {
                             meshColliderComponent["IsTrigger"] ? meshColliderComponent["IsTrigger"].as<bool>() : false;
                         component.OverrideMesh = overrideMesh;
 
+                        auto material = meshColliderComponent["Material"];
+                        if (material)
+                            component.Material = AssetManager::GetAsset<PhysicsMaterial>(material.as<AssetHandle>());
+
                         if (component.IsConvex)
                             PXPhysicsWrappers::CreateConvexMesh(component, deserializedEntity.Transform().Scale);
                         else
@@ -847,6 +842,28 @@ namespace Monado {
                     } else {
                         MND_CORE_WARN("MeshColliderComponent in use without valid mesh!");
                     }
+                }
+
+                // NOTE(Peter): Compatibility fix for older scenes
+                auto physicsMaterialComponent = entity["PhysicsMaterialComponent"];
+                if (physicsMaterialComponent) {
+                    // auto& component = deserializedEntity.AddComponent<PhysicsMaterialComponent>();
+                    Ref<PhysicsMaterial> material = Ref<PhysicsMaterial>::Create();
+                    material->StaticFriction = physicsMaterialComponent["StaticFriction"].as<float>();
+                    material->DynamicFriction = physicsMaterialComponent["DynamicFriction"].as<float>();
+                    material->Bounciness = physicsMaterialComponent["Bounciness"].as<float>();
+
+                    if (deserializedEntity.HasComponent<BoxColliderComponent>())
+                        deserializedEntity.GetComponent<BoxColliderComponent>().Material = material;
+
+                    if (deserializedEntity.HasComponent<SphereColliderComponent>())
+                        deserializedEntity.GetComponent<SphereColliderComponent>().Material = material;
+
+                    if (deserializedEntity.HasComponent<CapsuleColliderComponent>())
+                        deserializedEntity.GetComponent<CapsuleColliderComponent>().Material = material;
+
+                    if (deserializedEntity.HasComponent<MeshColliderComponent>())
+                        deserializedEntity.GetComponent<MeshColliderComponent>().Material = material;
                 }
             }
         }
