@@ -359,7 +359,7 @@ namespace Monado {
             ImGui::PushItemWidth(200);
             char *buf = m_InputBuffer;
             if (m_RenamingSelected)
-                buf = "\0";
+                buf = (char *)"\0";
 
             if (ImGui::InputTextWithHint("", "Search...", buf, MAX_INPUT_BUFFER_LENGTH)) {
                 if (strlen(m_InputBuffer) == 0) {

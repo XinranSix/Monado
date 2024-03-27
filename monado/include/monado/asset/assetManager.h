@@ -66,7 +66,7 @@ namespace Monado {
 
         template <typename T>
         static Ref<T> GetAsset(AssetHandle assetHandle, bool loadData = true) {
-            HZ_CORE_ASSERT(s_LoadedAssets.find(assetHandle) != s_LoadedAssets.end());
+            MND_CORE_ASSERT(s_LoadedAssets.find(assetHandle) != s_LoadedAssets.end());
             Ref<Asset> asset = s_LoadedAssets[assetHandle];
 
             if (!asset->IsDataLoaded && loadData)
