@@ -2,6 +2,7 @@
 #include "monado/physics/physics.h"
 #include "monado/physics/pXPhysicsWrappers.h"
 #include "monado/physics/physicsLayer.h"
+#include "monado/physics/PhysicsActor.h"
 #include "monado/script/scriptEngine.h"
 
 #include "extensions/PxBroadPhaseExt.h"
@@ -12,10 +13,7 @@
 namespace Monado {
 
     static physx::PxScene *s_Scene;
-    static std::vector<Entity> s_SimulatedEntities;
-    static Entity *s_EntityStorageBuffer;
-    static uint32_t s_EntityBufferCount;
-    static int s_EntityStorageBufferPosition;
+    static std::vector<Ref<PhysicsActor>> s_Actors;
     static float s_SimulationTime = 0.0F;
 
     static PhysicsSettings s_Settings;
@@ -26,32 +24,6 @@ namespace Monado {
     }
 
     void Physics::Shutdown() { PXPhysicsWrappers::Shutdown(); }
-
-    void Physics::ExpandEntityBuffer(uint32_t amount) {
-        MND_CORE_ASSERT(s_Scene);
-
-        if (s_EntityStorageBuffer != nullptr) {
-            Entity *temp = new Entity[s_EntityBufferCount + amount];
-            memcpy(temp, s_EntityStorageBuffer, s_EntityBufferCount * sizeof(Entity));
-
-            for (uint32_t i = 0; i < s_EntityBufferCount; i++) {
-                Entity &e = s_EntityStorageBuffer[i];
-                RigidBodyComponent &rb = e.GetComponent<RigidBodyComponent>();
-
-                if (rb.RuntimeActor) {
-                    physx::PxRigidActor *actor = static_cast<physx::PxRigidActor *>(rb.RuntimeActor);
-                    actor->userData = &temp[rb.EntityBufferIndex];
-                }
-            }
-
-            delete[] s_EntityStorageBuffer;
-            s_EntityStorageBuffer = temp;
-            s_EntityBufferCount += amount;
-        } else {
-            s_EntityStorageBuffer = new Entity[amount];
-            s_EntityBufferCount = amount;
-        }
-    }
 
     void Physics::CreateScene() {
         MND_CORE_ASSERT(s_Scene == nullptr, "Scene already has a Physics Scene!");
@@ -72,65 +44,26 @@ namespace Monado {
         }
     }
 
-    void Physics::CreateActor(Entity e) {
+    Ref<PhysicsActor> Physics::CreateActor(Entity e) {
         MND_CORE_ASSERT(s_Scene);
+        Ref<PhysicsActor> actor = Ref<PhysicsActor>::Create(e);
+        s_Actors.push_back(actor);
+        actor->Spawn();
+        return actor;
+    }
 
-        if (!e.HasComponent<RigidBodyComponent>()) {
-            MND_CORE_WARN("Trying to create PhysX actor from a non-rigidbody actor!");
-            return;
+    Ref<PhysicsActor> Physics::GetActorForEntity(Entity entity) {
+        for (auto &actor : s_Actors) {
+            if (actor->GetEntity() == entity)
+                return actor;
         }
 
-        if (!e.HasComponent<PhysicsMaterialComponent>()) {
-            MND_CORE_WARN("Trying to create PhysX actor without a PhysicsMaterialComponent!");
-            return;
-        }
-
-        RigidBodyComponent &rigidbody = e.GetComponent<RigidBodyComponent>();
-
-        TransformComponent &transform = e.GetComponent<TransformComponent>();
-        physx::PxRigidActor *actor = PXPhysicsWrappers::CreateActor(rigidbody, transform);
-
-        if (rigidbody.BodyType == RigidBodyComponent::Type::Dynamic)
-            s_SimulatedEntities.push_back(e);
-
-        Entity *entityStorage = &s_EntityStorageBuffer[s_EntityStorageBufferPosition];
-        *entityStorage = e;
-        actor->userData = (void *)entityStorage;
-        rigidbody.RuntimeActor = actor;
-        rigidbody.EntityBufferIndex = s_EntityStorageBufferPosition;
-        s_EntityStorageBufferPosition++;
-
-        physx::PxMaterial *material = PXPhysicsWrappers::CreateMaterial(e.GetComponent<PhysicsMaterialComponent>());
-
-        if (e.HasComponent<BoxColliderComponent>()) {
-            BoxColliderComponent &collider = e.GetComponent<BoxColliderComponent>();
-            PXPhysicsWrappers::AddBoxCollider(*actor, *material, collider, transform.Scale);
-        }
-
-        if (e.HasComponent<SphereColliderComponent>()) {
-            SphereColliderComponent &collider = e.GetComponent<SphereColliderComponent>();
-            PXPhysicsWrappers::AddSphereCollider(*actor, *material, collider, transform.Scale);
-        }
-
-        if (e.HasComponent<CapsuleColliderComponent>()) {
-            CapsuleColliderComponent &collider = e.GetComponent<CapsuleColliderComponent>();
-            PXPhysicsWrappers::AddCapsuleCollider(*actor, *material, collider, transform.Scale);
-        }
-
-        if (e.HasComponent<MeshColliderComponent>()) {
-            MeshColliderComponent &collider = e.GetComponent<MeshColliderComponent>();
-            PXPhysicsWrappers::AddMeshCollider(*actor, *material, collider, transform.Scale);
-        }
-
-        if (!PhysicsLayerManager::IsLayerValid(rigidbody.Layer))
-            rigidbody.Layer = 0;
-
-        PXPhysicsWrappers::SetCollisionFilters(*actor, rigidbody.Layer);
-        s_Scene->addActor(*actor);
+        return nullptr;
     }
 
     PhysicsSettings &Physics::GetSettings() { return s_Settings; }
 
+    // TODO: Physics Thread
     void Physics::Simulate(Timestep ts) {
         s_SimulationTime += ts.GetMilliseconds();
 
@@ -139,35 +72,23 @@ namespace Monado {
 
         s_SimulationTime -= s_Settings.FixedTimestep;
 
-        for (Entity &e : s_SimulatedEntities) {
-            if (ScriptEngine::IsEntityModuleValid(e))
-                ScriptEngine::OnPhysicsUpdateEntity(e, s_Settings.FixedTimestep);
-        }
+        for (auto &actor : s_Actors)
+            actor->Update(s_Settings.FixedTimestep);
 
         s_Scene->simulate(s_Settings.FixedTimestep);
         s_Scene->fetchResults(true);
 
-        for (Entity &e : s_SimulatedEntities) {
-            TransformComponent &transform = e.Transform();
-            RigidBodyComponent &rb = e.GetComponent<RigidBodyComponent>();
-            physx::PxRigidActor *actor = static_cast<physx::PxRigidActor *>(rb.RuntimeActor);
-            physx::PxTransform actorPose = actor->getGlobalPose();
-            transform.Translation = FromPhysXVector(actorPose.p);
-            transform.Rotation = glm::eulerAngles(FromPhysXQuat(actorPose.q));
-        }
+        for (auto &actor : s_Actors)
+            actor->SynchronizeTransform();
     }
 
     void Physics::DestroyScene() {
         MND_CORE_ASSERT(s_Scene);
 
-        delete[] s_EntityStorageBuffer;
-        s_EntityStorageBuffer = nullptr;
-        s_EntityStorageBufferPosition = 0;
-        s_SimulatedEntities.clear();
+        s_Actors.clear();
         s_Scene->release();
         s_Scene = nullptr;
     }
 
     void *Physics::GetPhysicsScene() { return s_Scene; }
-
 } // namespace Monado

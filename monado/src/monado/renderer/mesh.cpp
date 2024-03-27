@@ -220,6 +220,10 @@ namespace Monado {
                 auto aiMaterialName = aiMaterial->GetName();
 
                 auto mi = Ref<MaterialInstance>::Create(m_BaseMaterial, aiMaterialName.data);
+
+                // NOTE(Peter): This shouldn't be here. But right now everything is Two Sided otherwise
+                mi->SetFlag(MaterialFlag::TwoSided, false);
+
                 m_Materials[i] = mi;
 
                 MND_MESH_LOG("  {0} (Index = {1})", aiMaterialName.data, i);
@@ -248,6 +252,8 @@ namespace Monado {
                     parentPath /= std::string(aiTexPath.data);
                     std::string texturePath = parentPath.string();
                     MND_MESH_LOG("    Albedo map path = {0}", texturePath);
+                    if (texturePath.find_first_of(".tga") != std::string::npos)
+                        continue;
                     auto texture = Texture2D::Create(texturePath, true);
                     if (texture->Loaded()) {
                         m_Textures[i] = texture;
@@ -427,13 +433,13 @@ namespace Monado {
         m_Pipeline = Pipeline::Create(pipelineSpecification);
     }
 
-    Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<Index> &indices)
+    Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<Index> &indices, const glm::mat4 &transform)
         : m_StaticVertices(vertices), m_Indices(indices), m_IsAnimated(false) {
         Submesh submesh;
         submesh.BaseVertex = 0;
         submesh.BaseIndex = 0;
         submesh.IndexCount = indices.size() * 3;
-        submesh.Transform = glm::mat4(1.0F);
+        submesh.Transform = transform;
         m_Submeshes.push_back(submesh);
 
         m_VertexBuffer = VertexBuffer::Create(m_StaticVertices.data(), m_StaticVertices.size() * sizeof(Vertex));
@@ -476,12 +482,14 @@ namespace Monado {
     }
 
     void Mesh::TraverseNodes(aiNode *node, const glm::mat4 &parentTransform, uint32_t level) {
-        glm::mat4 transform = parentTransform * Mat4FromAssimpMat4(node->mTransformation);
+        glm::mat4 localTransform = Mat4FromAssimpMat4(node->mTransformation);
+        glm::mat4 transform = parentTransform * localTransform;
         for (uint32_t i = 0; i < node->mNumMeshes; i++) {
             uint32_t mesh = node->mMeshes[i];
             auto &submesh = m_Submeshes[mesh];
             submesh.NodeName = node->mName.C_Str();
             submesh.Transform = transform;
+            submesh.LocalTransform = localTransform;
         }
 
         // MND_MESH_LOG("{0} {1}", LevelToSpaces(level), node->mName.C_Str());

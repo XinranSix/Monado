@@ -6,6 +6,7 @@
 #include "monado/renderer/meshFactory.h"
 #include "monado/physics/physics.h"
 #include "monado/Physics/physicsLayer.h"
+#include "monado/asset/assetManager.h"
 
 #include "yaml-cpp/yaml.h"
 
@@ -150,6 +151,21 @@ namespace Monado {
         out << YAML::Key << "Entity";
         out << YAML::Value << uuid;
 
+        if (entity.HasComponent<RelationshipComponent>()) {
+            auto &relationshipComponent = entity.GetComponent<RelationshipComponent>();
+            out << YAML::Key << "Parent" << YAML::Value << relationshipComponent.ParentHandle;
+
+            out << YAML::Key << "Children";
+            out << YAML::Value << YAML::BeginSeq;
+
+            for (auto child : relationshipComponent.Children) {
+                out << YAML::BeginMap;
+                out << YAML::Key << "Handle" << YAML::Value << child;
+                out << YAML::EndMap;
+            }
+            out << YAML::EndSeq;
+        }
+
         if (entity.HasComponent<TagComponent>()) {
             out << YAML::Key << "TagComponent";
             out << YAML::BeginMap; // TagComponent
@@ -212,7 +228,10 @@ namespace Monado {
             out << YAML::BeginMap; // MeshComponent
 
             auto mesh = entity.GetComponent<MeshComponent>().Mesh;
-            out << YAML::Key << "AssetPath" << YAML::Value << mesh->GetFilePath();
+            if (mesh)
+                out << YAML::Key << "AssetID" << YAML::Value << mesh->Handle;
+            else
+                out << YAML::Key << "AssetID" << YAML::Value << 0;
 
             out << YAML::EndMap; // MeshComponent
         }
@@ -222,7 +241,17 @@ namespace Monado {
             out << YAML::BeginMap; // CameraComponent
 
             auto &cameraComponent = entity.GetComponent<CameraComponent>();
-            out << YAML::Key << "Camera" << YAML::Value << "some camera data...";
+            auto &camera = cameraComponent.Camera;
+            out << YAML::Key << "Camera" << YAML::Value;
+            out << YAML::BeginMap; // Camera
+            out << YAML::Key << "ProjectionType" << YAML::Value << (int)camera.GetProjectionType();
+            out << YAML::Key << "PerspectiveFOV" << YAML::Value << camera.GetPerspectiveVerticalFOV();
+            out << YAML::Key << "PerspectiveNear" << YAML::Value << camera.GetPerspectiveNearClip();
+            out << YAML::Key << "PerspectiveFar" << YAML::Value << camera.GetPerspectiveFarClip();
+            out << YAML::Key << "OrthographicSize" << YAML::Value << camera.GetOrthographicSize();
+            out << YAML::Key << "OrthographicNear" << YAML::Value << camera.GetOrthographicNearClip();
+            out << YAML::Key << "OrthographicFar" << YAML::Value << camera.GetOrthographicFarClip();
+            out << YAML::EndMap; // Camera
             out << YAML::Key << "Primary" << YAML::Value << cameraComponent.Primary;
 
             out << YAML::EndMap; // CameraComponent
@@ -246,7 +275,7 @@ namespace Monado {
             out << YAML::BeginMap; // SkyLightComponent
 
             auto &skyLightComponent = entity.GetComponent<SkyLightComponent>();
-            out << YAML::Key << "EnvironmentAssetPath" << YAML::Value << skyLightComponent.SceneEnvironment.FilePath;
+            out << YAML::Key << "EnvironmentMap" << YAML::Value << skyLightComponent.SceneEnvironment->Handle;
             out << YAML::Key << "Intensity" << YAML::Value << skyLightComponent.Intensity;
             out << YAML::Key << "Angle" << YAML::Value << skyLightComponent.Angle;
 
@@ -310,6 +339,9 @@ namespace Monado {
             auto &rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
             out << YAML::Key << "BodyType" << YAML::Value << (int)rigidbodyComponent.BodyType;
             out << YAML::Key << "Mass" << YAML::Value << rigidbodyComponent.Mass;
+            out << YAML::Key << "LinearDrag" << YAML::Value << rigidbodyComponent.LinearDrag;
+            out << YAML::Key << "AngularDrag" << YAML::Value << rigidbodyComponent.AngularDrag;
+            out << YAML::Key << "DisableGravity" << YAML::Value << rigidbodyComponent.DisableGravity;
             out << YAML::Key << "IsKinematic" << YAML::Value << rigidbodyComponent.IsKinematic;
             out << YAML::Key << "Layer" << YAML::Value << rigidbodyComponent.Layer;
 
@@ -328,18 +360,6 @@ namespace Monado {
             out << YAML::EndMap; // RigidBodyComponent
         }
 
-        if (entity.HasComponent<PhysicsMaterialComponent>()) {
-            out << YAML::Key << "PhysicsMaterialComponent";
-            out << YAML::BeginMap; // PhysicsMaterialComponent
-
-            auto &physicsMaterial = entity.GetComponent<PhysicsMaterialComponent>();
-            out << YAML::Key << "StaticFriction" << YAML::Value << physicsMaterial.StaticFriction;
-            out << YAML::Key << "DynamicFriction" << YAML::Value << physicsMaterial.DynamicFriction;
-            out << YAML::Key << "Bounciness" << YAML::Value << physicsMaterial.Bounciness;
-
-            out << YAML::EndMap;
-        }
-
         if (entity.HasComponent<BoxColliderComponent>()) {
             out << YAML::Key << "BoxColliderComponent";
             out << YAML::BeginMap; // BoxColliderComponent
@@ -348,6 +368,11 @@ namespace Monado {
             out << YAML::Key << "Offset" << YAML::Value << boxColliderComponent.Offset;
             out << YAML::Key << "Size" << YAML::Value << boxColliderComponent.Size;
             out << YAML::Key << "IsTrigger" << YAML::Value << boxColliderComponent.IsTrigger;
+
+            if (boxColliderComponent.Material)
+                out << YAML::Key << "Material" << YAML::Value << boxColliderComponent.Material->Handle;
+            else
+                out << YAML::Key << "Material" << YAML::Value << 0;
 
             out << YAML::EndMap; // BoxColliderComponent
         }
@@ -359,6 +384,11 @@ namespace Monado {
             auto &sphereColliderComponent = entity.GetComponent<SphereColliderComponent>();
             out << YAML::Key << "Radius" << YAML::Value << sphereColliderComponent.Radius;
             out << YAML::Key << "IsTrigger" << YAML::Value << sphereColliderComponent.IsTrigger;
+
+            if (sphereColliderComponent.Material)
+                out << YAML::Key << "Material" << YAML::Value << sphereColliderComponent.Material->Handle;
+            else
+                out << YAML::Key << "Material" << YAML::Value << 0;
 
             out << YAML::EndMap; // SphereColliderComponent
         }
@@ -372,6 +402,11 @@ namespace Monado {
             out << YAML::Key << "Height" << YAML::Value << capsuleColliderComponent.Height;
             out << YAML::Key << "IsTrigger" << YAML::Value << capsuleColliderComponent.IsTrigger;
 
+            if (capsuleColliderComponent.Material)
+                out << YAML::Key << "Material" << YAML::Value << capsuleColliderComponent.Material->Handle;
+            else
+                out << YAML::Key << "Material" << YAML::Value << 0;
+
             out << YAML::EndMap; // CapsuleColliderComponent
         }
 
@@ -380,9 +415,17 @@ namespace Monado {
             out << YAML::BeginMap; // MeshColliderComponent
 
             auto &meshColliderComponent = entity.GetComponent<MeshColliderComponent>();
-            out << YAML::Key << "AssetPath" << YAML::Value << meshColliderComponent.CollisionMesh->GetFilePath();
+
+            if (meshColliderComponent.OverrideMesh)
+                out << YAML::Key << "AssetID" << YAML::Value << meshColliderComponent.CollisionMesh->Handle;
             out << YAML::Key << "IsConvex" << YAML::Value << meshColliderComponent.IsConvex;
             out << YAML::Key << "IsTrigger" << YAML::Value << meshColliderComponent.IsTrigger;
+            out << YAML::Key << "OverrideMesh" << YAML::Value << meshColliderComponent.OverrideMesh;
+
+            if (meshColliderComponent.Material)
+                out << YAML::Key << "Material" << YAML::Value << meshColliderComponent.Material->Handle;
+            else
+                out << YAML::Key << "Material" << YAML::Value << 0;
 
             out << YAML::EndMap; // MeshColliderComponent
         }
@@ -394,7 +437,7 @@ namespace Monado {
         out << YAML::Key << "Environment";
         out << YAML::Value;
         out << YAML::BeginMap; // Environment
-        out << YAML::Key << "AssetPath" << YAML::Value << scene->GetEnvironment().FilePath;
+        out << YAML::Key << "AssetHandle" << YAML::Value << scene->GetEnvironment()->Handle;
         const auto &light = scene->GetLight();
         out << YAML::Key << "Light" << YAML::Value;
         out << YAML::BeginMap; // Light
@@ -403,6 +446,13 @@ namespace Monado {
         out << YAML::Key << "Multiplier" << YAML::Value << light.Multiplier;
         out << YAML::EndMap; // Light
         out << YAML::EndMap; // Environment
+    }
+
+    static bool CheckPath(const std::string &path) {
+        FILE *f = fopen(path.c_str(), "rb");
+        if (f)
+            fclose(f);
+        return f != nullptr;
     }
 
     void SceneSerializer::Serialize(const std::string &filepath) {
@@ -468,19 +518,32 @@ namespace Monado {
         std::string sceneName = data["Scene"].as<std::string>();
         MND_CORE_INFO("Deserializing scene '{0}'", sceneName);
 
-        auto environment = data["Environment"];
-        if (environment) {
-            std::string envPath = environment["AssetPath"].as<std::string>();
-            // m_Scene->SetEnvironment(Environment::Load(envPath));
+        /*auto environment = data["Environment"];
+        if (environment)
+        {
+                AssetHandle assetHandle;
+                if (environment["AssetPath"])
+                {
+                        std::string envPath = environment["AssetPath"].as<std::string>();
+                        assetHandle = AssetManager::GetAssetIDForFile(envPath);
+                }
+                else
+                {
+                        assetHandle = environment["AssetHandle"].as<uint64_t>();
+                }
+                //m_Scene->SetEnvironment(Environment::Load(envPath));
 
-            auto lightNode = environment["Light"];
-            if (lightNode) {
-                auto &light = m_Scene->GetLight();
-                light.Direction = lightNode["Direction"].as<glm::vec3>();
-                light.Radiance = lightNode["Radiance"].as<glm::vec3>();
-                light.Multiplier = lightNode["Multiplier"].as<float>();
-            }
-        }
+                auto lightNode = environment["Light"];
+                if (lightNode)
+                {
+                        auto& light = m_Scene->GetLight();
+                        light.Direction = lightNode["Direction"].as<glm::vec3>();
+                        light.Radiance = lightNode["Radiance"].as<glm::vec3>();
+                        light.Multiplier = lightNode["Multiplier"].as<float>();
+                }
+        }*/
+
+        std::vector<std::string> missingPaths;
 
         auto entities = data["Entities"];
         if (entities) {
@@ -496,19 +559,39 @@ namespace Monado {
 
                 Entity deserializedEntity = m_Scene->CreateEntityWithID(uuid, name);
 
+                auto &relationshipComponent = deserializedEntity.GetComponent<RelationshipComponent>();
+                uint64_t parentHandle = entity["Parent"] ? entity["Parent"].as<uint64_t>() : 0;
+                relationshipComponent.ParentHandle = parentHandle;
+
+                auto children = entity["Children"];
+                if (children) {
+                    for (auto child : children) {
+                        uint64_t childHandle = child["Handle"].as<uint64_t>();
+                        relationshipComponent.Children.push_back(childHandle);
+                    }
+                }
+
                 auto transformComponent = entity["TransformComponent"];
                 if (transformComponent) {
                     // Entities always have transforms
                     auto &transform = deserializedEntity.GetComponent<TransformComponent>();
                     transform.Translation = transformComponent["Position"].as<glm::vec3>();
-                    transform.Rotation = transformComponent["Rotation"].as<glm::vec3>();
+                    auto rotationNode = transformComponent["Rotation"];
+                    // Rotations used to be stored as quaternions
+                    if (rotationNode.size() == 4) {
+                        glm::quat rotation = transformComponent["Rotation"].as<glm::quat>();
+                        transform.Rotation = glm::eulerAngles(rotation);
+                    } else {
+                        MND_CORE_ASSERT(rotationNode.size() == 3);
+                        transform.Rotation = transformComponent["Rotation"].as<glm::vec3>();
+                    }
                     transform.Scale = transformComponent["Scale"].as<glm::vec3>();
 
                     MND_CORE_INFO("  Entity Transform:");
                     MND_CORE_INFO("    Translation: {0}, {1}, {2}", transform.Translation.x, transform.Translation.y,
-                                 transform.Translation.z);
+                                  transform.Translation.z);
                     MND_CORE_INFO("    Rotation: {0}, {1}, {2}", transform.Rotation.x, transform.Rotation.y,
-                                 transform.Rotation.z);
+                                  transform.Rotation.z);
                     MND_CORE_INFO("    Scale: {0}, {1}, {2}", transform.Scale.x, transform.Scale.y, transform.Scale.z);
                 }
 
@@ -524,13 +607,14 @@ namespace Monado {
                         if (storedFields) {
                             for (auto field : storedFields) {
                                 std::string name = field["Name"].as<std::string>();
+                                std::string typeName = field["TypeName"] ? field["TypeName"].as<std::string>() : "";
                                 FieldType type = (FieldType)field["Type"].as<uint32_t>();
                                 EntityInstanceData &data =
                                     ScriptEngine::GetEntityInstanceData(m_Scene->GetUUID(), uuid);
                                 auto &moduleFieldMap = data.ModuleFieldMap;
                                 auto &publicFields = moduleFieldMap[moduleName];
                                 if (publicFields.find(name) == publicFields.end()) {
-                                    PublicField pf = { name, type };
+                                    PublicField pf = { name, typeName, type };
                                     publicFields.emplace(name, std::move(pf));
                                 }
                                 auto dataNode = field["Data"];
@@ -571,21 +655,43 @@ namespace Monado {
 
                 auto meshComponent = entity["MeshComponent"];
                 if (meshComponent) {
-                    std::string meshPath = meshComponent["AssetPath"].as<std::string>();
-                    // TEMP (because script creates mesh component...)
-                    if (!deserializedEntity.HasComponent<MeshComponent>())
-                        deserializedEntity.AddComponent<MeshComponent>(Ref<Mesh>::Create(meshPath));
+                    UUID assetID;
+                    if (meshComponent["AssetPath"]) {
+                        std::string filepath = meshComponent["AssetPath"].as<std::string>();
+                        assetID = AssetManager::GetAssetHandleFromFilePath(filepath);
+                    } else {
+                        assetID = meshComponent["AssetID"].as<uint64_t>();
+                    }
 
-                    MND_CORE_INFO("  Mesh Asset Path: {0}", meshPath);
+                    if (AssetManager::IsAssetHandleValid(assetID) &&
+                        !deserializedEntity.HasComponent<MeshComponent>()) {
+                        deserializedEntity.AddComponent<MeshComponent>(AssetManager::GetAsset<Mesh>(assetID));
+                    }
                 }
 
                 auto cameraComponent = entity["CameraComponent"];
                 if (cameraComponent) {
                     auto &component = deserializedEntity.AddComponent<CameraComponent>();
-                    component.Camera = SceneCamera();
-                    component.Primary = cameraComponent["Primary"].as<bool>();
+                    auto cameraNode = cameraComponent["Camera"];
 
-                    MND_CORE_INFO("  Primary Camera: {0}", component.Primary);
+                    component.Camera = SceneCamera();
+                    auto &camera = component.Camera;
+                    if (cameraNode["ProjectionType"])
+                        camera.SetProjectionType((SceneCamera::ProjectionType)cameraNode["ProjectionType"].as<int>());
+                    if (cameraNode["PerspectiveFOV"])
+                        camera.SetPerspectiveVerticalFOV(cameraNode["PerspectiveFOV"].as<float>());
+                    if (cameraNode["PerspectiveNear"])
+                        camera.SetPerspectiveNearClip(cameraNode["PerspectiveNear"].as<float>());
+                    if (cameraNode["PerspectiveFar"])
+                        camera.SetPerspectiveFarClip(cameraNode["PerspectiveFar"].as<float>());
+                    if (cameraNode["OrthographicSize"])
+                        camera.SetOrthographicSize(cameraNode["OrthographicSize"].as<float>());
+                    if (cameraNode["OrthographicNear"])
+                        camera.SetOrthographicNearClip(cameraNode["OrthographicNear"].as<float>());
+                    if (cameraNode["OrthographicFar"])
+                        camera.SetOrthographicFarClip(cameraNode["OrthographicFar"].as<float>());
+
+                    component.Primary = cameraComponent["Primary"].as<bool>();
                 }
 
                 auto directionalLightComponent = entity["DirectionalLightComponent"];
@@ -600,9 +706,19 @@ namespace Monado {
                 auto skyLightComponent = entity["SkyLightComponent"];
                 if (skyLightComponent) {
                     auto &component = deserializedEntity.AddComponent<SkyLightComponent>();
-                    std::string env = skyLightComponent["EnvironmentAssetPath"].as<std::string>();
-                    if (!env.empty())
-                        component.SceneEnvironment = Environment::Load(env);
+
+                    AssetHandle assetHandle;
+                    if (skyLightComponent["EnvironmentAssetPath"]) {
+                        std::string filepath = skyLightComponent["EnvironmentAssetPath"].as<std::string>();
+                        assetHandle = AssetManager::GetAssetHandleFromFilePath(filepath);
+                    } else {
+                        assetHandle = skyLightComponent["EnvironmentMap"].as<uint64_t>();
+                    }
+
+                    if (AssetManager::IsAssetHandleValid(assetHandle)) {
+                        component.SceneEnvironment = AssetManager::GetAsset<Environment>(assetHandle);
+                    }
+
                     component.Intensity = skyLightComponent["Intensity"].as<float>();
                     component.Angle = skyLightComponent["Angle"].as<float>();
                 }
@@ -651,6 +767,12 @@ namespace Monado {
                     auto &component = deserializedEntity.AddComponent<RigidBodyComponent>();
                     component.BodyType = (RigidBodyComponent::Type)rigidBodyComponent["BodyType"].as<int>();
                     component.Mass = rigidBodyComponent["Mass"].as<float>();
+                    component.LinearDrag =
+                        rigidBodyComponent["LinearDrag"] ? rigidBodyComponent["LinearDrag"].as<float>() : 0.0f;
+                    component.AngularDrag =
+                        rigidBodyComponent["AngularDrag"] ? rigidBodyComponent["AngularDrag"].as<float>() : 0.05f;
+                    component.DisableGravity =
+                        rigidBodyComponent["DisableGravity"] ? rigidBodyComponent["DisableGravity"].as<bool>() : false;
                     component.IsKinematic =
                         rigidBodyComponent["IsKinematic"] ? rigidBodyComponent["IsKinematic"].as<bool>() : false;
                     component.Layer = rigidBodyComponent["Layer"] ? rigidBodyComponent["Layer"].as<uint32_t>() : 0;
@@ -663,14 +785,6 @@ namespace Monado {
                     component.LockRotationZ = rigidBodyComponent["Constraints"]["LockRotationZ"].as<bool>();
                 }
 
-                auto physicsMaterialComponent = entity["PhysicsMaterialComponent"];
-                if (physicsMaterialComponent) {
-                    auto &component = deserializedEntity.AddComponent<PhysicsMaterialComponent>();
-                    component.StaticFriction = physicsMaterialComponent["StaticFriction"].as<float>();
-                    component.DynamicFriction = physicsMaterialComponent["DynamicFriction"].as<float>();
-                    component.Bounciness = physicsMaterialComponent["Bounciness"].as<float>();
-                }
-
                 auto boxColliderComponent = entity["BoxColliderComponent"];
                 if (boxColliderComponent) {
                     auto &component = deserializedEntity.AddComponent<BoxColliderComponent>();
@@ -678,6 +792,12 @@ namespace Monado {
                     component.Size = boxColliderComponent["Size"].as<glm::vec3>();
                     component.IsTrigger =
                         boxColliderComponent["IsTrigger"] ? boxColliderComponent["IsTrigger"].as<bool>() : false;
+
+                    auto material = boxColliderComponent["Material"];
+                    if (material && AssetManager::IsAssetHandleValid(material.as<uint64_t>())) {
+                        component.Material = AssetManager::GetAsset<PhysicsMaterial>(material.as<uint64_t>());
+                    }
+
                     component.DebugMesh = MeshFactory::CreateBox(component.Size);
                 }
 
@@ -687,6 +807,11 @@ namespace Monado {
                     component.Radius = sphereColliderComponent["Radius"].as<float>();
                     component.IsTrigger =
                         sphereColliderComponent["IsTrigger"] ? sphereColliderComponent["IsTrigger"].as<bool>() : false;
+
+                    auto material = sphereColliderComponent["Material"];
+                    if (material && AssetManager::IsAssetHandleValid(material.as<uint64_t>()))
+                        component.Material = AssetManager::GetAsset<PhysicsMaterial>(material.as<uint64_t>());
+
                     component.DebugMesh = MeshFactory::CreateSphere(component.Radius);
                 }
 
@@ -698,25 +823,79 @@ namespace Monado {
                     component.IsTrigger = capsuleColliderComponent["IsTrigger"]
                                               ? capsuleColliderComponent["IsTrigger"].as<bool>()
                                               : false;
+
+                    auto material = capsuleColliderComponent["Material"];
+                    if (material && AssetManager::IsAssetHandleValid(material.as<uint64_t>()))
+                        component.Material = AssetManager::GetAsset<PhysicsMaterial>(material.as<uint64_t>());
+
                     component.DebugMesh = MeshFactory::CreateCapsule(component.Radius, component.Height);
                 }
 
                 auto meshColliderComponent = entity["MeshColliderComponent"];
                 if (meshColliderComponent) {
-                    std::string meshPath = meshColliderComponent["AssetPath"].as<std::string>();
-                    auto &component =
-                        deserializedEntity.AddComponent<MeshColliderComponent>(Ref<Mesh>::Create(meshPath));
-                    component.IsConvex =
-                        meshColliderComponent["IsConvex"] ? meshColliderComponent["IsConvex"].as<bool>() : false;
-                    component.IsTrigger =
-                        meshColliderComponent["IsTrigger"] ? meshColliderComponent["IsTrigger"].as<bool>() : false;
+                    Ref<Mesh> collisionMesh = deserializedEntity.HasComponent<MeshComponent>()
+                                                  ? deserializedEntity.GetComponent<MeshComponent>().Mesh
+                                                  : nullptr;
+                    bool overrideMesh = meshColliderComponent["OverrideMesh"]
+                                            ? meshColliderComponent["OverrideMesh"].as<bool>()
+                                            : false;
 
-                    if (component.IsConvex)
-                        PXPhysicsWrappers::CreateConvexMesh(component);
-                    else
-                        PXPhysicsWrappers::CreateTriangleMesh(component);
+                    if (overrideMesh) {
+                        UUID assetID;
+                        if (meshComponent["AssetPath"]) {
+                            std::string filepath = meshComponent["AssetPath"].as<std::string>();
+                            assetID = AssetManager::GetAssetHandleFromFilePath(filepath);
+                        } else {
+                            assetID = meshComponent["AssetID"].as<uint64_t>();
+                        }
 
-                    MND_CORE_INFO("  Mesh Collider Asset Path: {0}", meshPath);
+                        if (AssetManager::IsAssetHandleValid(assetID))
+                            collisionMesh = AssetManager::GetAsset<Mesh>(assetID);
+                    }
+
+                    if (collisionMesh) {
+                        auto &component = deserializedEntity.AddComponent<MeshColliderComponent>(collisionMesh);
+                        component.IsConvex =
+                            meshColliderComponent["IsConvex"] ? meshColliderComponent["IsConvex"].as<bool>() : false;
+                        component.IsTrigger =
+                            meshColliderComponent["IsTrigger"] ? meshColliderComponent["IsTrigger"].as<bool>() : false;
+                        component.OverrideMesh = overrideMesh;
+
+                        auto material = meshColliderComponent["Material"];
+                        if (material && AssetManager::IsAssetHandleValid(material.as<uint64_t>())) {
+                            component.Material = AssetManager::GetAsset<PhysicsMaterial>(material.as<uint64_t>());
+
+                            if (component.IsConvex)
+                                PXPhysicsWrappers::CreateConvexMesh(component, deserializedEntity.Transform().Scale);
+                            else
+                                PXPhysicsWrappers::CreateTriangleMesh(component, deserializedEntity.Transform().Scale);
+                        }
+
+                    } else {
+                        MND_CORE_WARN("MeshColliderComponent in use without valid mesh!");
+                    }
+                }
+
+                // NOTE(Peter): Compatibility fix for older scenes
+                auto physicsMaterialComponent = entity["PhysicsMaterialComponent"];
+                if (physicsMaterialComponent) {
+                    // auto& component = deserializedEntity.AddComponent<PhysicsMaterialComponent>();
+                    Ref<PhysicsMaterial> material = Ref<PhysicsMaterial>::Create();
+                    material->StaticFriction = physicsMaterialComponent["StaticFriction"].as<float>();
+                    material->DynamicFriction = physicsMaterialComponent["DynamicFriction"].as<float>();
+                    material->Bounciness = physicsMaterialComponent["Bounciness"].as<float>();
+
+                    if (deserializedEntity.HasComponent<BoxColliderComponent>())
+                        deserializedEntity.GetComponent<BoxColliderComponent>().Material = material;
+
+                    if (deserializedEntity.HasComponent<SphereColliderComponent>())
+                        deserializedEntity.GetComponent<SphereColliderComponent>().Material = material;
+
+                    if (deserializedEntity.HasComponent<CapsuleColliderComponent>())
+                        deserializedEntity.GetComponent<CapsuleColliderComponent>().Material = material;
+
+                    if (deserializedEntity.HasComponent<MeshColliderComponent>())
+                        deserializedEntity.GetComponent<MeshColliderComponent>().Material = material;
                 }
             }
         }
@@ -739,6 +918,15 @@ namespace Monado {
                     }
                 }
             }
+        }
+
+        if (missingPaths.size()) {
+            MND_CORE_ERROR("The following files could not be loaded:");
+            for (auto &path : missingPaths) {
+                MND_CORE_ERROR("  {0}", path);
+            }
+
+            return false;
         }
 
         return true;

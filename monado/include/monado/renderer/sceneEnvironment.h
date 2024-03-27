@@ -4,12 +4,14 @@
 
 namespace Monado {
 
-    struct Environment {
-        std::string FilePath;
+    class Environment : public Asset {
+    public:
         Ref<TextureCube> RadianceMap;
         Ref<TextureCube> IrradianceMap;
 
-        static Environment Load(const std::string &filepath);
+        Environment() = default;
+        Environment(const Ref<TextureCube> &radianceMap, const Ref<TextureCube> &irradianceMap)
+            : RadianceMap(radianceMap), IrradianceMap(irradianceMap) {}
     };
 
 } // namespace Monado

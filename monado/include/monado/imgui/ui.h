@@ -10,6 +10,7 @@
 #include "imgui.h"
 
 #include "assimp/scene.h"
+
 #include <cstdint>
 
 #include "imgui.h"
@@ -27,6 +28,8 @@
 #include "monado/core/application.h"
 #include "monado/physics/pxPhysicsWrappers.h"
 #include "monado/renderer/meshFactory.h"
+#include "monado/asset/asset.h"
+#include "monado/asset/assetManager.h"
 
 namespace Monado::UI {
 
@@ -153,7 +156,8 @@ namespace Monado::UI {
         return modified;
     }
 
-    static bool Property(const char *label, float &value, float delta = 0.1f, float min = 0.0f, float max = 0.0f) {
+    static bool Property(const char *label, float &value, float delta = 0.1f, float min = 0.0f, float max = 0.0f,
+                         bool readOnly = false) {
         bool modified = false;
 
         ImGui::Text(label);
@@ -164,8 +168,13 @@ namespace Monado::UI {
         s_IDBuffer[1] = '#';
         memset(s_IDBuffer + 2, 0, 14);
         itoa(s_Counter++, s_IDBuffer + 2, 16);
-        if (ImGui::DragFloat(s_IDBuffer, &value, delta, min, max))
-            modified = true;
+
+        if (!readOnly) {
+            if (ImGui::DragFloat(s_IDBuffer, &value, delta, min, max))
+                modified = true;
+        } else {
+            ImGui::InputFloat(s_IDBuffer, &value, 0.0F, 0.0F, "%.3f", ImGuiInputTextFlags_ReadOnly);
+        }
 
         ImGui::PopItemWidth();
         ImGui::NextColumn();
@@ -184,7 +193,7 @@ namespace Monado::UI {
         s_IDBuffer[1] = '#';
         memset(s_IDBuffer + 2, 0, 14);
         itoa(s_Counter++, s_IDBuffer + 2, 16);
-        if (ImGui::DragFloat3(s_IDBuffer, glm::value_ptr(value), delta))
+        if (ImGui::DragFloat2(s_IDBuffer, glm::value_ptr(value), delta))
             modified = true;
 
         ImGui::PopItemWidth();
@@ -282,6 +291,38 @@ namespace Monado::UI {
         return changed;
     }
 
+    template <typename T>
+    static bool PropertyAssetReference(const char *label, Ref<T> &object, AssetType supportedType) {
+        bool modified = false;
+
+        ImGui::Text(label);
+        ImGui::NextColumn();
+        ImGui::PushItemWidth(-1);
+
+        if (object) {
+            char *assetName = ((Ref<Asset> &)object)->FileName.data();
+            ImGui::InputText("##assetRef", assetName, 256, ImGuiInputTextFlags_ReadOnly);
+        } else {
+            ImGui::InputText("##assetRef", (char *)"Null", 256, ImGuiInputTextFlags_ReadOnly);
+        }
+
+        if (ImGui::BeginDragDropTarget()) {
+            auto data = ImGui::AcceptDragDropPayload("asset_payload");
+
+            if (data) {
+                AssetHandle assetHandle = *(AssetHandle *)data->Data;
+                if (AssetManager::IsAssetType(assetHandle, supportedType)) {
+                    object = AssetManager::GetAsset<T>(assetHandle);
+                    modified = true;
+                }
+            }
+        }
+
+        ImGui::PopItemWidth();
+        ImGui::NextColumn();
+        return modified;
+    }
+
     static void EndPropertyGrid() {
         ImGui::Columns(1);
         PopID();
@@ -298,4 +339,36 @@ namespace Monado::UI {
 
     static void EndTreeNode() { ImGui::TreePop(); }
 
+    static int s_CheckboxCount = 0;
+
+    static void BeginCheckboxGroup(const char *label) {
+        ImGui::Text(label);
+        ImGui::NextColumn();
+        ImGui::PushItemWidth(-1);
+    }
+
+    static bool PropertyCheckboxGroup(const char *label, bool &value) {
+        bool modified = false;
+
+        if (++s_CheckboxCount > 1)
+            ImGui::SameLine();
+
+        ImGui::Text(label);
+        ImGui::SameLine();
+
+        s_IDBuffer[0] = '#';
+        s_IDBuffer[1] = '#';
+        memset(s_IDBuffer + 2, 0, 14);
+        itoa(s_Counter++, s_IDBuffer + 2, 16);
+        if (ImGui::Checkbox(s_IDBuffer, &value))
+            modified = true;
+
+        return modified;
+    }
+
+    static void EndCheckboxGroup() {
+        ImGui::PopItemWidth();
+        ImGui::NextColumn();
+        s_CheckboxCount = 0;
+    }
 } // namespace Monado::UI

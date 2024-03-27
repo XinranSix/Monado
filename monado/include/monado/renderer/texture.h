@@ -2,6 +2,7 @@
 
 #include "monado/core/base.h"
 #include "monado/core/buffer.h"
+#include "monado/asset/asset.h"
 #include "rendererAPI.h"
 
 namespace Monado {
@@ -10,7 +11,7 @@ namespace Monado {
 
     enum class TextureWrap { None = 0, Clamp = 1, Repeat = 2 };
 
-    class Texture : public RefCounted {
+    class Texture : public Asset {
     public:
         virtual ~Texture() {}
 

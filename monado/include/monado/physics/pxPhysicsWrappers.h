@@ -7,6 +7,7 @@
 #define OVERLAP_MAX_COLLIDERS 10
 
 namespace Monado {
+    class PhysicsActor;
     struct RaycastHit;
 
     class PhysicsErrorCallback : public physx::PxErrorCallback {
@@ -34,25 +35,17 @@ namespace Monado {
     class PXPhysicsWrappers {
     public:
         static physx::PxScene *CreateScene();
-        static physx::PxRigidActor *CreateActor(const RigidBodyComponent &rigidbody,
-                                                const TransformComponent &transform);
-        static void SetCollisionFilters(const physx::PxRigidActor &actor, uint32_t physicsLayer);
 
-        static void AddBoxCollider(physx::PxRigidActor &actor, const physx::PxMaterial &material,
-                                   const BoxColliderComponent &collider, const glm::vec3 &size = glm::vec3(0.0F));
-        static void AddSphereCollider(physx::PxRigidActor &actor, const physx::PxMaterial &material,
-                                      const SphereColliderComponent &collider, const glm::vec3 &size = glm::vec3(0.0F));
-        static void AddCapsuleCollider(physx::PxRigidActor &actor, const physx::PxMaterial &material,
-                                       const CapsuleColliderComponent &collider,
-                                       const glm::vec3 &size = glm::vec3(0.0F));
-        static void AddMeshCollider(physx::PxRigidActor &actor, const physx::PxMaterial &material,
-                                    MeshColliderComponent &collider, const glm::vec3 &size = glm::vec3(0.0F));
+        static void AddBoxCollider(PhysicsActor &actor);
+        static void AddSphereCollider(PhysicsActor &actor);
+        static void AddCapsuleCollider(PhysicsActor &actor);
+        static void AddMeshCollider(PhysicsActor &actor);
 
-        static std::vector<physx::PxTriangleMesh *> CreateTriangleMesh(MeshColliderComponent &collider,
-                                                                       bool invalidateOld = false);
-        static std::vector<physx::PxConvexMesh *> CreateConvexMesh(MeshColliderComponent &collider,
-                                                                   bool invalidateOld = false);
-        static physx::PxMaterial *CreateMaterial(const PhysicsMaterialComponent &material);
+        static std::vector<physx::PxShape *> CreateConvexMesh(MeshColliderComponent &collider, const glm::vec3 &size,
+                                                              bool invalidateOld = false);
+        static std::vector<physx::PxShape *> CreateTriangleMesh(MeshColliderComponent &collider,
+                                                                const glm::vec3 &scale = glm::vec3(1.0f),
+                                                                bool invalidateOld = false);
 
         static bool Raycast(const glm::vec3 &origin, const glm::vec3 &direction, float maxDistance, RaycastHit *hit);
         static bool OverlapBox(const glm::vec3 &origin, const glm::vec3 &halfSize,
@@ -65,8 +58,11 @@ namespace Monado {
     private:
         static void Initialize();
         static void Shutdown();
+        static physx::PxPhysics &GetPhysics();
+        static physx::PxAllocatorCallback &GetAllocator();
 
     private:
         friend class Physics;
+        friend class PhysicsActor;
     };
 } // namespace Monado

@@ -41,7 +41,7 @@ namespace Monado {
         indices[10] = { 3, 2, 6 };
         indices[11] = { 6, 7, 3 };
 
-        return Ref<Mesh>::Create(vertices, indices);
+        return Ref<Mesh>::Create(vertices, indices, glm::mat4(1.0F));
     }
 
     Monado::Ref<Monado::Mesh> MeshFactory::CreateSphere(float radius) {
@@ -78,7 +78,7 @@ namespace Monado {
             }
         }
 
-        return Ref<Mesh>::Create(vertices, indices);
+        return Ref<Mesh>::Create(vertices, indices, glm::mat4(1.0F));
     }
 
     Ref<Mesh> MeshFactory::CreateCapsule(float radius, float height) {
@@ -151,7 +151,7 @@ namespace Monado {
             }
         }
 
-        return Ref<Mesh>::Create(vertices, indices);
+        return Ref<Mesh>::Create(vertices, indices, glm::mat4(1.0F));
     }
 
 } // namespace Monado

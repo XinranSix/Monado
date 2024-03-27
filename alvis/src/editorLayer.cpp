@@ -11,6 +11,9 @@
 #include "monado/script/scriptEngine.h"
 #include "monado/core/math/ray.h"
 #include "monado/physics/physics.h"
+#include "monado/math/math.h"
+#include "monado/utilities/fileSystem.h"
+#include "monado/editor/assetEditorPanel.h"
 
 #include "editorLayer.h"
 
@@ -38,72 +41,6 @@ namespace Monado {
         }
     }
 
-    static bool GetTransformDecomposition(const glm::mat4 &transform, glm::vec3 &translation, glm::vec3 &rotation,
-                                          glm::vec3 &scale) {
-        using namespace glm;
-        using T = float;
-
-        mat4 LocalMatrix(transform);
-
-        // Normalize the matrix.
-        if (epsilonEqual(LocalMatrix[3][3], static_cast<float>(0), epsilon<T>()))
-            return false;
-
-        // First, isolate perspective.  This is the messiest.
-        if (epsilonNotEqual(LocalMatrix[0][3], static_cast<T>(0), epsilon<T>()) ||
-            epsilonNotEqual(LocalMatrix[1][3], static_cast<T>(0), epsilon<T>()) ||
-            epsilonNotEqual(LocalMatrix[2][3], static_cast<T>(0), epsilon<T>())) {
-            // Clear the perspective partition
-            LocalMatrix[0][3] = LocalMatrix[1][3] = LocalMatrix[2][3] = static_cast<T>(0);
-            LocalMatrix[3][3] = static_cast<T>(1);
-        }
-
-        // Next take care of translation (easy).
-        translation = vec3(LocalMatrix[3]);
-        LocalMatrix[3] = vec4(0, 0, 0, LocalMatrix[3].w);
-
-        vec3 Row[3], Pdum3;
-
-        // Now get scale and shear.
-        for (length_t i = 0; i < 3; ++i)
-            for (length_t j = 0; j < 3; ++j)
-                Row[i][j] = LocalMatrix[i][j];
-
-        // Compute X scale factor and normalize first row.
-        scale.x = length(Row[0]);
-        Row[0] = detail::scale(Row[0], static_cast<T>(1));
-        scale.y = length(Row[1]);
-        Row[1] = detail::scale(Row[1], static_cast<T>(1));
-        scale.z = length(Row[2]);
-        Row[2] = detail::scale(Row[2], static_cast<T>(1));
-
-        // At this point, the matrix (in rows[]) is orthonormal.
-        // Check for a coordinate system flip.  If the determinant
-        // is -1, then negate the matrix and the scaling factors.
-#if 0
-		Pdum3 = cross(Row[1], Row[2]); // v3Cross(row[1], row[2], Pdum3);
-		if (dot(Row[0], Pdum3) < 0)
-		{
-			for (length_t i = 0; i < 3; i++)
-			{
-				scale[i] *= static_cast<T>(-1);
-				Row[i] *= static_cast<T>(-1);
-			}
-		}
-#endif
-
-        rotation.y = asin(-Row[0][2]);
-        if (cos(rotation.y) != 0) {
-            rotation.x = atan2(Row[1][2], Row[2][2]);
-            rotation.z = atan2(Row[0][1], Row[0][0]);
-        } else {
-            rotation.x = atan2(-Row[2][0], Row[1][1]);
-            rotation.z = 0;
-        }
-
-        return true;
-    }
-
     EditorLayer::EditorLayer()
         : m_SceneType(SceneType::Model),
           m_EditorCamera(glm::perspectiveFov(glm::radians(45.0f), 1280.0f, 720.0f, 0.1f, 1000.0f)) {}
@@ -111,70 +48,28 @@ namespace Monado {
     EditorLayer::~EditorLayer() {}
 
     void EditorLayer::OnAttach() {
-        // ImGui Colors
-        ImVec4 *colors = ImGui::GetStyle().Colors;
-        colors[ImGuiCol_Text] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-        colors[ImGuiCol_TextDisabled] = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
-        colors[ImGuiCol_WindowBg] = ImVec4(0.18f, 0.18f, 0.18f, 1.0f); // Window background
-        colors[ImGuiCol_ChildBg] = ImVec4(1.0f, 1.0f, 1.0f, 0.0f);
-        colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
-        colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.5f);
-        colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-        colors[ImGuiCol_FrameBg] = ImVec4(0.3f, 0.3f, 0.3f, 0.5f); // Widget backgrounds
-        colors[ImGuiCol_FrameBgHovered] = ImVec4(0.4f, 0.4f, 0.4f, 0.4f);
-        colors[ImGuiCol_FrameBgActive] = ImVec4(0.4f, 0.4f, 0.4f, 0.6f);
-        colors[ImGuiCol_TitleBg] = ImVec4(0.04f, 0.04f, 0.04f, 1.0f);
-        colors[ImGuiCol_TitleBgActive] = ImVec4(0.29f, 0.29f, 0.29f, 1.0f);
-        colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.0f, 0.0f, 0.0f, 0.51f);
-        colors[ImGuiCol_MenuBarBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.0f);
-        colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
-        colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 1.0f);
-        colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.41f, 0.41f, 0.41f, 1.0f);
-        colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.51f, 0.51f, 0.51f, 1.0f);
-        colors[ImGuiCol_CheckMark] = ImVec4(0.94f, 0.94f, 0.94f, 1.0f);
-        colors[ImGuiCol_SliderGrab] = ImVec4(0.51f, 0.51f, 0.51f, 0.7f);
-        colors[ImGuiCol_SliderGrabActive] = ImVec4(0.66f, 0.66f, 0.66f, 1.0f);
-        colors[ImGuiCol_Button] = ImVec4(0.44f, 0.44f, 0.44f, 0.4f);
-        colors[ImGuiCol_ButtonHovered] = ImVec4(0.46f, 0.47f, 0.48f, 1.0f);
-        colors[ImGuiCol_ButtonActive] = ImVec4(0.42f, 0.42f, 0.42f, 1.0f);
-        colors[ImGuiCol_Header] = ImVec4(0.7f, 0.7f, 0.7f, 0.31f);
-        colors[ImGuiCol_HeaderHovered] = ImVec4(0.7f, 0.7f, 0.7f, 0.8f);
-        colors[ImGuiCol_HeaderActive] = ImVec4(0.48f, 0.5f, 0.52f, 1.0f);
-        colors[ImGuiCol_Separator] = ImVec4(0.43f, 0.43f, 0.5f, 0.5f);
-        colors[ImGuiCol_SeparatorHovered] = ImVec4(0.72f, 0.72f, 0.72f, 0.78f);
-        colors[ImGuiCol_SeparatorActive] = ImVec4(0.51f, 0.51f, 0.51f, 1.0f);
-        colors[ImGuiCol_ResizeGrip] = ImVec4(0.91f, 0.91f, 0.91f, 0.25f);
-        colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.81f, 0.81f, 0.81f, 0.67f);
-        colors[ImGuiCol_ResizeGripActive] = ImVec4(0.46f, 0.46f, 0.46f, 0.95f);
-        colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.0f);
-        colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.0f, 0.43f, 0.35f, 1.0f);
-        colors[ImGuiCol_PlotHistogram] = ImVec4(0.73f, 0.6f, 0.15f, 1.0f);
-        colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.0f, 0.6f, 0.0f, 1.0f);
-        colors[ImGuiCol_TextSelectedBg] = ImVec4(0.87f, 0.87f, 0.87f, 0.35f);
-        colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.8f, 0.8f, 0.8f, 0.35f);
-        colors[ImGuiCol_DragDropTarget] = ImVec4(1.0f, 1.0f, 0.0f, 0.9f);
-        colors[ImGuiCol_NavHighlight] = ImVec4(0.60f, 0.6f, 0.6f, 1.0f);
-        colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.0f, 1.0f, 1.0f, 0.7f);
-
         using namespace glm;
 
         // Editor
-        m_CheckerboardTex = Texture2D::Create("alvis/assets/editor/Checkerboard.tga");
-        m_PlayButtonTex = Texture2D::Create("alvis/assets/editor/PlayButton.png");
+        m_CheckerboardTex = Texture2D::Create("assets/editor/Checkerboard.tga");
+        m_PlayButtonTex = Texture2D::Create("assets/editor/PlayButton.png");
 
-        m_EditorScene = Ref<Scene>::Create("EditorScene", true);
-        UpdateWindowTitle("Untitled Scene");
-        ScriptEngine::SetSceneContext(m_EditorScene);
         m_SceneHierarchyPanel = CreateScope<SceneHierarchyPanel>(m_EditorScene);
         m_SceneHierarchyPanel->SetSelectionChangedCallback(
             std::bind(&EditorLayer::SelectEntity, this, std::placeholders::_1));
         m_SceneHierarchyPanel->SetEntityDeletedCallback(
             std::bind(&EditorLayer::OnEntityDeleted, this, std::placeholders::_1));
 
-        OpenScene("alvis/assets/scenes/LightingTest.msc");
+        m_AssetManagerPanel = CreateScope<AssetManagerPanel>();
+        m_ObjectsPanel = CreateScope<ObjectsPanel>();
+
+        // OpenScene("assets/scenes/FPSDemo.msc");
+        NewScene();
+
+        FileSystem::StartWatching();
     }
 
-    void EditorLayer::OnDetach() {}
+    void EditorLayer::OnDetach() { FileSystem::StopWatching(); }
 
     void EditorLayer::OnScenePlay() {
         m_SelectionContext.clear();
@@ -189,6 +84,7 @@ namespace Monado {
 
         m_RuntimeScene->OnRuntimeStart();
         m_SceneHierarchyPanel->SetContext(m_RuntimeScene);
+        m_CurrentScene = m_RuntimeScene;
     }
 
     void EditorLayer::OnSceneStop() {
@@ -201,6 +97,7 @@ namespace Monado {
         m_SelectionContext.clear();
         ScriptEngine::SetSceneContext(m_EditorScene);
         m_SceneHierarchyPanel->SetContext(m_EditorScene);
+        m_CurrentScene = m_EditorScene;
     }
 
     void EditorLayer::UpdateWindowTitle(const std::string &sceneName) {
@@ -266,8 +163,21 @@ namespace Monado {
                     Renderer::BeginRenderPass(SceneRenderer::GetFinalRenderPass(), false);
                     auto viewProj = m_EditorCamera.GetViewProjection();
                     Renderer2D::BeginScene(viewProj, false);
-                    Renderer2D::DrawRotatedQuad({ transform.Translation.x, transform.Translation.y }, size * 2.0f,
-                                                transform.Rotation.z, { 1.0f, 0.0f, 1.0f, 1.0f });
+                    Renderer2D::DrawRotatedRect({ transform.Translation.x, transform.Translation.y }, size * 2.0f,
+                                                transform.Rotation.z, { 0.0f, 1.0f, 1.0f, 1.0f });
+                    Renderer2D::EndScene();
+                    Renderer::EndRenderPass();
+                }
+
+                if (selection.Entity.HasComponent<CircleCollider2DComponent>()) {
+                    const auto &size = selection.Entity.GetComponent<CircleCollider2DComponent>().Radius;
+                    const TransformComponent &transform = selection.Entity.GetComponent<TransformComponent>();
+
+                    Renderer::BeginRenderPass(SceneRenderer::GetFinalRenderPass(), false);
+                    auto viewProj = m_EditorCamera.GetViewProjection();
+                    Renderer2D::BeginScene(viewProj, false);
+                    Renderer2D::DrawCircle({ transform.Translation.x, transform.Translation.y }, size,
+                                           { 0.0f, 1.0f, 1.0f, 1.0f });
                     Renderer2D::EndScene();
                     Renderer::EndRenderPass();
                 }
@@ -416,10 +326,12 @@ namespace Monado {
         m_SelectionContext.push_back(selection);
 
         m_EditorScene->SetSelectedEntity(entity);
+
+        m_CurrentScene = m_EditorScene;
     }
 
     void EditorLayer::NewScene() {
-        m_EditorScene = Ref<Scene>::Create();
+        m_EditorScene = Ref<Scene>::Create("Empty Scene", true);
         m_SceneHierarchyPanel->SetContext(m_EditorScene);
         ScriptEngine::SetSceneContext(m_EditorScene);
         UpdateWindowTitle("Untitled Scene");
@@ -440,6 +352,7 @@ namespace Monado {
         SceneSerializer serializer(newScene);
         serializer.Deserialize(filepath);
         m_EditorScene = newScene;
+        m_SceneFilePath = filepath;
 
         std::filesystem::path path = filepath;
         UpdateWindowTitle(path.filename().string());
@@ -448,6 +361,8 @@ namespace Monado {
 
         m_EditorScene->SetSelectedEntity({});
         m_SelectionContext.clear();
+
+        m_CurrentScene = m_EditorScene;
     }
 
     void EditorLayer::SaveScene() {
@@ -553,6 +468,10 @@ namespace Monado {
             ShowBoundingBoxes(m_UIShowBoundingBoxes, m_UIShowBoundingBoxesOnTop);
         if (m_UIShowBoundingBoxes && Property("On Top", m_UIShowBoundingBoxesOnTop))
             ShowBoundingBoxes(m_UIShowBoundingBoxes, m_UIShowBoundingBoxesOnTop);
+
+        m_AssetManagerPanel->OnImGuiRender();
+        m_ObjectsPanel->OnImGuiRender();
+        AssetEditorPanel::OnImGuiRender();
 
         const char *label = m_SelectionMode == SelectionMode::Entity ? "Entity" : "Mesh";
         if (ImGui::Button(label)) {
@@ -674,7 +593,7 @@ namespace Monado {
             bool snap = Input::IsKeyPressed(MND_KEY_LEFT_CONTROL);
 
             TransformComponent &entityTransform = selection.Entity.Transform();
-            glm::mat4 transform = entityTransform.GetTransform();
+            glm::mat4 transform = m_CurrentScene->GetTransformRelativeToParent(selection.Entity);
             float snapValue = GetSnapValue();
             float snapValues[3] = { snapValue, snapValue, snapValue };
 
@@ -686,12 +605,24 @@ namespace Monado {
 
                 if (ImGuizmo::IsUsing()) {
                     glm::vec3 translation, rotation, scale;
-                    GetTransformDecomposition(transform, translation, rotation, scale);
+                    Math::DecomposeTransform(transform, translation, rotation, scale);
 
-                    glm::vec3 deltaRotation = rotation - entityTransform.Rotation;
-                    entityTransform.Translation = translation;
-                    entityTransform.Rotation += deltaRotation;
-                    entityTransform.Scale = scale;
+                    Entity parent = m_CurrentScene->FindEntityByUUID(selection.Entity.GetParentUUID());
+                    if (parent) {
+                        glm::vec3 parentTranslation, parentRotation, parentScale;
+                        Math::DecomposeTransform(m_CurrentScene->GetTransformRelativeToParent(parent),
+                                                 parentTranslation, parentRotation, parentScale);
+
+                        glm::vec3 deltaRotation = (rotation - parentRotation) - entityTransform.Rotation;
+                        entityTransform.Translation = translation - parentTranslation;
+                        entityTransform.Rotation += deltaRotation;
+                        entityTransform.Scale = scale;
+                    } else {
+                        glm::vec3 deltaRotation = rotation - entityTransform.Rotation;
+                        entityTransform.Translation = translation;
+                        entityTransform.Rotation += deltaRotation;
+                        entityTransform.Scale = scale;
+                    }
                 }
             } else {
                 glm::mat4 transformBase = transform * selection.Mesh->Transform;
@@ -702,6 +633,30 @@ namespace Monado {
 
                 selection.Mesh->Transform = glm::inverse(transform) * transformBase;
             }
+        }
+
+        if (ImGui::BeginDragDropTarget()) {
+            auto data = ImGui::AcceptDragDropPayload("asset_payload");
+            if (data) {
+                int count = data->DataSize / sizeof(AssetHandle);
+
+                for (int i = 0; i < count; i++) {
+                    AssetHandle assetHandle = *(((AssetHandle *)data->Data) + i);
+                    Ref<Asset> asset = AssetManager::GetAsset<Asset>(assetHandle);
+
+                    // We can't really support dragging and dropping scenes when we're dropping multiple assets
+                    if (count == 1 && asset->Type == AssetType::Scene) {
+                        OpenScene(asset->FilePath);
+                    }
+
+                    if (asset->Type == AssetType::Mesh) {
+                        Entity entity = m_EditorScene->CreateEntity(asset->FileName);
+                        entity.AddComponent<MeshComponent>(Ref<Mesh>(asset));
+                        SelectEntity(entity);
+                    }
+                }
+            }
+            ImGui::EndDragDropTarget();
         }
 
         ImGui::End();
@@ -963,6 +918,14 @@ namespace Monado {
                 case KeyCode::W: m_GizmoType = ImGuizmo::OPERATION::TRANSLATE; break;
                 case KeyCode::E: m_GizmoType = ImGuizmo::OPERATION::ROTATE; break;
                 case KeyCode::R: m_GizmoType = ImGuizmo::OPERATION::SCALE; break;
+                case KeyCode::F: {
+                    if (m_SelectionContext.size() == 0)
+                        break;
+
+                    Entity selectedEntity = m_SelectionContext[0].Entity;
+                    m_EditorCamera.Focus(selectedEntity.Transform().Translation);
+                    break;
+                }
                 }
             }
             switch (e.GetKeyCode()) {
@@ -1031,11 +994,9 @@ namespace Monado {
                     float lastT = std::numeric_limits<float>::max();
                     for (uint32_t i = 0; i < submeshes.size(); i++) {
                         auto &submesh = submeshes[i];
-                        Ray ray = { glm::inverse(entity.Transform().GetTransform() * submesh.Transform) *
-                                        glm::vec4(origin, 1.0f),
-                                    glm::inverse(glm::mat3(entity.Transform().GetTransform()) *
-                                                 glm::mat3(submesh.Transform)) *
-                                        direction };
+                        glm::mat4 transform = m_CurrentScene->GetTransformRelativeToParent(entity);
+                        Ray ray = { glm::inverse(transform * submesh.Transform) * glm::vec4(origin, 1.0f),
+                                    glm::inverse(glm::mat3(transform) * glm::mat3(submesh.Transform)) * direction };
 
                         float t;
                         bool intersects = ray.IntersectsAABB(submesh.BoundingBox, t);

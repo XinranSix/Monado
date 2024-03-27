@@ -51,6 +51,7 @@ namespace Monado {
         Component_RegisterType(BoxColliderComponent);
         Component_RegisterType(SphereColliderComponent);
     }
+
     void ScriptEngineRegistry::RegisterAll() {
         InitComponentTypes();
 
@@ -75,6 +76,18 @@ namespace Monado {
                                Monado::Script::Monado_TransformComponent_GetTransform);
         mono_add_internal_call("Monado.TransformComponent::SetTransform_Native",
                                Monado::Script::Monado_TransformComponent_SetTransform);
+        mono_add_internal_call("Monado.TransformComponent::GetTranslation_Native",
+                               Monado::Script::Monado_TransformComponent_GetTranslation);
+        mono_add_internal_call("Monado.TransformComponent::SetTranslation_Native",
+                               Monado::Script::Monado_TransformComponent_SetTranslation);
+        mono_add_internal_call("Monado.TransformComponent::GetRotation_Native",
+                               Monado::Script::Monado_TransformComponent_GetRotation);
+        mono_add_internal_call("Monado.TransformComponent::SetRotation_Native",
+                               Monado::Script::Monado_TransformComponent_SetRotation);
+        mono_add_internal_call("Monado.TransformComponent::GetScale_Native",
+                               Monado::Script::Monado_TransformComponent_GetScale);
+        mono_add_internal_call("Monado.TransformComponent::SetScale_Native",
+                               Monado::Script::Monado_TransformComponent_SetScale);
 
         mono_add_internal_call("Monado.MeshComponent::GetMesh_Native", Monado::Script::Monado_MeshComponent_GetMesh);
         mono_add_internal_call("Monado.MeshComponent::SetMesh_Native", Monado::Script::Monado_MeshComponent_SetMesh);
@@ -138,12 +151,10 @@ namespace Monado {
         mono_add_internal_call("Monado.Mesh::Constructor_Native", Monado::Script::Monado_Mesh_Constructor);
         mono_add_internal_call("Monado.Mesh::Destructor_Native", Monado::Script::Monado_Mesh_Destructor);
         mono_add_internal_call("Monado.Mesh::GetMaterial_Native", Monado::Script::Monado_Mesh_GetMaterial);
-        mono_add_internal_call("Monado.Mesh::GetMaterialByIndex_Native",
-                               Monado::Script::Monado_Mesh_GetMaterialByIndex);
+        mono_add_internal_call("Monado.Mesh::GetMaterialByIndex_Native", Monado::Script::Monado_Mesh_GetMaterialByIndex);
         mono_add_internal_call("Monado.Mesh::GetMaterialCount_Native", Monado::Script::Monado_Mesh_GetMaterialCount);
 
-        mono_add_internal_call("Monado.MeshFactory::CreatePlane_Native",
-                               Monado::Script::Monado_MeshFactory_CreatePlane);
+        mono_add_internal_call("Monado.MeshFactory::CreatePlane_Native", Monado::Script::Monado_MeshFactory_CreatePlane);
     }
 
 } // namespace Monado

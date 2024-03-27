@@ -1,0 +1,30 @@
+[Info]
+Version = 3
+
+[Effect]
+Obj = none
+Obj[0] = Textures\body.fx
+Obj[1] = Textures\body.fx
+Obj[2] = Textures\body.fx
+Obj[3] = Textures\body.fx
+Obj[4] = Textures\body.fx
+Obj[5] = Textures\body.fx
+Obj[6] = Textures\default.fx
+Obj[7] = Textures\default.fx
+Obj[8] = Textures\earrings.fx
+Obj[9] = Textures\default.fx
+Obj[10] = Textures\default.fx
+Obj[11] = Textures\default.fx
+Obj[12] = Textures\default.fx
+Obj[13] = Textures\headgear.fx
+Obj[14] = Textures\headgear_crystal.fx
+Obj[15] = Textures\default.fx
+Obj[16] = Textures\default.fx
+Obj[17] = Textures\gear_crystal.fx
+Obj[18] = Textures\gear.fx
+Obj[19] = Textures\gear.fx
+Obj[20] = Textures\gear.fx
+Obj[21] = Textures\gear.fx
+Obj[22] = Textures\gear_crystal.fx
+Obj[23] = Textures\gear_crystal.fx
+

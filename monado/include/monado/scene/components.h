@@ -11,6 +11,7 @@
 #include "monado/core/uuid.h"
 #include "monado/renderer/sceneEnvironment.h"
 #include "monado/scene/sceneCamera.h"
+#include "monado/asset/asset.h"
 
 namespace Monado {
 
@@ -29,18 +30,31 @@ namespace Monado {
         operator const std::string &() const { return Tag; }
     };
 
+    struct RelationshipComponent {
+        UUID ParentHandle = 0;
+        std::vector<UUID> Children;
+
+        RelationshipComponent() = default;
+        RelationshipComponent(const RelationshipComponent &other) = default;
+        RelationshipComponent(UUID parent) : ParentHandle(parent) {}
+    };
+
     struct TransformComponent {
-        glm::vec3 Translation = { 0.0F, 0.0F, 0.0F };
-        glm::vec3 Rotation = { 0.0F, 0.0F, 0.0F };
-        glm::vec3 Scale = { 0.0F, 0.0F, 0.0F };
+        glm::vec3 Translation = { 0.0f, 0.0f, 0.0f };
+        glm::vec3 Rotation = { 0.0f, 0.0f, 0.0f };
+        glm::vec3 Scale = { 1.0f, 1.0f, 1.0f };
+
+        glm::vec3 Up = { 0.0F, 1.0F, 0.0F };
+        glm::vec3 Right = { 1.0F, 0.0F, 0.0F };
+        glm::vec3 Forward = { 0.0F, 0.0F, -1.0F };
 
         TransformComponent() = default;
         TransformComponent(const TransformComponent &other) = default;
         TransformComponent(const glm::vec3 &translation) : Translation(translation) {}
 
         glm::mat4 GetTransform() const {
-            return glm::translate(glm::mat4(1.0F), Translation) * glm::toMat4(glm::quat(Rotation)) *
-                   glm::scale(glm::mat4(1.0F), Scale);
+            return glm::translate(glm::mat4(1.0f), Translation) * glm::toMat4(glm::quat(Rotation)) *
+                   glm::scale(glm::mat4(1.0f), Scale);
         }
     };
 
@@ -125,7 +139,10 @@ namespace Monado {
     struct RigidBodyComponent {
         enum class Type { Static, Dynamic };
         Type BodyType;
-        float Mass = 1.0F;
+        float Mass = 1.0f;
+        float LinearDrag = 0.0f;
+        float AngularDrag = 0.05F;
+        bool DisableGravity = false;
         bool IsKinematic = false;
         uint32_t Layer = 0;
 
@@ -136,28 +153,15 @@ namespace Monado {
         bool LockRotationY = false;
         bool LockRotationZ = false;
 
-        void *RuntimeActor = nullptr;
-        int32_t EntityBufferIndex = -1;
-
         RigidBodyComponent() = default;
         RigidBodyComponent(const RigidBodyComponent &other) = default;
     };
 
-    // TODO: This will eventually be a resource, but that requires object referencing through the editor
-    struct PhysicsMaterialComponent {
-        float StaticFriction = 1.0F;
-        float DynamicFriction = 1.0F;
-        float Bounciness = 1.0F;
-
-        PhysicsMaterialComponent() = default;
-        PhysicsMaterialComponent(const PhysicsMaterialComponent &other) = default;
-    };
-
     struct BoxColliderComponent {
-        glm::vec3 Size = { 1.0F, 1.0F, 1.0F };
-        glm::vec3 Offset = { 0.0F, 0.0F, 0.0F };
-
+        glm::vec3 Size = { 1.0f, 1.0f, 1.0f };
+        glm::vec3 Offset = { 0.0f, 0.0f, 0.0f };
         bool IsTrigger = false;
+        Ref<PhysicsMaterial> Material;
 
         // The mesh that will be drawn in the editor to show the collision bounds
         Ref<Mesh> DebugMesh;
@@ -169,6 +173,7 @@ namespace Monado {
     struct SphereColliderComponent {
         float Radius = 0.5F;
         bool IsTrigger = false;
+        Ref<PhysicsMaterial> Material;
 
         // The mesh that will be drawn in the editor to show the collision bounds
         Ref<Mesh> DebugMesh;
@@ -179,8 +184,9 @@ namespace Monado {
 
     struct CapsuleColliderComponent {
         float Radius = 0.5F;
-        float Height = 1.0F;
+        float Height = 1.0f;
         bool IsTrigger = false;
+        Ref<PhysicsMaterial> Material;
 
         Ref<Mesh> DebugMesh;
 
@@ -189,16 +195,18 @@ namespace Monado {
     };
 
     struct MeshColliderComponent {
-        Ref<Monado::Mesh> CollisionMesh;
-        std::vector<Ref<Monado::Mesh>> ProcessedMeshes;
+        Ref<Mesh> CollisionMesh;
+        std::vector<Ref<Mesh>> ProcessedMeshes;
         bool IsConvex = false;
         bool IsTrigger = false;
+        bool OverrideMesh = false;
+        Ref<PhysicsMaterial> Material;
 
         MeshColliderComponent() = default;
         MeshColliderComponent(const MeshColliderComponent &other) = default;
-        MeshColliderComponent(const Ref<Monado::Mesh> &mesh) : CollisionMesh(mesh) {}
+        MeshColliderComponent(const Ref<Mesh> &mesh) : CollisionMesh(mesh) {}
 
-        operator Ref<Monado::Mesh>() { return CollisionMesh; }
+        operator Ref<Mesh>() { return CollisionMesh; }
     };
 
     enum class LightType { None = 0, Directional = 1, Point = 2, Spot = 3 };
@@ -212,7 +220,7 @@ namespace Monado {
     };
 
     struct SkyLightComponent {
-        Environment SceneEnvironment;
+        Ref<Environment> SceneEnvironment;
         float Intensity = 1.0f;
         float Angle = 0.0f;
     };

@@ -14,13 +14,6 @@ typedef struct _MonoArray MonoArray;
 namespace Monado {
     namespace Script {
 
-        struct ScriptTransform {
-            glm::vec3 Translation;
-            glm::vec3 Rotation;
-            glm::vec3 Scale;
-            glm::vec3 Up, Right, Forward;
-        };
-
         // Math
         float Monado_Noise_PerlinNoise(float x, float y);
 
@@ -38,7 +31,7 @@ namespace Monado {
         MonoArray *Monado_Physics_OverlapSphere(glm::vec3 *origin, float radius);
         int32_t Monado_Physics_OverlapBoxNonAlloc(glm::vec3 *origin, glm::vec3 *halfSize, MonoArray *outColliders);
         int32_t Monado_Physics_OverlapCapsuleNonAlloc(glm::vec3 *origin, float radius, float halfHeight,
-                                                      MonoArray *outColliders);
+                                                     MonoArray *outColliders);
         int32_t Monado_Physics_OverlapSphereNonAlloc(glm::vec3 *origin, float radius, MonoArray *outColliders);
 
         // Entity
@@ -46,14 +39,20 @@ namespace Monado {
         bool Monado_Entity_HasComponent(uint64_t entityID, void *type);
         uint64_t Monado_Entity_FindEntityByTag(MonoString *tag);
 
-        void Monado_TransformComponent_GetTransform(uint64_t entityID, ScriptTransform *outTransform);
-        void Monado_TransformComponent_SetTransform(uint64_t entityID, ScriptTransform *inTransform);
+        void Monado_TransformComponent_GetTransform(uint64_t entityID, TransformComponent *outTransform);
+        void Monado_TransformComponent_SetTransform(uint64_t entityID, TransformComponent *inTransform);
+        void Monado_TransformComponent_GetTranslation(uint64_t entityID, glm::vec3 *outTranslation);
+        void Monado_TransformComponent_SetTranslation(uint64_t entityID, glm::vec3 *inTranslation);
+        void Monado_TransformComponent_GetRotation(uint64_t entityID, glm::vec3 *outRotation);
+        void Monado_TransformComponent_SetRotation(uint64_t entityID, glm::vec3 *inRotation);
+        void Monado_TransformComponent_GetScale(uint64_t entityID, glm::vec3 *outScale);
+        void Monado_TransformComponent_SetScale(uint64_t entityID, glm::vec3 *inScale);
 
         void *Monado_MeshComponent_GetMesh(uint64_t entityID);
         void Monado_MeshComponent_SetMesh(uint64_t entityID, Ref<Mesh> *inMesh);
 
         void Monado_RigidBody2DComponent_ApplyLinearImpulse(uint64_t entityID, glm::vec2 *impulse, glm::vec2 *offset,
-                                                            bool wake);
+                                                           bool wake);
         void Monado_RigidBody2DComponent_GetLinearVelocity(uint64_t entityID, glm::vec2 *outVelocity);
         void Monado_RigidBody2DComponent_SetLinearVelocity(uint64_t entityID, glm::vec2 *velocity);
 
@@ -85,7 +84,7 @@ namespace Monado {
         void Monado_MaterialInstance_SetVector3(Ref<MaterialInstance> *_this, MonoString *uniform, glm::vec3 *value);
         void Monado_MaterialInstance_SetVector4(Ref<MaterialInstance> *_this, MonoString *uniform, glm::vec4 *value);
         void Monado_MaterialInstance_SetTexture(Ref<MaterialInstance> *_this, MonoString *uniform,
-                                                Ref<Texture2D> *texture);
+                                               Ref<Texture2D> *texture);
 
         // Mesh
         Ref<Mesh> *Monado_Mesh_Constructor(MonoString *filepath);
@@ -95,6 +94,5 @@ namespace Monado {
         int Monado_Mesh_GetMaterialCount(Ref<Mesh> *inMesh);
 
         void *Monado_MeshFactory_CreatePlane(float width, float height);
-
     } // namespace Script
 } // namespace Monado

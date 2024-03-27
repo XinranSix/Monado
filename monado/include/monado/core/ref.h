@@ -95,6 +95,11 @@ namespace Monado {
             m_Instance = instance;
         }
 
+        template <typename T2>
+        Ref<T2> As() {
+            return Ref<T2>(*this);
+        }
+
         template <typename... Args>
         static Ref<T> Create(Args &&...args) {
             return Ref<T>(new T(std::forward<Args>(args)...));

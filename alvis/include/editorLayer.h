@@ -12,9 +12,12 @@
 #include "monado/renderer/mesh.h"
 #include "monado/editor/sceneHierarchyPanel.h"
 #include "monado/core/math/ray.h"
+#include "monado/editor/assetManagerPanel.h"
+#include "monado/editor/objectsPanel.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include <assimp/scene.h>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/quaternion.hpp"
@@ -84,8 +87,10 @@ namespace Monado {
 
     private:
         Scope<SceneHierarchyPanel> m_SceneHierarchyPanel;
+        Scope<AssetManagerPanel> m_AssetManagerPanel;
+        Scope<ObjectsPanel> m_ObjectsPanel;
 
-        Ref<Scene> m_RuntimeScene, m_EditorScene;
+        Ref<Scene> m_RuntimeScene, m_EditorScene, m_CurrentScene;
         std::string m_SceneFilePath;
         bool m_ReloadScriptOnPlay = true;
 

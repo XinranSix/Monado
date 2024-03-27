@@ -11,6 +11,7 @@
 #include "glm/gtx/matrix_decompose.hpp"
 
 #include "monado/editor/sceneHierarchyPanel.h"
+#include "monado/math/math.h"
 #include "monado/renderer/mesh.h"
 #include "monado/script/scriptEngine.h"
 #include "monado/physics/physicsLayer.h"
@@ -19,6 +20,7 @@
 #include "monado/physics/pxPhysicsWrappers.h"
 #include "monado/renderer/meshFactory.h"
 #include "monado/imGui/ui.h"
+#include "monado/asset/assetManager.h"
 
 namespace Monado {
 
@@ -42,13 +44,41 @@ namespace Monado {
 
     void SceneHierarchyPanel::OnImGuiRender() {
         ImGui::Begin("Scene Hierarchy");
+        ImRect windowRect = { ImGui::GetWindowContentRegionMin(), ImGui::GetWindowContentRegionMax() };
+
         if (m_Context) {
             uint32_t entityCount = 0, meshCount = 0;
             m_Context->m_Registry.each([&](auto entity) {
                 Entity e(entity, m_Context.Raw());
-                if (e.HasComponent<IDComponent>())
+                if (e.HasComponent<IDComponent>() && e.GetParentUUID() == 0)
                     DrawEntityNode(e);
             });
+
+            if (ImGui::BeginDragDropTargetCustom(windowRect, ImGui::GetCurrentWindow()->ID)) {
+                const ImGuiPayload *payload =
+                    ImGui::AcceptDragDropPayload("scene_entity_hierarchy", ImGuiDragDropFlags_AcceptNoDrawDefaultRect);
+
+                if (payload) {
+                    UUID droppedHandle = *((UUID *)payload->Data);
+                    Entity e = m_Context->FindEntityByUUID(droppedHandle);
+                    Entity previousParent = m_Context->FindEntityByUUID(e.GetParentUUID());
+
+                    if (previousParent) {
+                        auto &children = previousParent.Children();
+                        children.erase(std::remove(children.begin(), children.end(), droppedHandle), children.end());
+
+                        glm::mat4 parentTransform = m_Context->GetTransformRelativeToParent(previousParent);
+                        glm::vec3 parentTranslation, parentRotation, parentScale;
+                        Math::DecomposeTransform(parentTransform, parentTranslation, parentRotation, parentScale);
+
+                        e.Transform().Translation = e.Transform().Translation + parentTranslation;
+                    }
+
+                    e.SetParentUUID(0);
+                }
+
+                ImGui::EndDragDropTarget();
+            }
 
             if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight |
                                                       ImGuiPopupFlags_NoOpenOverExistingPopup)) {
@@ -115,6 +145,10 @@ namespace Monado {
         ImGuiTreeNodeFlags flags =
             (entity == m_SelectionContext ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
         flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
+
+        if (entity.Children().empty())
+            flags |= ImGuiTreeNodeFlags_Leaf;
+
         bool opened = ImGui::TreeNodeEx((void *)(uint32_t)entity, flags, name);
         if (ImGui::IsItemClicked()) {
             m_SelectionContext = entity;
@@ -129,8 +163,50 @@ namespace Monado {
 
             ImGui::EndPopup();
         }
+
+        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+            UUID entityId = entity.GetUUID();
+            ImGui::Text(entity.GetComponent<TagComponent>().Tag.c_str());
+            ImGui::SetDragDropPayload("scene_entity_hierarchy", &entityId, sizeof(UUID));
+            ImGui::EndDragDropSource();
+        }
+
+        if (ImGui::BeginDragDropTarget()) {
+            const ImGuiPayload *payload =
+                ImGui::AcceptDragDropPayload("scene_entity_hierarchy", ImGuiDragDropFlags_AcceptNoDrawDefaultRect);
+
+            if (payload) {
+                UUID droppedHandle = *((UUID *)payload->Data);
+                Entity e = m_Context->FindEntityByUUID(droppedHandle);
+
+                if (!entity.IsDescendantOf(e)) {
+                    // Remove from previous parent
+                    Entity previousParent = m_Context->FindEntityByUUID(e.GetParentUUID());
+                    if (previousParent) {
+                        auto &parentChildren = previousParent.Children();
+                        parentChildren.erase(std::remove(parentChildren.begin(), parentChildren.end(), droppedHandle),
+                                             parentChildren.end());
+                    }
+
+                    e.SetParentUUID(entity.GetUUID());
+                    entity.Children().push_back(droppedHandle);
+
+                    MND_CORE_INFO("Dropping Entity {0} on {1}", droppedHandle, entity.GetUUID());
+                }
+
+                MND_CORE_INFO("Dropping Entity {0} on {1}", droppedHandle, entity.GetUUID());
+            }
+
+            ImGui::EndDragDropTarget();
+        }
+
         if (opened) {
-            // TODO: Children
+            for (auto child : entity.Children()) {
+                Entity e = m_Context->FindEntityByUUID(child);
+                if (e)
+                    DrawEntityNode(e);
+            }
+
             ImGui::TreePop();
         }
 
@@ -352,7 +428,7 @@ namespace Monado {
             }
             if (!m_SelectionContext.HasComponent<MeshComponent>()) {
                 if (ImGui::Button("Mesh")) {
-                    m_SelectionContext.AddComponent<MeshComponent>();
+                    MeshComponent &component = m_SelectionContext.AddComponent<MeshComponent>();
                     ImGui::CloseCurrentPopup();
                 }
             }
@@ -404,12 +480,6 @@ namespace Monado {
                     ImGui::CloseCurrentPopup();
                 }
             }
-            if (!m_SelectionContext.HasComponent<PhysicsMaterialComponent>()) {
-                if (ImGui::Button("Physics Material")) {
-                    m_SelectionContext.AddComponent<PhysicsMaterialComponent>();
-                    ImGui::CloseCurrentPopup();
-                }
-            }
             if (!m_SelectionContext.HasComponent<BoxColliderComponent>()) {
                 if (ImGui::Button("Box Collider")) {
                     m_SelectionContext.AddComponent<BoxColliderComponent>();
@@ -430,7 +500,12 @@ namespace Monado {
             }
             if (!m_SelectionContext.HasComponent<MeshColliderComponent>()) {
                 if (ImGui::Button("Mesh Collider")) {
-                    m_SelectionContext.AddComponent<MeshColliderComponent>();
+                    MeshColliderComponent &component = m_SelectionContext.AddComponent<MeshColliderComponent>();
+                    if (m_SelectionContext.HasComponent<MeshComponent>()) {
+                        component.CollisionMesh = m_SelectionContext.GetComponent<MeshComponent>().Mesh;
+                        PXPhysicsWrappers::CreateTriangleMesh(component);
+                    }
+
                     ImGui::CloseCurrentPopup();
                 }
             }
@@ -446,26 +521,9 @@ namespace Monado {
         });
 
         DrawComponent<MeshComponent>("Mesh", entity, [](MeshComponent &mc) {
-            ImGui::Columns(3);
-            ImGui::SetColumnWidth(0, 100);
-            ImGui::SetColumnWidth(1, 300);
-            ImGui::SetColumnWidth(2, 40);
-            ImGui::Text("File Path");
-            ImGui::NextColumn();
-            ImGui::PushItemWidth(-1);
-            if (mc.Mesh)
-                ImGui::InputText("##meshfilepath", (char *)mc.Mesh->GetFilePath().c_str(), 256,
-                                 ImGuiInputTextFlags_ReadOnly);
-            else
-                ImGui::InputText("##meshfilepath", (char *)"Null", 256, ImGuiInputTextFlags_ReadOnly);
-            ImGui::PopItemWidth();
-            ImGui::NextColumn();
-            if (ImGui::Button("...##openmesh")) {
-                std::string file = Application::Get().OpenFile();
-                if (!file.empty())
-                    mc.Mesh = Ref<Mesh>::Create(file);
-            }
-            ImGui::Columns(1);
+            UI::BeginPropertyGrid();
+            UI::PropertyAssetReference("Mesh", mc.Mesh, AssetType::Mesh);
+            UI::EndPropertyGrid();
         });
 
         DrawComponent<CameraComponent>("Camera", entity, [](CameraComponent &cc) {
@@ -532,28 +590,8 @@ namespace Monado {
         });
 
         DrawComponent<SkyLightComponent>("Sky Light", entity, [](SkyLightComponent &slc) {
-            ImGui::Columns(3);
-            ImGui::SetColumnWidth(0, 100);
-            ImGui::SetColumnWidth(1, 300);
-            ImGui::SetColumnWidth(2, 40);
-            ImGui::Text("File Path");
-            ImGui::NextColumn();
-            ImGui::PushItemWidth(-1);
-            if (!slc.SceneEnvironment.FilePath.empty())
-                ImGui::InputText("##envfilepath", (char *)slc.SceneEnvironment.FilePath.c_str(), 256,
-                                 ImGuiInputTextFlags_ReadOnly);
-            else
-                ImGui::InputText("##envfilepath", (char *)"Empty", 256, ImGuiInputTextFlags_ReadOnly);
-            ImGui::PopItemWidth();
-            ImGui::NextColumn();
-            if (ImGui::Button("...##openenv")) {
-                std::string file = Application::Get().OpenFile("*.hdr");
-                if (!file.empty())
-                    slc.SceneEnvironment = Environment::Load(file);
-            }
-            ImGui::Columns(1);
-
             UI::BeginPropertyGrid();
+            UI::PropertyAssetReference("Environment Map", slc.SceneEnvironment, AssetType::EnvMap);
             UI::Property("Intensity", slc.Intensity, 0.01f, 0.0f, 5.0f);
             UI::EndPropertyGrid();
         });
@@ -634,6 +672,18 @@ namespace Monado {
                             }
                             break;
                         }
+                            /*  case FieldType::ClassReference: {
+                                 Ref<Asset> *asset =
+                                     (Ref<Asset> *)(isRuntime ? field.GetRuntimeValueRaw() : field.GetStoredValueRaw());
+                                 std::string label = field.Name + "(" + field.TypeName + ")";
+                                 if (UI::PropertyAssetReference(label.c_str(), *asset)) {
+                                     if (isRuntime)
+                                         field.SetRuntimeValueRaw(asset);
+                                     else
+                                         field.SetStoredValueRaw(asset);
+                                 }
+                                 break;
+                             } */
                         }
                     }
                 }
@@ -732,32 +782,31 @@ namespace Monado {
             if (rbc.BodyType == RigidBodyComponent::Type::Dynamic) {
                 UI::BeginPropertyGrid();
                 UI::Property("Mass", rbc.Mass);
+                UI::Property("Linear Drag", rbc.LinearDrag);
+                UI::Property("Angular Drag", rbc.AngularDrag);
+                UI::Property("Disable Gravity", rbc.DisableGravity);
                 UI::Property("Is Kinematic", rbc.IsKinematic);
                 UI::EndPropertyGrid();
 
                 if (UI::BeginTreeNode("Constraints", false)) {
                     UI::BeginPropertyGrid();
-                    UI::Property("Position: X", rbc.LockPositionX);
-                    UI::Property("Position: Y", rbc.LockPositionY);
-                    UI::Property("Position: Z", rbc.LockPositionZ);
-                    UI::Property("Rotation: X", rbc.LockRotationX);
-                    UI::Property("Rotation: Y", rbc.LockRotationY);
-                    UI::Property("Rotation: Z", rbc.LockRotationZ);
-                    UI::EndPropertyGrid();
 
+                    UI::BeginCheckboxGroup("Freeze Position");
+                    UI::PropertyCheckboxGroup("X", rbc.LockPositionX);
+                    UI::PropertyCheckboxGroup("Y", rbc.LockPositionY);
+                    UI::PropertyCheckboxGroup("Z", rbc.LockPositionZ);
+                    UI::EndCheckboxGroup();
+
+                    UI::BeginCheckboxGroup("Freeze Rotation");
+                    UI::PropertyCheckboxGroup("X", rbc.LockRotationX);
+                    UI::PropertyCheckboxGroup("Y", rbc.LockRotationY);
+                    UI::PropertyCheckboxGroup("Z", rbc.LockRotationZ);
+                    UI::EndCheckboxGroup();
+
+                    UI::EndPropertyGrid();
                     UI::EndTreeNode();
                 }
             }
-        });
-
-        DrawComponent<PhysicsMaterialComponent>("Physics Material", entity, [](PhysicsMaterialComponent &pmc) {
-            UI::BeginPropertyGrid();
-
-            UI::Property("Static Friction", pmc.StaticFriction);
-            UI::Property("Dynamic Friction", pmc.DynamicFriction);
-            UI::Property("Bounciness", pmc.Bounciness);
-
-            UI::EndPropertyGrid();
         });
 
         DrawComponent<BoxColliderComponent>("Box Collider", entity, [](BoxColliderComponent &bcc) {
@@ -769,6 +818,7 @@ namespace Monado {
 
             // Property("Offset", bcc.Offset);
             UI::Property("Is Trigger", bcc.IsTrigger);
+            UI::PropertyAssetReference("Material", bcc.Material, AssetType::PhysicsMat);
 
             UI::EndPropertyGrid();
         });
@@ -781,6 +831,7 @@ namespace Monado {
             }
 
             UI::Property("Is Trigger", scc.IsTrigger);
+            UI::PropertyAssetReference("Material", scc.Material, AssetType::PhysicsMat);
 
             UI::EndPropertyGrid();
         });
@@ -797,6 +848,7 @@ namespace Monado {
                 changed = true;
 
             UI::Property("Is Trigger", ccc.IsTrigger);
+            UI::PropertyAssetReference("Material", ccc.Material, AssetType::PhysicsMat);
 
             if (changed) {
                 ccc.DebugMesh = MeshFactory::CreateCapsule(ccc.Radius, ccc.Height);
@@ -805,42 +857,38 @@ namespace Monado {
             UI::EndPropertyGrid();
         });
 
-        DrawComponent<MeshColliderComponent>("Mesh Collider", entity, [](MeshColliderComponent &mcc) {
-            ImGui::Columns(3);
-            ImGui::SetColumnWidth(0, 100);
-            ImGui::SetColumnWidth(1, 300);
-            ImGui::SetColumnWidth(2, 40);
-            ImGui::Text("File Path");
-            ImGui::NextColumn();
-            ImGui::PushItemWidth(-1);
-            if (mcc.CollisionMesh)
-                ImGui::InputText("##meshfilepath", (char *)mcc.CollisionMesh->GetFilePath().c_str(), 256,
-                                 ImGuiInputTextFlags_ReadOnly);
-            else
-                ImGui::InputText("##meshfilepath", (char *)"Null", 256, ImGuiInputTextFlags_ReadOnly);
-            ImGui::PopItemWidth();
-            ImGui::NextColumn();
-            if (ImGui::Button("...##openmesh")) {
-                std::string file = Application::Get().OpenFile();
-                if (!file.empty()) {
-                    mcc.CollisionMesh = Ref<Mesh>::Create(file);
+        DrawComponent<MeshColliderComponent>("Mesh Collider", entity, [&](MeshColliderComponent &mcc) {
+            UI::BeginPropertyGrid();
+
+            if (mcc.OverrideMesh) {
+                if (UI::PropertyAssetReference("Mesh", mcc.CollisionMesh, AssetType::Mesh)) {
                     if (mcc.IsConvex)
-                        PXPhysicsWrappers::CreateConvexMesh(mcc, true);
+                        PXPhysicsWrappers::CreateConvexMesh(mcc, glm::vec3(1.0f), true);
                     else
-                        PXPhysicsWrappers::CreateTriangleMesh(mcc, true);
+                        PXPhysicsWrappers::CreateTriangleMesh(mcc, glm::vec3(1.0f), true);
                 }
             }
-            ImGui::Columns(1);
 
-            UI::BeginPropertyGrid();
             if (UI::Property("Is Convex", mcc.IsConvex)) {
                 if (mcc.IsConvex)
-                    PXPhysicsWrappers::CreateConvexMesh(mcc, true);
+                    PXPhysicsWrappers::CreateConvexMesh(mcc, glm::vec3(1.0f), true);
                 else
-                    PXPhysicsWrappers::CreateTriangleMesh(mcc, true);
+                    PXPhysicsWrappers::CreateTriangleMesh(mcc, glm::vec3(1.0f), true);
             }
 
             UI::Property("Is Trigger", mcc.IsTrigger);
+            UI::PropertyAssetReference("Material", mcc.Material, AssetType::PhysicsMat);
+
+            if (UI::Property("Override Mesh", mcc.OverrideMesh)) {
+                if (!mcc.OverrideMesh && entity.HasComponent<MeshComponent>()) {
+                    mcc.CollisionMesh = entity.GetComponent<MeshComponent>().Mesh;
+
+                    if (mcc.IsConvex)
+                        PXPhysicsWrappers::CreateConvexMesh(mcc, glm::vec3(1.0f), true);
+                    else
+                        PXPhysicsWrappers::CreateTriangleMesh(mcc, glm::vec3(1.0f), true);
+                }
+            }
             UI::EndPropertyGrid();
         });
     }

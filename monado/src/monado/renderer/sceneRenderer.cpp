@@ -30,7 +30,7 @@ namespace Monado {
 
             // Resources
             Ref<MaterialInstance> SkyboxMaterial;
-            Environment SceneEnvironment;
+            Ref<Environment> SceneEnvironment;
             float SceneEnvironmentIntensity;
             LightEnvironment SceneLightEnvironment;
             Light ActiveLight;
@@ -138,13 +138,13 @@ namespace Monado {
         bloomBlendRenderPassSpec.TargetFramebuffer = Framebuffer::Create(bloomBlendFramebufferSpec);
         s_Data.BloomBlendPass = RenderPass::Create(bloomBlendRenderPassSpec);
 
-        s_Data.CompositeShader = Shader::Create("alvis/assets/shaders/SceneComposite.glsl");
-        s_Data.BloomBlurShader = Shader::Create("alvis/assets/shaders/BloomBlur.glsl");
-        s_Data.BloomBlendShader = Shader::Create("alvis/assets/shaders/BloomBlend.glsl");
-        s_Data.BRDFLUT = Texture2D::Create("alvis/assets/textures/BRDF_LUT.tga");
+        s_Data.CompositeShader = Shader::Create("assets/shaders/SceneComposite.glsl");
+        s_Data.BloomBlurShader = Shader::Create("assets/shaders/BloomBlur.glsl");
+        s_Data.BloomBlendShader = Shader::Create("assets/shaders/BloomBlend.glsl");
+        s_Data.BRDFLUT = Texture2D::Create("assets/textures/BRDF_LUT.tga");
 
         // Grid
-        auto gridShader = Shader::Create("alvis/assets/shaders/Grid.glsl");
+        auto gridShader = Shader::Create("assets/shaders/Grid.glsl");
         s_Data.GridMaterial = MaterialInstance::Create(Material::Create(gridShader));
         s_Data.GridMaterial->SetFlag(MaterialFlag::TwoSided, true);
         float gridScale = 16.025f, gridSize = 0.025f;
@@ -152,21 +152,22 @@ namespace Monado {
         s_Data.GridMaterial->Set("u_Res", gridSize);
 
         // Outline
-        auto outlineShader = Shader::Create("alvis/assets/shaders/Outline.glsl");
+        auto outlineShader = Shader::Create("assets/shaders/Outline.glsl");
         s_Data.OutlineMaterial = MaterialInstance::Create(Material::Create(outlineShader));
         s_Data.OutlineMaterial->SetFlag(MaterialFlag::DepthTest, false);
 
-        auto outlineAnimShader = Shader::Create("alvis/assets/shaders/Outline_Anim.glsl");
+        auto outlineAnimShader = Shader::Create("assets/shaders/Outline_Anim.glsl");
         s_Data.OutlineAnimMaterial = MaterialInstance::Create(Material::Create(outlineAnimShader));
         s_Data.OutlineAnimMaterial->SetFlag(MaterialFlag::DepthTest, false);
 
         // Collider
-        auto colliderShader = Shader::Create("alvis/assets/shaders/Collider.glsl");
+        auto colliderShader = Shader::Create("assets/shaders/Collider.glsl");
         s_Data.ColliderMaterial = MaterialInstance::Create(Material::Create(colliderShader));
         s_Data.ColliderMaterial->SetFlag(MaterialFlag::DepthTest, false);
 
-        s_Data.ShadowMapShader = Shader::Create("alvis/assets/shaders/ShadowMap.glsl");
-        s_Data.ShadowMapAnimShader = Shader::Create("alvis/assets/shaders/ShadowMap_Anim.glsl");
+        // Shadow Map
+        s_Data.ShadowMapShader = Shader::Create("assets/shaders/ShadowMap.glsl");
+        s_Data.ShadowMapAnimShader = Shader::Create("assets/shaders/ShadowMap_Anim.glsl");
 
         FramebufferSpecification shadowMapFramebufferSpec;
         shadowMapFramebufferSpec.Width = 4096;
@@ -257,7 +258,7 @@ namespace Monado {
 
         Ref<TextureCube> envUnfiltered = TextureCube::Create(TextureFormat::Float16, cubemapSize, cubemapSize);
         if (!equirectangularConversionShader)
-            equirectangularConversionShader = Shader::Create("alvis/assets/shaders/EquirectangularToCubeMap.glsl");
+            equirectangularConversionShader = Shader::Create("assets/shaders/EquirectangularToCubeMap.glsl");
         Ref<Texture2D> envEquirect = Texture2D::Create(filepath);
         MND_CORE_ASSERT(envEquirect->GetFormat() == TextureFormat::Float16, "Texture is not HDR!");
 
@@ -270,7 +271,7 @@ namespace Monado {
         });
 
         if (!envFilteringShader)
-            envFilteringShader = Shader::Create("alvis/assets/shaders/EnvironmentMipFilter.glsl");
+            envFilteringShader = Shader::Create("assets/shaders/EnvironmentMipFilter.glsl");
 
         Ref<TextureCube> envFiltered = TextureCube::Create(TextureFormat::Float16, cubemapSize, cubemapSize);
 
@@ -296,7 +297,7 @@ namespace Monado {
         });
 
         if (!envIrradianceShader)
-            envIrradianceShader = Shader::Create("alvis/assets/shaders/EnvironmentIrradiance.glsl");
+            envIrradianceShader = Shader::Create("assets/shaders/EnvironmentIrradiance.glsl");
 
         Ref<TextureCube> irradianceMap =
             TextureCube::Create(TextureFormat::Float16, irradianceMapSize, irradianceMapSize);
@@ -315,13 +316,13 @@ namespace Monado {
         bool outline = s_Data.SelectedMeshDrawList.size() > 0;
         bool collider = s_Data.ColliderDrawList.size() > 0;
 
-        if (outline || collider) {
+        if (outline) {
             Renderer::Submit([]() { glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); });
         }
 
         Renderer::BeginRenderPass(s_Data.GeoPass);
 
-        if (outline || collider) {
+        if (outline) {
             Renderer::Submit([]() { glStencilMask(0); });
         }
 
@@ -335,10 +336,6 @@ namespace Monado {
         s_Data.SceneData.SkyboxMaterial->Set("u_InverseVP", glm::inverse(viewProjection));
         s_Data.SceneData.SkyboxMaterial->Set("u_SkyIntensity", s_Data.SceneData.SceneEnvironmentIntensity);
         Renderer::SubmitFullscreenQuad(s_Data.SceneData.SkyboxMaterial);
-
-        float aspectRatio = (float)s_Data.GeoPass->GetSpecification().TargetFramebuffer->GetWidth() /
-                            (float)s_Data.GeoPass->GetSpecification().TargetFramebuffer->GetHeight();
-        float frustumSize = 2.0f * sceneCamera.Near * glm::tan(sceneCamera.FOV * 0.5f) * aspectRatio;
 
         // Render entities
         for (auto &dc : s_Data.DrawList) {
@@ -362,8 +359,8 @@ namespace Monado {
             baseMaterial->Set("u_IBLContribution", s_Data.SceneData.SceneEnvironmentIntensity);
 
             // Environment (TODO: don't do this per mesh)
-            baseMaterial->Set("u_EnvRadianceTex", s_Data.SceneData.SceneEnvironment.RadianceMap);
-            baseMaterial->Set("u_EnvIrradianceTex", s_Data.SceneData.SceneEnvironment.IrradianceMap);
+            baseMaterial->Set("u_EnvRadianceTex", s_Data.SceneData.SceneEnvironment->RadianceMap);
+            baseMaterial->Set("u_EnvIrradianceTex", s_Data.SceneData.SceneEnvironment->IrradianceMap);
             baseMaterial->Set("u_BRDFLUTTexture", s_Data.BRDFLUT);
 
             // Set lights (TODO: move to light environment and don't do per mesh)
@@ -403,9 +400,11 @@ namespace Monado {
             Renderer::SubmitMesh(dc.Mesh, dc.Transform, overrideMaterial);
         }
 
-        if (outline || collider) {
-            glStencilFunc(GL_ALWAYS, 1, 0xff);
-            glStencilMask(0xff);
+        if (outline) {
+            Renderer::Submit([]() {
+                glStencilFunc(GL_ALWAYS, 1, 0xff);
+                glStencilMask(0xff);
+            });
         }
 
         for (auto &dc : s_Data.SelectedMeshDrawList) {
@@ -424,9 +423,14 @@ namespace Monado {
             baseMaterial->Set("u_IBLContribution", s_Data.SceneData.SceneEnvironmentIntensity);
 
             // Environment (TODO: don't do this per mesh)
-            baseMaterial->Set("u_EnvRadianceTex", s_Data.SceneData.SceneEnvironment.RadianceMap);
-            baseMaterial->Set("u_EnvIrradianceTex", s_Data.SceneData.SceneEnvironment.IrradianceMap);
+            baseMaterial->Set("u_EnvRadianceTex", s_Data.SceneData.SceneEnvironment->RadianceMap);
+            baseMaterial->Set("u_EnvIrradianceTex", s_Data.SceneData.SceneEnvironment->IrradianceMap);
             baseMaterial->Set("u_BRDFLUTTexture", s_Data.BRDFLUT);
+
+            baseMaterial->Set("u_LightMatrixCascade0", s_Data.LightMatrices[0]);
+            baseMaterial->Set("u_LightMatrixCascade1", s_Data.LightMatrices[1]);
+            baseMaterial->Set("u_LightMatrixCascade2", s_Data.LightMatrices[2]);
+            baseMaterial->Set("u_LightMatrixCascade3", s_Data.LightMatrices[3]);
 
             // Set lights (TODO: move to light environment and don't do per mesh)
             baseMaterial->Set("u_DirectionalLights", s_Data.SceneData.SceneLightEnvironment.DirectionalLights[0]);
@@ -502,9 +506,6 @@ namespace Monado {
 
         if (collider) {
             Renderer::Submit([]() {
-                glStencilFunc(GL_NOTEQUAL, 1, 0xff);
-                glStencilMask(0);
-
                 glLineWidth(1);
                 glEnable(GL_LINE_SMOOTH);
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -529,8 +530,6 @@ namespace Monado {
 
             Renderer::Submit([]() {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-                glStencilMask(0xff);
-                glStencilFunc(GL_ALWAYS, 1, 0xff);
                 glEnable(GL_DEPTH_TEST);
             });
         }
@@ -714,6 +713,19 @@ namespace Monado {
                 glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0f + s_Data.CascadeNearPlaneOffset,
                            maxExtents.z - minExtents.z + s_Data.CascadeFarPlaneOffset);
 
+            // Offset to texel space to avoid shimmering (from
+            // https://stackoverflow.com/questions/33499053/cascaded-shadow-map-shimmering)
+            glm::mat4 shadowMatrix = lightOrthoMatrix * lightViewMatrix;
+            const float ShadowMapResolution = 4096.0f;
+            glm::vec4 shadowOrigin = (shadowMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)) * ShadowMapResolution / 2.0f;
+            glm::vec4 roundedOrigin = glm::round(shadowOrigin);
+            glm::vec4 roundOffset = roundedOrigin - shadowOrigin;
+            roundOffset = roundOffset * 2.0f / ShadowMapResolution;
+            roundOffset.z = 0.0f;
+            roundOffset.w = 0.0f;
+
+            lightOrthoMatrix[3] += roundOffset;
+
             // Store split distance and matrix in cascade
             cascades[i].SplitDepth = (nearClip + splitDist * clipRange) * -1.0f;
             cascades[i].ViewProj = lightOrthoMatrix * lightViewMatrix;
@@ -860,7 +872,6 @@ namespace Monado {
             auto id = fb->GetColorAttachmentRendererID();
 
             float size =
-                // FIXME:: 这里不太对
                 ImGui::GetContentRegionAvail().x; // (float)fb->GetWidth() * 0.5f, (float)fb->GetHeight() * 0.5f
             float w = size;
             float h = w / ((float)fb->GetWidth() / (float)fb->GetHeight());
