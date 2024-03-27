@@ -518,19 +518,30 @@ namespace Monado {
         std::string sceneName = data["Scene"].as<std::string>();
         MND_CORE_INFO("Deserializing scene '{0}'", sceneName);
 
-        auto environment = data["Environment"];
-        if (environment) {
-            std::string envPath = environment["AssetPath"].as<std::string>();
-            // m_Scene->SetEnvironment(Environment::Load(envPath));
+        /*auto environment = data["Environment"];
+        if (environment)
+        {
+                AssetHandle assetHandle;
+                if (environment["AssetPath"])
+                {
+                        std::string envPath = environment["AssetPath"].as<std::string>();
+                        assetHandle = AssetManager::GetAssetIDForFile(envPath);
+                }
+                else
+                {
+                        assetHandle = environment["AssetHandle"].as<uint64_t>();
+                }
+                //m_Scene->SetEnvironment(Environment::Load(envPath));
 
-            auto lightNode = environment["Light"];
-            if (lightNode) {
-                auto &light = m_Scene->GetLight();
-                light.Direction = lightNode["Direction"].as<glm::vec3>();
-                light.Radiance = lightNode["Radiance"].as<glm::vec3>();
-                light.Multiplier = lightNode["Multiplier"].as<float>();
-            }
-        }
+                auto lightNode = environment["Light"];
+                if (lightNode)
+                {
+                        auto& light = m_Scene->GetLight();
+                        light.Direction = lightNode["Direction"].as<glm::vec3>();
+                        light.Radiance = lightNode["Radiance"].as<glm::vec3>();
+                        light.Multiplier = lightNode["Multiplier"].as<float>();
+                }
+        }*/
 
         std::vector<std::string> missingPaths;
 

@@ -1,6 +1,6 @@
 Scene: Scene Name
 Environment:
-  AssetPath: assets/env/birchwood_4k.hdr
+  AssetHandle: 1453555556797978549
   Light:
     Direction: [0, 0, 0]
     Radiance: [0, 0, 0]
@@ -37,7 +37,7 @@ Entities:
       Offset: [0, 0, 0]
       Size: [2, 2, 2]
       IsTrigger: false
-      Material: 0
+      Material: 10121066009159327136
   - Entity: 16519350140026489313
     Parent: 0
     Children:
@@ -69,7 +69,7 @@ Entities:
       Offset: [0, 0, 0]
       Size: [2, 2, 2]
       IsTrigger: false
-      Material: 0
+      Material: 10121066009159327136
   - Entity: 8139519735174842173
     Parent: 0
     Children:
@@ -128,7 +128,7 @@ Entities:
       Radius: 0.5
       Height: 1
       IsTrigger: false
-      Material: 0
+      Material: 10121066009159327136
   - Entity: 17660423772096889750
     Parent: 0
     Children:
@@ -160,7 +160,7 @@ Entities:
       Offset: [0, 0, 0]
       Size: [2, 2, 2]
       IsTrigger: false
-      Material: 0
+      Material: 10121066009159327136
   - Entity: 15200110747878749015
     Parent: 0
     Children:
@@ -172,7 +172,7 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     SkyLightComponent:
-      EnvironmentAssetPath: assets/env/birchwood_4k.hdr
+      EnvironmentMap: 1453555556797978549
       Intensity: 1
       Angle: 0
   - Entity: 11043057851675603335

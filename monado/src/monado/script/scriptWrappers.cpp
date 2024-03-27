@@ -88,7 +88,7 @@ namespace Monado {
                     void *data[] = { &entity.GetUUID(), &sphereCollider.IsTrigger, &sphereCollider.Radius };
 
                     MonoObject *obj =
-                        ScriptEngine::Construct("Monado.SphereCollider:.ctor(ulong,bool,float)", true, data);
+                        ScriptEngine::Construct("Monado.SphereCollider:.ctor(ulong,bool,single)", true, data);
                     mono_array_set(array, MonoObject *, arrayIndex++, obj);
                 }
 
@@ -174,7 +174,7 @@ namespace Monado {
         }
 
         int32_t Monado_Physics_OverlapCapsuleNonAlloc(glm::vec3 *origin, float radius, float halfHeight,
-                                                     MonoArray *outColliders) {
+                                                      MonoArray *outColliders) {
             memset(s_OverlapBuffer.data(), 0, OVERLAP_MAX_COLLIDERS * sizeof(physx::PxOverlapHit));
 
             uint64_t arrayLength = mono_array_length(outColliders);
@@ -360,7 +360,7 @@ namespace Monado {
         }
 
         void Monado_RigidBody2DComponent_ApplyLinearImpulse(uint64_t entityID, glm::vec2 *impulse, glm::vec2 *offset,
-                                                           bool wake) {
+                                                            bool wake) {
             Ref<Scene> scene = ScriptEngine::GetCurrentSceneContext();
             MND_CORE_ASSERT(scene, "No active scene!");
             const auto &entityMap = scene->GetEntityMap();
@@ -661,7 +661,7 @@ namespace Monado {
         }
 
         void Monado_MaterialInstance_SetTexture(Ref<MaterialInstance> *_this, MonoString *uniform,
-                                               Ref<Texture2D> *texture) {
+                                                Ref<Texture2D> *texture) {
             Ref<MaterialInstance> &instance = *(Ref<MaterialInstance> *)_this;
             instance->Set(mono_string_to_utf8(uniform), *texture);
         }

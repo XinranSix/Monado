@@ -316,13 +316,13 @@ namespace Monado {
         bool outline = s_Data.SelectedMeshDrawList.size() > 0;
         bool collider = s_Data.ColliderDrawList.size() > 0;
 
-        if (outline || collider) {
+        if (outline) {
             Renderer::Submit([]() { glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); });
         }
 
         Renderer::BeginRenderPass(s_Data.GeoPass);
 
-        if (outline || collider) {
+        if (outline) {
             Renderer::Submit([]() { glStencilMask(0); });
         }
 
@@ -400,7 +400,7 @@ namespace Monado {
             Renderer::SubmitMesh(dc.Mesh, dc.Transform, overrideMaterial);
         }
 
-        if (outline || collider) {
+        if (outline) {
             Renderer::Submit([]() {
                 glStencilFunc(GL_ALWAYS, 1, 0xff);
                 glStencilMask(0xff);
@@ -506,9 +506,6 @@ namespace Monado {
 
         if (collider) {
             Renderer::Submit([]() {
-                glStencilFunc(GL_NOTEQUAL, 1, 0xff);
-                glStencilMask(0);
-
                 glLineWidth(1);
                 glEnable(GL_LINE_SMOOTH);
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -533,8 +530,6 @@ namespace Monado {
 
             Renderer::Submit([]() {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-                glStencilMask(0xff);
-                glStencilFunc(GL_ALWAYS, 1, 0xff);
                 glEnable(GL_DEPTH_TEST);
             });
         }

@@ -7,18 +7,19 @@
 #include <Shellapi.h>
 
 #undef DeleteFile
+#undef MoveFile
 
 namespace Monado {
 
-    Monado::FileSystem::FileSystemChangedCallbackFn Monado::FileSystem::s_Callback;
+    FileSystem::FileSystemChangedCallbackFn FileSystem::s_Callback;
 
     static bool s_Watching = true;
     static bool s_IgnoreNextChange = false;
     static HANDLE s_WatcherThread;
 
-    void Monado::FileSystem::SetChangeCallback(const FileSystemChangedCallbackFn &callback) { s_Callback = callback; }
+    void FileSystem::SetChangeCallback(const FileSystemChangedCallbackFn &callback) { s_Callback = callback; }
 
-    bool Monado::FileSystem::CreateFolder(const std::string &filepath) {
+    bool FileSystem::CreateFolder(const std::string &filepath) {
         BOOL created = CreateDirectoryA(filepath.c_str(), NULL);
         if (!created) {
             DWORD error = GetLastError();
@@ -35,7 +36,7 @@ namespace Monado {
         return true;
     }
 
-    bool Monado::FileSystem::Exists(const std::string &filepath) {
+    bool FileSystem::Exists(const std::string &filepath) {
         DWORD attribs = GetFileAttributesA(filepath.c_str());
 
         if (attribs == INVALID_FILE_ATTRIBUTES)
@@ -51,6 +52,15 @@ namespace Monado {
         MoveFileA(filepath.c_str(), newFilePath.c_str());
         s_IgnoreNextChange = false;
         return newFilePath;
+    }
+
+    bool FileSystem::MoveFile(const std::string &filepath, const std::string &dest) {
+        s_IgnoreNextChange = true;
+        std::filesystem::path p = filepath;
+        std::string destFilePath = dest + "/" + p.filename().string();
+        BOOL result = MoveFileA(filepath.c_str(), destFilePath.c_str());
+        s_IgnoreNextChange = false;
+        return result != 0;
     }
 
     bool FileSystem::DeleteFile(const std::string &filepath) {
@@ -91,15 +101,15 @@ namespace Monado {
         return converted;
     }
 
-    unsigned long Monado::FileSystem::Watch(void *param) {
+    unsigned long FileSystem::Watch(void *param) {
         LPCWSTR filepath = L"assets";
         BYTE *buffer = new BYTE[10 * 1024]; // 1 MB
         OVERLAPPED overlapped = { 0 };
         HANDLE handle = NULL;
         DWORD bytesReturned = 0;
 
-        handle = CreateFileW(filepath, FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                             NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
+        handle = CreateFileW(filepath, FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
 
         ZeroMemory(&overlapped, sizeof(overlapped));
 
