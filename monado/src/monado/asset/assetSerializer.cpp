@@ -44,12 +44,12 @@ namespace Monado {
         if (hasMeta) {
             LoadMetaData(asset);
         } else {
-            asset->Handle = (filepath == "assets") ? static_cast<AssetHandle>(0) : AssetHandle();
-            asset->FileName = Utils::RemoveExtension(Utils::GetFilename(filepath));
-            asset->Extension = Utils::GetExtension(filepath);
+            asset->Handle = AssetHandle();
             asset->Type = type;
         }
 
+        asset->Extension = extension;
+        asset->FileName = Utils::RemoveExtension(Utils::GetFilename(filepath));
         asset->ParentDirectory = parentHandle;
         asset->IsDataLoaded = false;
 
@@ -137,20 +137,20 @@ namespace Monado {
             MND_CORE_ASSERT("Invalid File Format");
 
         asset->Handle = data["Asset"].as<uint64_t>();
-        asset->FileName = data["FileName"].as<std::string>();
         asset->FilePath = data["FilePath"].as<std::string>();
-        asset->Extension = data["Extension"].as<std::string>();
         asset->Type = (AssetType)data["Type"].as<int>();
+
+        if (asset->FileName == "assets" && asset->Handle == 0) {
+            asset->Handle = AssetHandle();
+            CreateMetaFile(asset);
+        }
     }
 
     void AssetSerializer::CreateMetaFile(const Ref<Asset> &asset) {
         YAML::Emitter out;
         out << YAML::BeginMap;
         out << YAML::Key << "Asset" << YAML::Value << asset->Handle;
-        out << YAML::Key << "FileName" << YAML::Value << asset->FileName;
         out << YAML::Key << "FilePath" << YAML::Value << asset->FilePath;
-        out << YAML::Key << "Extension" << YAML::Value << asset->Extension;
-        out << YAML::Key << "Directory" << YAML::Value << asset->ParentDirectory;
         out << YAML::Key << "Type" << YAML::Value << (int)asset->Type;
         out << YAML::EndMap;
 

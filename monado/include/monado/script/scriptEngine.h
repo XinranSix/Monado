@@ -15,7 +15,7 @@ typedef struct _MonoClass MonoClass;
 
 namespace Monado {
 
-    enum class FieldType { None = 0, Float, Int, UnsignedInt, String, Vec2, Vec3, Vec4 };
+    enum class FieldType { None = 0, Float, Int, UnsignedInt, String, Vec2, Vec3, Vec4, ClassReference };
 
     const char *FieldTypeToString(FieldType type);
 
@@ -32,9 +32,10 @@ namespace Monado {
     // TODO: This needs to somehow work for strings...
     struct PublicField {
         std::string Name;
+        std::string TypeName;
         FieldType Type;
 
-        PublicField(const std::string &name, FieldType type);
+        PublicField(const std::string &name, const std::string &typeName, FieldType type);
         PublicField(const PublicField &) = delete;
         PublicField(PublicField &&other);
         ~PublicField();
@@ -67,6 +68,10 @@ namespace Monado {
         }
 
         void SetStoredValueRaw(void *src);
+        void *GetStoredValueRaw() { return m_StoredValueBuffer; }
+
+        void SetRuntimeValueRaw(void *src);
+        void *GetRuntimeValueRaw();
 
     private:
         EntityInstance *m_EntityInstance;

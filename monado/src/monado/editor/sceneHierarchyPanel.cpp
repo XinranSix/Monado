@@ -407,7 +407,7 @@ namespace Monado {
 
         // ID
         ImGui::SameLine();
-        ImGui::TextDisabled("%llx",(int64_t) id);
+        ImGui::TextDisabled("%llx", (int64_t)id);
         float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
         ImVec2 textSize = ImGui::CalcTextSize("Add Component");
         ImGui::SameLine(contentRegionAvailable.x - (textSize.x + GImGui->Style.FramePadding.y));
@@ -664,6 +664,18 @@ namespace Monado {
                                     field.SetRuntimeValue(value);
                                 else
                                     field.SetStoredValue(value);
+                            }
+                            break;
+                        }
+                        case FieldType::ClassReference: {
+                            Ref<Asset> *asset =
+                                (Ref<Asset> *)(isRuntime ? field.GetRuntimeValueRaw() : field.GetStoredValueRaw());
+                            std::string label = field.Name + "(" + field.TypeName + ")";
+                            if (UI::PropertyAssetReference(label.c_str(), *asset)) {
+                                if (isRuntime)
+                                    field.SetRuntimeValueRaw(asset);
+                                else
+                                    field.SetStoredValueRaw(asset);
                             }
                             break;
                         }

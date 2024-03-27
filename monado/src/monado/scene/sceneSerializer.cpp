@@ -607,13 +607,14 @@ namespace Monado {
                         if (storedFields) {
                             for (auto field : storedFields) {
                                 std::string name = field["Name"].as<std::string>();
+                                std::string typeName = field["TypeName"] ? field["TypeName"].as<std::string>() : "";
                                 FieldType type = (FieldType)field["Type"].as<uint32_t>();
                                 EntityInstanceData &data =
                                     ScriptEngine::GetEntityInstanceData(m_Scene->GetUUID(), uuid);
                                 auto &moduleFieldMap = data.ModuleFieldMap;
                                 auto &publicFields = moduleFieldMap[moduleName];
                                 if (publicFields.find(name) == publicFields.end()) {
-                                    PublicField pf = { name, type };
+                                    PublicField pf = { name, typeName, type };
                                     publicFields.emplace(name, std::move(pf));
                                 }
                                 auto dataNode = field["Data"];
@@ -657,7 +658,7 @@ namespace Monado {
                     UUID assetID;
                     if (meshComponent["AssetPath"]) {
                         std::string filepath = meshComponent["AssetPath"].as<std::string>();
-                        assetID = AssetManager::GetAssetIDForFile(filepath);
+                        assetID = AssetManager::GetAssetHandleFromFilePath(filepath);
                     } else {
                         assetID = meshComponent["AssetID"].as<uint64_t>();
                     }
@@ -709,7 +710,7 @@ namespace Monado {
                     AssetHandle assetHandle;
                     if (skyLightComponent["EnvironmentAssetPath"]) {
                         std::string filepath = skyLightComponent["EnvironmentAssetPath"].as<std::string>();
-                        assetHandle = AssetManager::GetAssetIDForFile(filepath);
+                        assetHandle = AssetManager::GetAssetHandleFromFilePath(filepath);
                     } else {
                         assetHandle = skyLightComponent["EnvironmentMap"].as<uint64_t>();
                     }
@@ -843,7 +844,7 @@ namespace Monado {
                         UUID assetID;
                         if (meshComponent["AssetPath"]) {
                             std::string filepath = meshComponent["AssetPath"].as<std::string>();
-                            assetID = AssetManager::GetAssetIDForFile(filepath);
+                            assetID = AssetManager::GetAssetHandleFromFilePath(filepath);
                         } else {
                             assetID = meshComponent["AssetID"].as<uint64_t>();
                         }

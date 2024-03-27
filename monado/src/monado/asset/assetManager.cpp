@@ -82,7 +82,7 @@ namespace Monado {
     AssetHandle AssetManager::FindParentHandle(const std::string &filepath) {
         std::vector<std::string> parts = Utils::SplitString(filepath, "/\\");
         std::string parentFolder = parts[parts.size() - 2];
-        Ref<Directory> assetsDirectory = GetAsset<Directory>(0);
+        Ref<Directory> assetsDirectory = GetAsset<Directory>(GetAssetHandleFromFilePath("assets"));
         return FindParentHandleInChildren(assetsDirectory, parentFolder);
     }
 
@@ -154,7 +154,7 @@ namespace Monado {
         return false;
     }
 
-    AssetHandle AssetManager::GetAssetIDForFile(const std::string &filepath) {
+    AssetHandle AssetManager::GetAssetHandleFromFilePath(const std::string &filepath) {
         for (auto &[id, asset] : s_LoadedAssets) {
             if (asset->FilePath == filepath)
                 return id;
@@ -164,7 +164,7 @@ namespace Monado {
     }
 
     bool AssetManager::IsAssetHandleValid(AssetHandle assetHandle) {
-        return s_LoadedAssets.find(assetHandle) != s_LoadedAssets.end();
+        return assetHandle != 0 && s_LoadedAssets.find(assetHandle) != s_LoadedAssets.end();
     }
 
     void AssetManager::Rename(Ref<Asset> &asset, const std::string &newName) {
@@ -259,7 +259,7 @@ namespace Monado {
             AssetSerializer::LoadAssetInfo(directoryPath, parentHandle, AssetType::Directory).As<Directory>();
         s_LoadedAssets[dirInfo->Handle] = dirInfo;
 
-        if (parentHandle != dirInfo->Handle && IsAssetHandleValid(parentHandle))
+        if (IsAssetHandleValid(parentHandle))
             s_LoadedAssets[parentHandle].As<Directory>()->ChildDirectories.push_back(dirInfo->Handle);
 
         for (auto entry : std::filesystem::directory_iterator(directoryPath)) {

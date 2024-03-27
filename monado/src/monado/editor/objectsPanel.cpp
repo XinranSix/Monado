@@ -23,13 +23,21 @@ namespace Monado {
     }
 
     void ObjectsPanel::OnImGuiRender() {
-        static const AssetHandle CubeHandle = AssetManager::GetAssetIDForFile("assets/meshes/Default/Cube.fbx");
-        static const AssetHandle CapsuleHandle = AssetManager::GetAssetIDForFile("assets/meshes/Default/Capsule.fbx");
-        static const AssetHandle SphereHandle = AssetManager::GetAssetIDForFile("assets/meshes/Default/Sphere.fbx");
-        static const AssetHandle CylinderHandle = AssetManager::GetAssetIDForFile("assets/meshes/Default/Cylinder.fbx");
-        static const AssetHandle TorusHandle = AssetManager::GetAssetIDForFile("assets/meshes/Default/Torus.fbx");
-        static const AssetHandle PlaneHandle = AssetManager::GetAssetIDForFile("assets/meshes/Default/Plane.fbx");
-        static const AssetHandle ConeHandle = AssetManager::GetAssetIDForFile("assets/meshes/Default/Cone.fbx");
+        
+        static const AssetHandle CubeHandle =
+            AssetManager::GetAssetHandleFromFilePath("assets/meshes/Default/Cube.fbx");
+        static const AssetHandle CapsuleHandle =
+            AssetManager::GetAssetHandleFromFilePath("assets/meshes/Default/Capsule.fbx");
+        static const AssetHandle SphereHandle =
+            AssetManager::GetAssetHandleFromFilePath("assets/meshes/Default/Sphere.fbx");
+        static const AssetHandle CylinderHandle =
+            AssetManager::GetAssetHandleFromFilePath("assets/meshes/Default/Cylinder.fbx");
+        static const AssetHandle TorusHandle =
+            AssetManager::GetAssetHandleFromFilePath("assets/meshes/Default/Torus.fbx");
+        static const AssetHandle PlaneHandle =
+            AssetManager::GetAssetHandleFromFilePath("assets/meshes/Default/Plane.fbx");
+        static const AssetHandle ConeHandle =
+            AssetManager::GetAssetHandleFromFilePath("assets/meshes/Default/Cone.fbx");
 
         ImGui::Begin("Objects");
         {

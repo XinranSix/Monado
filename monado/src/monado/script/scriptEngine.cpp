@@ -223,7 +223,7 @@ namespace Monado {
         MonoDomain *domain = nullptr;
         bool cleanup = false;
         if (s_MonoDomain) {
-            domain = mono_domain_create_appdomain((char *)"Monado Runtime", nullptr);
+            domain = mono_domain_create_appdomain((char*)"Monado Runtime", nullptr);
             mono_domain_set(domain, false);
 
             cleanup = true;
@@ -255,7 +255,7 @@ namespace Monado {
                 for (auto &[entityID, entityInstanceData] : entityMap) {
                     const auto &entityMap = scene->GetEntityMap();
                     MND_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(),
-                                    "Invalid entity ID or entity doesn't exist in scene!");
+                                   "Invalid entity ID or entity doesn't exist in scene!");
                     InitScriptEntity(entityMap.at(entityID));
                 }
             }
@@ -476,6 +476,7 @@ namespace Monado {
             if (strcmp(name, "Monado.Vector4") == 0)
                 return FieldType::Vec4;
         }
+        case MONO_TYPE_CLASS: return FieldType::ClassReference;
         }
         return FieldType::None;
     }
@@ -546,12 +547,20 @@ namespace Monado {
                 // TODO: Attributes
                 MonoCustomAttrInfo *attr = mono_custom_attrs_from_field(scriptClass.Class, iter);
 
+                char *typeName = mono_type_get_name(fieldType);
+
                 if (oldFields.find(name) != oldFields.end()) {
                     fieldMap.emplace(name, std::move(oldFields.at(name)));
                 } else {
-                    PublicField field = { name, MonadoFieldType };
+                    PublicField field = { name, typeName, MonadoFieldType };
                     field.m_EntityInstance = &entityInstance;
                     field.m_MonoClassField = iter;
+
+                    if (field.Type == FieldType::ClassReference) {
+                        Ref<Asset> *asset = new Ref<Asset>();
+                        field.SetStoredValueRaw(asset);
+                    }
+
                     fieldMap.emplace(name, std::move(field));
                 }
             }
@@ -608,17 +617,20 @@ namespace Monado {
         case FieldType::Vec2: return 4 * 2;
         case FieldType::Vec3: return 4 * 3;
         case FieldType::Vec4: return 4 * 4;
+        case FieldType::ClassReference: return 4;
         }
         MND_CORE_ASSERT(false, "Unknown field type!");
         return 0;
     }
 
-    PublicField::PublicField(const std::string &name, FieldType type) : Name(name), Type(type) {
+    PublicField::PublicField(const std::string &name, const std::string &typeName, FieldType type)
+        : Name(name), TypeName(typeName), Type(type) {
         m_StoredValueBuffer = AllocateBuffer(type);
     }
 
     PublicField::PublicField(PublicField &&other) {
         Name = std::move(other.Name);
+        TypeName = std::move(other.TypeName);
         Type = other.Type;
         m_EntityInstance = other.m_EntityInstance;
         m_MonoClassField = other.m_MonoClassField;
@@ -633,14 +645,53 @@ namespace Monado {
 
     void PublicField::CopyStoredValueToRuntime() {
         MND_CORE_ASSERT(m_EntityInstance->GetInstance());
-        mono_field_set_value(m_EntityInstance->GetInstance(), m_MonoClassField, m_StoredValueBuffer);
+
+        if (Type == FieldType::ClassReference) {
+            // Create Managed Object
+            void *params[] = { &m_StoredValueBuffer };
+            MonoObject *obj = ScriptEngine::Construct(TypeName + ":.ctor(intptr)", true, params);
+            mono_field_set_value(m_EntityInstance->GetInstance(), m_MonoClassField, obj);
+        } else {
+            mono_field_set_value(m_EntityInstance->GetInstance(), m_MonoClassField, m_StoredValueBuffer);
+        }
     }
 
     bool PublicField::IsRuntimeAvailable() const { return m_EntityInstance->Handle != 0; }
 
     void PublicField::SetStoredValueRaw(void *src) {
-        uint32_t size = GetFieldSize(Type);
-        memcpy(m_StoredValueBuffer, src, size);
+        if (Type == FieldType::ClassReference) {
+            m_StoredValueBuffer = (uint8_t *)src;
+        } else {
+            uint32_t size = GetFieldSize(Type);
+            memcpy(m_StoredValueBuffer, src, size);
+        }
+    }
+
+    void PublicField::SetRuntimeValueRaw(void *src) {
+        MND_CORE_ASSERT(m_EntityInstance->GetInstance());
+        mono_field_set_value(m_EntityInstance->GetInstance(), m_MonoClassField, src);
+    }
+
+    void *PublicField::GetRuntimeValueRaw() {
+        MND_CORE_ASSERT(m_EntityInstance->GetInstance());
+
+        if (Type == FieldType::ClassReference) {
+            MonoObject *instance;
+            mono_field_get_value(m_EntityInstance->GetInstance(), m_MonoClassField, &instance);
+
+            if (!instance)
+                return nullptr;
+
+            MonoClassField *field =
+                mono_class_get_field_from_name(mono_object_get_class(instance), "m_UnmanagedInstance");
+            int *value;
+            mono_field_get_value(instance, field, &value);
+            return value;
+        } else {
+            uint8_t *outValue;
+            mono_field_get_value(m_EntityInstance->GetInstance(), m_MonoClassField, outValue);
+            return outValue;
+        }
     }
 
     uint8_t *PublicField::AllocateBuffer(FieldType type) {
@@ -651,8 +702,12 @@ namespace Monado {
     }
 
     void PublicField::SetStoredValue_Internal(void *value) const {
-        uint32_t size = GetFieldSize(Type);
-        memcpy(m_StoredValueBuffer, value, size);
+        if (Type == FieldType::ClassReference) {
+            // m_StoredValueBuffer = (uint8_t*)value;
+        } else {
+            uint32_t size = GetFieldSize(Type);
+            memcpy(m_StoredValueBuffer, value, size);
+        }
     }
 
     void PublicField::GetStoredValue_Internal(void *outValue) const {
@@ -674,7 +729,7 @@ namespace Monado {
     void ScriptEngine::OnImGuiRender() {
         ImGui::Begin("Script Engine Debug");
         for (auto &[sceneID, entityMap] : s_EntityInstanceMap) {
-            bool opened = ImGui::TreeNode((void *)(uint64_t)sceneID, "Scene (%llx)", (uint64_t)sceneID);
+            bool opened = ImGui::TreeNode((void *)(uint64_t)sceneID, "Scene (%llx)",(int64_t) sceneID);
             if (opened) {
                 Ref<Scene> scene = Scene::GetScene(sceneID);
                 for (auto &[entityID, entityInstanceData] : entityMap) {
@@ -682,8 +737,7 @@ namespace Monado {
                     std::string entityName = "Unnamed Entity";
                     if (entity.HasComponent<TagComponent>())
                         entityName = entity.GetComponent<TagComponent>().Tag;
-                    opened = ImGui::TreeNode((void *)(uint64_t)entityID, "%s (%llx)", entityName.c_str(),
-                                             (uint64_t)entityID);
+                    opened = ImGui::TreeNode((void *)(uint64_t)entityID, "%s (%llx)", entityName.c_str(), (int64_t)entityID);
                     if (opened) {
                         for (auto &[moduleName, fieldMap] : entityInstanceData.ModuleFieldMap) {
                             opened = ImGui::TreeNode(moduleName.c_str());

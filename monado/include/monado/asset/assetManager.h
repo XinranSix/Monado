@@ -37,7 +37,7 @@ namespace Monado {
 
         static bool IsDirectory(const std::string &filepath);
 
-        static AssetHandle GetAssetIDForFile(const std::string &filepath);
+        static AssetHandle GetAssetHandleFromFilePath(const std::string &filepath);
         static bool IsAssetHandleValid(AssetHandle assetHandle);
 
         static void Rename(Ref<Asset> &asset, const std::string &newName);

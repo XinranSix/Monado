@@ -101,7 +101,7 @@ namespace Monado {
     }
 
     void EditorLayer::UpdateWindowTitle(const std::string &sceneName) {
-        std::string title = sceneName + " - Hazelnut - " + Application::GetPlatformName() + " (" +
+        std::string title = sceneName + " - Monadonut - " + Application::GetPlatformName() + " (" +
                             Application::GetConfigurationName() + ")";
         Application::Get().GetWindow().SetTitle(title);
     }
@@ -669,7 +669,7 @@ namespace Monado {
 
             if (ImGui::BeginMenu("Script")) {
                 if (ImGui::MenuItem("Reload C# Assembly"))
-                    ScriptEngine::ReloadAssembly("assets/scripts/ExampleApp.dll");
+                    ScriptEngine::ReloadAssembly("ExampleApp.dll");
 
                 ImGui::MenuItem("Reload assembly on play", nullptr, &m_ReloadScriptOnPlay);
                 ImGui::EndMenu();
