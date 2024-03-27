@@ -170,17 +170,30 @@ namespace Monado {
                 UUID droppedHandle = *((UUID *)payload->Data);
                 Entity e = m_Context->FindEntityByUUID(droppedHandle);
 
-                // Remove from previous parent
-                Entity previousParent = m_Context->FindEntityByUUID(e.GetParentUUID());
-                if (previousParent) {
-                    auto &parentChildren = previousParent.Children();
-                    parentChildren.erase(std::remove(parentChildren.begin(), parentChildren.end(), droppedHandle),
-                                         parentChildren.end());
+                // NOTE(Peter): We probably don't want to allow you to parent a parent to it's own children since this
+                // could cause a lot of edge-cases that will be difficult to handle
+                bool reparentToChild = false;
+                for (auto child : e.Children()) {
+                    if (child == entity.GetUUID()) {
+                        reparentToChild = true;
+                        break;
+                    }
                 }
 
-                e.SetParentUUID(entity.GetUUID());
-                auto &children = entity.Children();
-                children.push_back(droppedHandle);
+                if (!reparentToChild) {
+                    // Remove from previous parent
+                    Entity previousParent = m_Context->FindEntityByUUID(e.GetParentUUID());
+                    if (previousParent) {
+                        auto &parentChildren = previousParent.Children();
+                        parentChildren.erase(std::remove(parentChildren.begin(), parentChildren.end(), droppedHandle),
+                                             parentChildren.end());
+                    }
+
+                    e.SetParentUUID(entity.GetUUID());
+                    entity.Children().push_back(droppedHandle);
+
+                    MND_CORE_INFO("Dropping Entity {0} on {1}", droppedHandle, entity.GetUUID());
+                }
 
                 MND_CORE_INFO("Dropping Entity {0} on {1}", droppedHandle, entity.GetUUID());
             }

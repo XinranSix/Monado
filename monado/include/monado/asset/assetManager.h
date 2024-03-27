@@ -54,6 +54,9 @@ namespace Monado {
         static AssetHandle GetAssetIDForFile(const std::string &filepath);
         static bool IsAssetHandleValid(AssetHandle assetHandle);
 
+        static void Rename(Ref<Asset> &asset, const std::string &newName);
+        static void Rename(int directoryIndex, const std::string &newName);
+
         template <typename T, typename... Args>
         static Ref<T> CreateAsset(const std::string &filename, AssetType type, int directoryIndex, Args &&...args) {
             static_assert(std::is_base_of<Asset, T>::value, "CreateAsset only works for types derived from Asset");

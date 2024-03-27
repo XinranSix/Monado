@@ -32,7 +32,6 @@ namespace Monado {
     Ref<Asset> AssetSerializer::Deserialize(const std::string &filepath, int parentIndex, bool reimport,
                                             AssetType type) {
         Ref<Asset> asset = Ref<Asset>::Create();
-
         std::string extension = Utils::GetExtension(filepath);
 
         bool loadYAMLData = true;
@@ -70,22 +69,21 @@ namespace Monado {
             MND_CORE_ASSERT(asset, "Failed to load asset");
         }
 
-        bool hasMeta = FileSystem::Exists(filepath + ".meta");
+        asset->FilePath = filepath;
+        std::replace(asset->FilePath.begin(), asset->FilePath.end(), '\\', '/');
+
+        bool hasMeta = FileSystem::Exists(asset->FilePath + ".meta");
         if (hasMeta) {
-            asset->FilePath = filepath;
             LoadMetaData(asset);
-            std::replace(asset->FilePath.begin(), asset->FilePath.end(), '\\', '/');
         } else {
-            asset->FilePath = filepath;
-            std::replace(asset->FilePath.begin(), asset->FilePath.end(), '\\', '/');
-            asset->Handle = std::hash<std::string>()(asset->FilePath);
+            asset->Handle = UUID();
             asset->FileName = Utils::RemoveExtension(Utils::GetFilename(filepath));
             asset->Extension = Utils::GetExtension(filepath);
             asset->ParentDirectory = parentIndex;
             asset->Type = type;
         }
 
-        if (!hasMeta || reimport)
+        if (!hasMeta)
             CreateMetaFile(asset);
 
         return asset;
@@ -118,7 +116,7 @@ namespace Monado {
         if (!data["Asset"])
             MND_CORE_ASSERT("Invalid File Format");
 
-        asset->Handle = data["Asset"].as<AssetHandle>();
+        asset->Handle = data["Asset"].as<uint64_t>();
         asset->FileName = data["FileName"].as<std::string>();
         asset->FilePath = data["FilePath"].as<std::string>();
         asset->Extension = data["Extension"].as<std::string>();

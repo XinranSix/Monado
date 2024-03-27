@@ -60,7 +60,7 @@ namespace Monado {
         std::vector<Ref<Asset>> results;
 
         for (auto &asset : s_LoadedAssets) {
-            if (asset.second->ParentDirectory == dirIndex)
+            if (asset.second && asset.second->ParentDirectory == dirIndex)
                 results.push_back(asset.second);
         }
 
@@ -236,7 +236,26 @@ namespace Monado {
     }
 
     bool AssetManager::IsAssetHandleValid(AssetHandle assetHandle) {
-        return s_LoadedAssets.find(assetHandle) != s_LoadedAssets.end();
+        return assetHandle != 0 && s_LoadedAssets.find(assetHandle) != s_LoadedAssets.end();
+    }
+
+    void AssetManager::Rename(Ref<Asset> &asset, const std::string &newName) {
+        std::string newFilePath = FileSystem::Rename(asset->FilePath, newName);
+        std::string oldFilePath = asset->FilePath;
+        asset->FilePath = newFilePath;
+        asset->FileName = newName;
+
+        if (FileSystem::Exists(oldFilePath + ".meta")) {
+            FileSystem::Rename(oldFilePath + ".meta", newName + "." + asset->Extension);
+            AssetSerializer::CreateMetaFile(asset);
+        }
+    }
+
+    void AssetManager::Rename(int directoryIndex, const std::string &newName) {
+        DirectoryInfo &dir = GetDirectoryInfo(directoryIndex);
+        std::string newFilePath = FileSystem::Rename(dir.FilePath, newName);
+        dir.FilePath = newFilePath;
+        dir.DirectoryName = newName;
     }
 
     /*void AssetManager::RemoveDirectory(DirectoryInfo& dir)

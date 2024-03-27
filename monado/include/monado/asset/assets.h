@@ -8,7 +8,7 @@ namespace Monado {
 
     enum class AssetType { Scene, Mesh, Texture, EnvMap, Audio, Script, PhysicsMat, Other };
 
-    using AssetHandle = size_t;
+    using AssetHandle = UUID;
 
     class Asset : public RefCounted {
     public:

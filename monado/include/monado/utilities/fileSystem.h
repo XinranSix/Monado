@@ -4,7 +4,6 @@
 #include <string>
 
 namespace Monado {
-
     enum class FileSystemAction { Added, Rename, Modified, Delete };
 
     struct FileSystemChangedEvent {
@@ -19,6 +18,7 @@ namespace Monado {
     public:
         static bool CreateFolder(const std::string &filepath);
         static bool Exists(const std::string &filepath);
+        static std::string Rename(const std::string &filepath, const std::string &newName);
         // static bool MoveFile(const std::string& filepath, const std::string& dest);
 
     public:

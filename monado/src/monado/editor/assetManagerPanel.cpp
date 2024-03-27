@@ -1,9 +1,10 @@
 #include "monado/editor/assetManagerPanel.h"
-#include "monado/Core/application.h"
+#include "monado/core/application.h"
 #include "monado/utilities/dragDropData.h"
 #include "monado/asset/assetManager.h"
 #include "monado/utilities/fileSystem.h"
 #include "monado/editor/assetEditorPanel.h"
+#include "monado/core/input.h"
 
 namespace Monado {
 
@@ -81,7 +82,7 @@ namespace Monado {
                     std::string file = (char *)data->Data;
                     /*if (AssetManager::MoveFile(file, m_MovePath))
                     {
-                            MND_CORE_INFO("Moved File: " + file + " to " + m_MovePath);
+                           MND_CORE_INFO("Moved File: " + file + " to " + m_MovePath);
                             UpdateCurrentDirectory(m_CurrentDirIndex);
                     }*/
                     m_IsDragging = false;
@@ -105,6 +106,17 @@ namespace Monado {
 
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0F, 0.0F, 0.0F, 0.0F));
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2F, 0.205F, 0.21F, 0.25F));
+
+                if (Input::IsKeyPressed(KeyCode::Escape) ||
+                    (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsItemFocused())) {
+                    if (m_SelectedAsset != -1)
+                        m_SelectedAsset = -1;
+
+                    if (m_SelectedDirectory != -1)
+                        m_SelectedDirectory = -1;
+
+                    m_RenamingSelected = false;
+                }
 
                 for (DirectoryInfo &dir : m_CurrentDirChildren) {
                     if (m_DisplayListView)
@@ -221,13 +233,26 @@ namespace Monado {
 
     void AssetManagerPanel::RenderDirectoriesGridView(DirectoryInfo &dirInfo) {
         ImGui::BeginGroup();
-
         float columnWidth = ImGui::GetColumnWidth();
+
+        if (m_SelectedDirectory == dirInfo.DirectoryIndex)
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25F, 0.25F, 0.25F, 0.75F));
+
         ImGui::ImageButton((ImTextureID)m_FolderTex->GetRendererID(), { columnWidth - 15.0F, columnWidth - 15.0F });
 
-        if (ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered()) {
-            m_PrevDirIndex = m_CurrentDirIndex;
-            UpdateCurrentDirectory(dirInfo.DirectoryIndex);
+        if (m_SelectedDirectory == dirInfo.DirectoryIndex)
+            ImGui::PopStyleColor();
+
+        if (ImGui::IsItemHovered()) {
+            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                m_PrevDirIndex = m_CurrentDirIndex;
+                UpdateCurrentDirectory(dirInfo.DirectoryIndex);
+            }
+
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                m_SelectedDirectory = dirInfo.DirectoryIndex;
+                m_SelectedAsset = -1;
+            }
         }
 
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
@@ -241,8 +266,31 @@ namespace Monado {
 
         ImVec2 prevCursorPos = ImGui::GetCursorPos();
         ImGui::SetCursorPos(ImVec2(prevCursorPos.x + 10.0F, prevCursorPos.y - 21.0F));
-        ImGui::TextWrapped(dirInfo.DirectoryName.c_str());
+        ImGui::SetNextItemWidth(columnWidth - 15.0F);
+
+        if (m_SelectedDirectory != dirInfo.DirectoryIndex || !m_RenamingSelected)
+            ImGui::TextWrapped(dirInfo.DirectoryName.c_str());
+
         ImGui::SetCursorPos(prevCursorPos);
+
+        if (m_SelectedDirectory == dirInfo.DirectoryIndex) {
+            if (!m_RenamingSelected && Input::IsKeyPressed(KeyCode::F2)) {
+                memset(m_RenameBuffer, 0, 512);
+                memcpy(m_RenameBuffer, dirInfo.DirectoryName.c_str(), dirInfo.DirectoryName.size());
+                m_RenamingSelected = true;
+            }
+
+            if (m_RenamingSelected) {
+                ImGui::SetKeyboardFocusHere();
+                if (ImGui::InputText("##rename_dummy", m_RenameBuffer, 512, ImGuiInputTextFlags_EnterReturnsTrue)) {
+                    MND_CORE_INFO("Renaming to {0}", m_RenameBuffer);
+                    AssetManager::Rename(dirInfo.DirectoryIndex, m_RenameBuffer);
+                    m_RenamingSelected = false;
+                    m_SelectedDirectory = -1;
+                    UpdateCurrentDirectory(m_CurrentDirIndex);
+                }
+            }
+        }
 
         ImGui::EndGroup();
     }
@@ -256,8 +304,12 @@ namespace Monado {
 
         ImGui::Selectable(asset->FileName.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick, ImVec2(0, 30));
 
-        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered()) {
-            AssetEditorPanel::OpenEditor(asset);
+        if (ImGui::IsItemHovered()) {
+            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+                AssetEditorPanel::OpenEditor(asset);
+
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+                m_SelectedAsset = asset->Handle;
         }
 
         HandleDragDrop(iconRef, asset);
@@ -271,19 +323,49 @@ namespace Monado {
         RendererID iconRef = m_AssetIconMap[fileID]->GetRendererID();
         float columnWidth = ImGui::GetColumnWidth();
 
+        if (m_SelectedAsset == asset->Handle)
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25F, 0.25F, 0.25F, 0.75F));
+
         ImGui::ImageButton((ImTextureID)iconRef, { columnWidth - 15.0F, columnWidth - 15.0F });
 
-        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered()) {
-            AssetEditorPanel::OpenEditor(asset);
+        if (m_SelectedAsset == asset->Handle)
+            ImGui::PopStyleColor();
+
+        if (ImGui::IsItemHovered()) {
+            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+                AssetEditorPanel::OpenEditor(asset);
+
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                m_SelectedAsset = asset->Handle;
+                m_SelectedDirectory = -1;
+            }
         }
 
         HandleDragDrop(iconRef, asset);
 
-        std::string newFileName = AssetManager::StripExtras(asset->FileName);
-        ImVec2 prevCursorPos = ImGui::GetCursorPos();
-        // ImGui::SetCursorPos(ImVec2(prevCursorPos.x + 10.0F, prevCursorPos.y - 18.0F));
-        ImGui::TextWrapped(newFileName.c_str());
-        // ImGui::SetCursorPos(prevCursorPos);
+        ImGui::SetNextItemWidth(columnWidth - 15.0F);
+
+        if (m_SelectedAsset != asset->Handle || !m_RenamingSelected)
+            ImGui::TextWrapped(asset->FileName.c_str());
+
+        if (m_SelectedAsset == asset->Handle) {
+            if (!m_RenamingSelected && Input::IsKeyPressed(KeyCode::F2)) {
+                memset(m_RenameBuffer, 0, 512);
+                memcpy(m_RenameBuffer, asset->FileName.c_str(), asset->FileName.size());
+                m_RenamingSelected = true;
+            }
+
+            if (m_RenamingSelected) {
+                ImGui::SetKeyboardFocusHere();
+                if (ImGui::InputText("##rename_dummy", m_RenameBuffer, 512, ImGuiInputTextFlags_EnterReturnsTrue)) {
+                    MND_CORE_INFO("Renaming to {0}", m_RenameBuffer);
+                    AssetManager::Rename(asset, m_RenameBuffer);
+                    m_RenamingSelected = false;
+                    m_SelectedAsset = -1;
+                }
+            }
+        }
+
         ImGui::EndGroup();
     }
 

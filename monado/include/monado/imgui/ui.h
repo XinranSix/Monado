@@ -169,7 +169,7 @@ namespace Monado::UI {
         memset(s_IDBuffer + 2, 0, 14);
         itoa(s_Counter++, s_IDBuffer + 2, 16);
 
-        if (readOnly) {
+        if (!readOnly) {
             if (ImGui::DragFloat(s_IDBuffer, &value, delta, min, max))
                 modified = true;
         } else {
