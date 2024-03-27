@@ -30,7 +30,7 @@ namespace Monado {
 
             // Resources
             Ref<MaterialInstance> SkyboxMaterial;
-            Environment SceneEnvironment;
+            Ref<Environment> SceneEnvironment;
             float SceneEnvironmentIntensity;
             LightEnvironment SceneLightEnvironment;
             Light ActiveLight;
@@ -359,8 +359,8 @@ namespace Monado {
             baseMaterial->Set("u_IBLContribution", s_Data.SceneData.SceneEnvironmentIntensity);
 
             // Environment (TODO: don't do this per mesh)
-            baseMaterial->Set("u_EnvRadianceTex", s_Data.SceneData.SceneEnvironment.RadianceMap);
-            baseMaterial->Set("u_EnvIrradianceTex", s_Data.SceneData.SceneEnvironment.IrradianceMap);
+            baseMaterial->Set("u_EnvRadianceTex", s_Data.SceneData.SceneEnvironment->RadianceMap);
+            baseMaterial->Set("u_EnvIrradianceTex", s_Data.SceneData.SceneEnvironment->IrradianceMap);
             baseMaterial->Set("u_BRDFLUTTexture", s_Data.BRDFLUT);
 
             // Set lights (TODO: move to light environment and don't do per mesh)
@@ -423,8 +423,8 @@ namespace Monado {
             baseMaterial->Set("u_IBLContribution", s_Data.SceneData.SceneEnvironmentIntensity);
 
             // Environment (TODO: don't do this per mesh)
-            baseMaterial->Set("u_EnvRadianceTex", s_Data.SceneData.SceneEnvironment.RadianceMap);
-            baseMaterial->Set("u_EnvIrradianceTex", s_Data.SceneData.SceneEnvironment.IrradianceMap);
+            baseMaterial->Set("u_EnvRadianceTex", s_Data.SceneData.SceneEnvironment->RadianceMap);
+            baseMaterial->Set("u_EnvIrradianceTex", s_Data.SceneData.SceneEnvironment->IrradianceMap);
             baseMaterial->Set("u_BRDFLUTTexture", s_Data.BRDFLUT);
 
             baseMaterial->Set("u_LightMatrixCascade0", s_Data.LightMatrices[0]);

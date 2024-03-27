@@ -57,6 +57,9 @@ namespace Monado {
         static void Rename(Ref<Asset> &asset, const std::string &newName);
         static void Rename(int directoryIndex, const std::string &newName);
 
+        static void RemoveDirectory(int directory);
+        static void RemoveAsset(AssetHandle assetHandle);
+
         template <typename T, typename... Args>
         static Ref<T> CreateAsset(const std::string &filename, AssetType type, int directoryIndex, Args &&...args) {
             static_assert(std::is_base_of<Asset, T>::value, "CreateAsset only works for types derived from Asset");
@@ -70,6 +73,7 @@ namespace Monado {
             asset->Extension = Utils::GetFilename(filename);
             asset->ParentDirectory = directoryIndex;
             asset->Handle = std::hash<std::string>()(asset->FilePath);
+            asset->IsDataLoaded = true;
             s_LoadedAssets[asset->Handle] = asset;
 
             AssetSerializer::SerializeAsset(asset);
@@ -80,7 +84,12 @@ namespace Monado {
         template <typename T>
         static Ref<T> GetAsset(AssetHandle assetHandle) {
             MND_CORE_ASSERT(s_LoadedAssets.find(assetHandle) != s_LoadedAssets.end());
-            return (Ref<T>)s_LoadedAssets[assetHandle];
+            Ref<Asset> asset = (Ref<Asset>)s_LoadedAssets[assetHandle];
+
+            if (!asset->IsDataLoaded)
+                asset = AssetSerializer::LoadAssetData(asset);
+
+            return (Ref<T>)asset;
         }
 
         static bool IsAssetType(AssetHandle assetHandle, AssetType type) {

@@ -258,6 +258,26 @@ namespace Monado {
         dir.DirectoryName = newName;
     }
 
+    void AssetManager::RemoveDirectory(int directory) {
+        for (auto it = s_Directories.begin(); it != s_Directories.end();) {
+            if (it->DirectoryIndex == directory) {
+                for (auto child : it->ChildrenIndices)
+                    RemoveDirectory(child);
+
+                auto assets = GetAssetsInDirectory(directory);
+                for (auto &asset : assets) {
+                    RemoveAsset(asset->Handle);
+                }
+
+                it = s_Directories.erase(it);
+            } else {
+                it++;
+            }
+        }
+    }
+
+    void AssetManager::RemoveAsset(AssetHandle assetHandle) { s_LoadedAssets.erase(assetHandle); }
+
     /*void AssetManager::RemoveDirectory(DirectoryInfo& dir)
     {
             // Remove us from our parent
@@ -326,7 +346,14 @@ namespace Monado {
             return;
 
         AssetType type = AssetTypes::GetAssetTypeFromExtension(extension);
-        Ref<Asset> asset = AssetSerializer::Deserialize(filepath, parentIndex, reimport, type);
+        Ref<Asset> asset = AssetSerializer::LoadAssetInfo(filepath, parentIndex, type);
+
+        if (s_LoadedAssets.find(asset->Handle) != s_LoadedAssets.end()) {
+            if (s_LoadedAssets[asset->Handle]->IsDataLoaded) {
+                asset = AssetSerializer::LoadAssetData(asset);
+            }
+        }
+
         s_LoadedAssets[asset->Handle] = asset;
     }
 

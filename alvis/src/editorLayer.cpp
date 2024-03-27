@@ -11,7 +11,6 @@
 #include "monado/script/scriptEngine.h"
 #include "monado/core/math/ray.h"
 #include "monado/physics/physics.h"
-#include "monado/utilities/dragDropData.h"
 #include "monado/math/math.h"
 #include "monado/utilities/fileSystem.h"
 #include "monado/editor/assetEditorPanel.h"
@@ -624,19 +623,24 @@ namespace Monado {
         }
 
         if (ImGui::BeginDragDropTarget()) {
-            auto data = ImGui::AcceptDragDropPayload("scene_entity_assetsP");
+            auto data = ImGui::AcceptDragDropPayload("asset_payload");
             if (data) {
-                AssetHandle assetHandle = *(AssetHandle *)data->Data;
-                Ref<Asset> asset = AssetManager::GetAsset<Asset>(assetHandle);
+                int count = data->DataSize / sizeof(AssetHandle);
 
-                if (asset->Type == AssetType::Scene) {
-                    OpenScene(asset->FilePath);
-                }
+                for (int i = 0; i < count; i++) {
+                    AssetHandle assetHandle = *(((AssetHandle *)data->Data) + i);
+                    Ref<Asset> asset = AssetManager::GetAsset<Asset>(assetHandle);
 
-                if (asset->Type == AssetType::Mesh) {
-                    Entity entity = m_EditorScene->CreateEntity(asset->FileName);
-                    entity.AddComponent<MeshComponent>(Ref<Mesh>(asset));
-                    SelectEntity(entity);
+                    // We can't really support dragging and dropping scenes when we're dropping multiple assets
+                    if (count == 1 && asset->Type == AssetType::Scene) {
+                        OpenScene(asset->FilePath);
+                    }
+
+                    if (asset->Type == AssetType::Mesh) {
+                        Entity entity = m_EditorScene->CreateEntity(asset->FileName);
+                        entity.AddComponent<MeshComponent>(Ref<Mesh>(asset));
+                        SelectEntity(entity);
+                    }
                 }
             }
             ImGui::EndDragDropTarget();

@@ -3,7 +3,10 @@
 #include <functional>
 #include <string>
 
+#undef DeleteFile
+
 namespace Monado {
+
     enum class FileSystemAction { Added, Rename, Modified, Delete };
 
     struct FileSystemChangedEvent {
@@ -19,6 +22,7 @@ namespace Monado {
         static bool CreateFolder(const std::string &filepath);
         static bool Exists(const std::string &filepath);
         static std::string Rename(const std::string &filepath, const std::string &newName);
+        static bool DeleteFile(const std::string &filepath);
         // static bool MoveFile(const std::string& filepath, const std::string& dest);
 
     public:
@@ -34,4 +38,5 @@ namespace Monado {
     private:
         static FileSystemChangedCallbackFn s_Callback;
     };
+
 } // namespace Monado

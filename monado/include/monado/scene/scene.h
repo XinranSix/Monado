@@ -56,7 +56,7 @@ namespace Monado {
 
         void SetViewportSize(uint32_t width, uint32_t height);
 
-        const Environment &GetEnvironment() const { return m_Environment; }
+        const Ref<Environment> &GetEnvironment() const { return m_Environment; }
         void SetSkybox(const Ref<TextureCube> &skybox);
 
         Light &GetLight() { return m_Light; }
@@ -110,7 +110,7 @@ namespace Monado {
 
         LightEnvironment m_LightEnvironment;
 
-        Environment m_Environment;
+        Ref<Environment> m_Environment;
         float m_EnvironmentIntensity = 1.0f;
         Ref<TextureCube> m_SkyboxTexture;
         Ref<MaterialInstance> m_SkyboxMaterial;

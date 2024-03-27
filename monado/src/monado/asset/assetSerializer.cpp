@@ -3,6 +3,7 @@
 #include "monado/utilities/fileSystem.h"
 #include "monado/renderer/mesh.h"
 #include "monado/asset/assetSerializer.h"
+#include "monado/renderer/sceneRenderer.h"
 
 #include <yaml-cpp/yaml.h>
 
@@ -29,46 +30,9 @@ namespace Monado {
         fout << out.c_str();
     }
 
-    Ref<Asset> AssetSerializer::Deserialize(const std::string &filepath, int parentIndex, bool reimport,
-                                            AssetType type) {
+    Ref<Asset> AssetSerializer::LoadAssetInfo(const std::string &filepath, int parentIndex, AssetType type) {
         Ref<Asset> asset = Ref<Asset>::Create();
         std::string extension = Utils::GetExtension(filepath);
-
-        bool loadYAMLData = true;
-
-        switch (type) {
-        case AssetType::Mesh: {
-            if (extension != "blend")
-                asset = Ref<Mesh>::Create(filepath);
-            loadYAMLData = false;
-            break;
-        }
-        case AssetType::Texture: {
-            asset = Texture2D::Create(filepath);
-            loadYAMLData = false;
-            break;
-        }
-        case AssetType::EnvMap: {
-            // TODO
-            /*auto [radiance, irradiance] = SceneRenderer::CreateEnvironmentMap(filepath);
-            asset = Ref<Environment>::Create(radiance, irradiance);*/
-            loadYAMLData = false;
-            break;
-        }
-        case AssetType::Scene:
-        case AssetType::Audio:
-        case AssetType::Script:
-        case AssetType::Other: {
-            loadYAMLData = false;
-            break;
-        }
-        }
-
-        if (loadYAMLData) {
-            asset = DeserializeYAML(filepath, type);
-            MND_CORE_ASSERT(asset, "Failed to load asset");
-        }
-
         asset->FilePath = filepath;
         std::replace(asset->FilePath.begin(), asset->FilePath.end(), '\\', '/');
 
@@ -83,20 +47,70 @@ namespace Monado {
             asset->Type = type;
         }
 
+        asset->ParentDirectory = parentIndex;
+        asset->IsDataLoaded = false;
+
         if (!hasMeta)
             CreateMetaFile(asset);
 
         return asset;
     }
 
-    Ref<Asset> AssetSerializer::DeserializeYAML(const std::string &filepath, AssetType type) {
-        std::ifstream stream(filepath);
+    Ref<Asset> AssetSerializer::LoadAssetData(Ref<Asset> &asset) {
+        Ref<Asset> temp = asset;
+        bool loadYAMLData = true;
+
+        switch (asset->Type) {
+        case AssetType::Mesh: {
+            if (asset->Extension != "blend")
+                asset = Ref<Mesh>::Create(asset->FilePath);
+            loadYAMLData = false;
+            break;
+        }
+        case AssetType::Texture: {
+            asset = Texture2D::Create(asset->FilePath);
+            loadYAMLData = false;
+            break;
+        }
+        case AssetType::EnvMap: {
+            auto [radiance, irradiance] = SceneRenderer::CreateEnvironmentMap(asset->FilePath);
+            asset = Ref<Environment>::Create(radiance, irradiance);
+            loadYAMLData = false;
+            break;
+        }
+        case AssetType::Scene:
+        case AssetType::Audio:
+        case AssetType::Script:
+        case AssetType::Other: {
+            loadYAMLData = false;
+            break;
+        }
+        }
+
+        if (loadYAMLData) {
+            asset = DeserializeYAML(asset);
+            MND_CORE_ASSERT(asset, "Failed to load asset");
+        }
+
+        asset->Handle = temp->Handle;
+        asset->FilePath = temp->FilePath;
+        asset->FileName = temp->FileName;
+        asset->Extension = temp->Extension;
+        asset->ParentDirectory = temp->ParentDirectory;
+        asset->Type = temp->Type;
+        asset->IsDataLoaded = true;
+
+        return asset;
+    }
+
+    Ref<Asset> AssetSerializer::DeserializeYAML(const Ref<Asset> &asset) {
+        std::ifstream stream(asset->FilePath);
         std::stringstream strStream;
         strStream << stream.rdbuf();
 
         YAML::Node data = YAML::Load(strStream.str());
 
-        if (type == AssetType::PhysicsMat) {
+        if (asset->Type == AssetType::PhysicsMat) {
             float staticFriction = data["StaticFriction"].as<float>();
             float dynamicFriction = data["DynamicFriction"].as<float>();
             float bounciness = data["Bounciness"].as<float>();

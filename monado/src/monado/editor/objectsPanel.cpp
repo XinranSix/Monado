@@ -1,5 +1,4 @@
 #include "monado/editor/objectsPanel.h"
-#include "monado/utilities/dragDropData.h"
 #include "monado/ImGui/ui.h"
 
 namespace Monado {
@@ -18,7 +17,7 @@ namespace Monado {
 
             ImGui::Text(label);
 
-            ImGui::SetDragDropPayload("scene_entity_assetsP", &handle, sizeof(AssetHandle));
+            ImGui::SetDragDropPayload("asset_payload", &handle, sizeof(AssetHandle));
             ImGui::EndDragDropSource();
         }
     }

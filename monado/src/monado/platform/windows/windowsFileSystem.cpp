@@ -1,21 +1,24 @@
 #include "monado/core/log.h"
-#include "monado/utilities/FileSystem.h"
+#include "monado/utilities/fileSystem.h"
 #include "monado/asset/assetManager.h"
 
 #include <Windows.h>
 #include <filesystem>
+#include <Shellapi.h>
+
+#undef DeleteFile
 
 namespace Monado {
 
-    FileSystem::FileSystemChangedCallbackFn FileSystem::s_Callback;
+    Monado::FileSystem::FileSystemChangedCallbackFn Monado::FileSystem::s_Callback;
 
     static bool s_Watching = true;
     static bool s_IgnoreNextChange = false;
     static HANDLE s_WatcherThread;
 
-    void FileSystem::SetChangeCallback(const FileSystemChangedCallbackFn &callback) { s_Callback = callback; }
+    void Monado::FileSystem::SetChangeCallback(const FileSystemChangedCallbackFn &callback) { s_Callback = callback; }
 
-    bool FileSystem::CreateFolder(const std::string &filepath) {
+    bool Monado::FileSystem::CreateFolder(const std::string &filepath) {
         BOOL created = CreateDirectoryA(filepath.c_str(), NULL);
         if (!created) {
             DWORD error = GetLastError();
@@ -32,7 +35,7 @@ namespace Monado {
         return true;
     }
 
-    bool FileSystem::Exists(const std::string &filepath) {
+    bool Monado::FileSystem::Exists(const std::string &filepath) {
         DWORD attribs = GetFileAttributesA(filepath.c_str());
 
         if (attribs == INVALID_FILE_ATTRIBUTES)
@@ -48,6 +51,21 @@ namespace Monado {
         MoveFileA(filepath.c_str(), newFilePath.c_str());
         s_IgnoreNextChange = false;
         return newFilePath;
+    }
+
+    bool FileSystem::DeleteFile(const std::string &filepath) {
+        std::string fp = filepath;
+        fp.append(1, '\0');
+        SHFILEOPSTRUCTA file_op;
+        file_op.hwnd = NULL;
+        file_op.wFunc = FO_DELETE;
+        file_op.pFrom = fp.c_str();
+        file_op.pTo = "";
+        file_op.fFlags = FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT;
+        file_op.fAnyOperationsAborted = false;
+        file_op.hNameMappings = 0;
+        file_op.lpszProgressTitle = "";
+        return SHFileOperationA(&file_op) == 0;
     }
 
     void FileSystem::StartWatching() {
@@ -70,7 +88,7 @@ namespace Monado {
         return converted;
     }
 
-    unsigned long FileSystem::Watch(void *param) {
+    unsigned long Monado::FileSystem::Watch(void *param) {
         LPCWSTR filepath = L"assets";
         BYTE *buffer = new BYTE[10 * 1024]; // 1 MB
         OVERLAPPED overlapped = { 0 };
