@@ -199,9 +199,9 @@ namespace Monado {
                 Math::DecomposeTransform(transform, translation, rotation, scale);
 
                 glm::quat rotationQuat = glm::quat(rotation);
-                transformComponent.Up = glm::normalize(glm::rotate(rotationQuat, glm::vec3(0.0F, 1.0F, 0.0F)));
-                transformComponent.Right = glm::normalize(glm::rotate(rotationQuat, glm::vec3(1.0F, 0.0F, 0.0F)));
-                transformComponent.Forward = glm::normalize(glm::rotate(rotationQuat, glm::vec3(0.0F, 0.0F, -1.0F)));
+                transformComponent.Up = glm::normalize(glm::rotate(rotationQuat, glm::vec3(0.0f, 1.0f, 0.0f)));
+                transformComponent.Right = glm::normalize(glm::rotate(rotationQuat, glm::vec3(1.0f, 0.0f, 0.0f)));
+                transformComponent.Forward = glm::normalize(glm::rotate(rotationQuat, glm::vec3(0.0f, 0.0f, -1.0f)));
             }
         }
 
@@ -245,7 +245,8 @@ namespace Monado {
                     lights.get<TransformComponent, SkyLightComponent>(entity);
                 m_Environment = skyLightComponent.SceneEnvironment;
                 m_EnvironmentIntensity = skyLightComponent.Intensity;
-                SetSkybox(m_Environment->RadianceMap);
+                if (m_Environment)
+                    SetSkybox(m_Environment->RadianceMap);
             }
         }
 
@@ -312,7 +313,8 @@ namespace Monado {
                     lights.get<TransformComponent, SkyLightComponent>(entity);
                 m_Environment = skyLightComponent.SceneEnvironment;
                 m_EnvironmentIntensity = skyLightComponent.Intensity;
-                SetSkybox(m_Environment->RadianceMap);
+                if (m_Environment)
+                    SetSkybox(m_Environment->RadianceMap);
             }
         }
 

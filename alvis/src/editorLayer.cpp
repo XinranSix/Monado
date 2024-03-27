@@ -326,6 +326,8 @@ namespace Monado {
         m_SelectionContext.push_back(selection);
 
         m_EditorScene->SetSelectedEntity(entity);
+
+        m_CurrentScene = m_EditorScene;
     }
 
     void EditorLayer::NewScene() {
@@ -984,11 +986,9 @@ namespace Monado {
                     float lastT = std::numeric_limits<float>::max();
                     for (uint32_t i = 0; i < submeshes.size(); i++) {
                         auto &submesh = submeshes[i];
-                        Ray ray = { glm::inverse(entity.Transform().GetTransform() * submesh.Transform) *
-                                        glm::vec4(origin, 1.0f),
-                                    glm::inverse(glm::mat3(entity.Transform().GetTransform()) *
-                                                 glm::mat3(submesh.Transform)) *
-                                        direction };
+                        glm::mat4 transform = m_CurrentScene->GetTransformRelativeToParent(entity);
+                        Ray ray = { glm::inverse(transform * submesh.Transform) * glm::vec4(origin, 1.0f),
+                                    glm::inverse(glm::mat3(transform) * glm::mat3(submesh.Transform)) * direction };
 
                         float t;
                         bool intersects = ray.IntersectsAABB(submesh.BoundingBox, t);

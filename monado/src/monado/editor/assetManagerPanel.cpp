@@ -80,8 +80,8 @@ namespace Monado {
 
                 ImGui::BeginChild("Scrolling");
 
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0F, 0.0F, 0.0F, 0.0F));
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2F, 0.205F, 0.21F, 0.25F));
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2f, 0.205f, 0.21f, 0.25f));
 
                 if (Input::IsKeyPressed(KeyCode::Escape) ||
                     (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !m_IsAnyItemHovered)) {
@@ -124,9 +124,9 @@ namespace Monado {
                         }
 
                         if (ImGui::MenuItem("Physics Material")) {
-                            AssetManager::CreateAsset<PhysicsMaterial>("New Physics Material.mpm",
-                                                                       AssetType::PhysicsMat, m_CurrentDirHandle, 0.6F,
-                                                                       0.6F, 0.0F);
+                            AssetManager::CreateAsset<PhysicsMaterial>("New Physics Material.hpm",
+                                                                       AssetType::PhysicsMat, m_CurrentDirHandle, 0.6f,
+                                                                       0.6f, 0.0f);
                             UpdateCurrentDirectory(m_CurrentDirHandle);
                         }
 
@@ -155,7 +155,7 @@ namespace Monado {
                     m_UpdateDirectoryNextFrame = false;
                 }
 
-                if (m_IsDragging && !ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.1F)) {
+                if (m_IsDragging && !ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.1f)) {
                     m_IsDragging = false;
                     m_DraggedAssetId = 0;
                 }
@@ -194,9 +194,9 @@ namespace Monado {
         RendererID iconRef = m_AssetIconMap[fileID]->GetRendererID();
 
         if (m_SelectedAssets.IsSelected(assetHandle))
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25F, 0.25F, 0.25F, 0.75F));
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.25f, 0.25f, 0.75f));
 
-        float buttonWidth = ImGui::GetColumnWidth() - 15.0F;
+        float buttonWidth = ImGui::GetColumnWidth() - 15.0f;
         ImGui::ImageButton((ImTextureID)iconRef, { buttonWidth, buttonWidth });
 
         if (m_SelectedAssets.IsSelected(assetHandle))

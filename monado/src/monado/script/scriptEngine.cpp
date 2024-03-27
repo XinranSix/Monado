@@ -544,6 +544,9 @@ namespace Monado {
                 MonoType *fieldType = mono_field_get_type(iter);
                 FieldType MonadoFieldType = GetMonadoFieldType(fieldType);
 
+                if (MonadoFieldType == FieldType::ClassReference)
+                    continue;
+
                 // TODO: Attributes
                 MonoCustomAttrInfo *attr = mono_custom_attrs_from_field(scriptClass.Class, iter);
 
@@ -556,10 +559,12 @@ namespace Monado {
                     field.m_EntityInstance = &entityInstance;
                     field.m_MonoClassField = iter;
 
-                    if (field.Type == FieldType::ClassReference) {
-                        Ref<Asset> *asset = new Ref<Asset>();
-                        field.SetStoredValueRaw(asset);
-                    }
+                    /*if (field.Type == FieldType::ClassReference)
+                    {
+                            Asset* rawAsset = new Asset();
+                            Ref<Asset>* asset = new Ref<Asset>(rawAsset);
+                            field.SetStoredValueRaw(asset);
+                    }*/
 
                     fieldMap.emplace(name, std::move(field));
                 }

@@ -11,6 +11,7 @@
 #include "glm/gtx/matrix_decompose.hpp"
 
 #include "monado/editor/sceneHierarchyPanel.h"
+#include "monado/math/math.h"
 #include "monado/renderer/mesh.h"
 #include "monado/script/scriptEngine.h"
 #include "monado/physics/physicsLayer.h"
@@ -65,11 +66,15 @@ namespace Monado {
                     if (previousParent) {
                         auto &children = previousParent.Children();
                         children.erase(std::remove(children.begin(), children.end(), droppedHandle), children.end());
+
+                        glm::mat4 parentTransform = m_Context->GetTransformRelativeToParent(previousParent);
+                        glm::vec3 parentTranslation, parentRotation, parentScale;
+                        Math::DecomposeTransform(parentTransform, parentTranslation, parentRotation, parentScale);
+
+                        e.Transform().Translation = e.Transform().Translation + parentTranslation;
                     }
 
                     e.SetParentUUID(0);
-
-                    MND_CORE_INFO("Unparented Entity!");
                 }
 
                 ImGui::EndDragDropTarget();
