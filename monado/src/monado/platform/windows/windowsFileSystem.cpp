@@ -54,6 +54,7 @@ namespace Monado {
     }
 
     bool FileSystem::DeleteFile(const std::string &filepath) {
+        s_IgnoreNextChange = true;
         std::string fp = filepath;
         fp.append(1, '\0');
         SHFILEOPSTRUCTA file_op;
@@ -65,7 +66,9 @@ namespace Monado {
         file_op.fAnyOperationsAborted = false;
         file_op.hNameMappings = 0;
         file_op.lpszProgressTitle = "";
-        return SHFileOperationA(&file_op) == 0;
+        int result = SHFileOperationA(&file_op);
+        s_IgnoreNextChange = false;
+        return result == 0;
     }
 
     void FileSystem::StartWatching() {

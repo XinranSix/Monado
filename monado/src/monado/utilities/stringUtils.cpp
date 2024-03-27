@@ -14,7 +14,7 @@ namespace Monado::Utils {
     std::string GetExtension(const std::string &filename) {
         std::vector<std::string> parts = SplitString(filename, '.');
 
-        if (parts.size() > 0)
+        if (parts.size() > 1)
             return parts[parts.size() - 1];
 
         return "";

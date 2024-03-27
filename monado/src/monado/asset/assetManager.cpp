@@ -23,6 +23,9 @@ namespace Monado {
     }
 
     size_t AssetTypes::GetAssetTypeID(const std::string &extension) {
+        if (extension == "")
+            return 0;
+
         for (auto &kv : s_Types) {
             if (kv.first == extension)
                 return std::hash<std::string>()(extension);
@@ -46,21 +49,14 @@ namespace Monado {
         s_AssetsChangeCallback = callback;
     }
 
-    void AssetManager::Shutdown() {
-        s_LoadedAssets.clear();
-        s_Directories.clear();
-    }
+    void AssetManager::Shutdown() { s_LoadedAssets.clear(); }
 
-    DirectoryInfo &AssetManager::GetDirectoryInfo(int index) {
-        MND_CORE_ASSERT(index >= 0 && index < s_Directories.size());
-        return s_Directories[index];
-    }
-
-    std::vector<Ref<Asset>> AssetManager::GetAssetsInDirectory(int dirIndex) {
+    std::vector<Ref<Asset>> AssetManager::GetAssetsInDirectory(AssetHandle directoryHandle) {
         std::vector<Ref<Asset>> results;
 
         for (auto &asset : s_LoadedAssets) {
-            if (asset.second && asset.second->ParentDirectory == dirIndex)
+            if (asset.second && asset.second->ParentDirectory == directoryHandle &&
+                asset.second->Handle != directoryHandle)
                 results.push_back(asset.second);
         }
 
@@ -108,104 +104,76 @@ namespace Monado {
     }
 
     // Utility function to find the parent of an unprocessed directory
-    int AssetManager::FindParentIndexInChildren(DirectoryInfo &dir, const std::string &dirName) {
-        if (dir.DirectoryName == dirName)
-            return dir.DirectoryIndex;
+    AssetHandle AssetManager::FindParentHandleInChildren(Ref<Directory> &dir, const std::string &dirName) {
+        if (dir->FileName == dirName)
+            return dir->Handle;
 
-        for (int childIndex : dir.ChildrenIndices) {
-            DirectoryInfo &child = AssetManager::GetDirectoryInfo(childIndex);
+        for (AssetHandle childHandle : dir->ChildDirectories) {
+            Ref<Directory> child = GetAsset<Directory>(childHandle);
+            AssetHandle dirHandle = FindParentHandleInChildren(child, dirName);
 
-            int dirIndex = FindParentIndexInChildren(child, dirName);
-
-            if (dirIndex != 0)
-                return dirIndex;
+            if (IsAssetHandleValid(dirHandle))
+                return dirHandle;
         }
 
         return 0;
     }
 
-    int AssetManager::FindParentIndex(const std::string &filepath) {
+    AssetHandle AssetManager::FindParentHandle(const std::string &filepath) {
         std::vector<std::string> parts = Utils::SplitString(filepath, "/\\");
         std::string parentFolder = parts[parts.size() - 2];
-        DirectoryInfo &assetsDirectory = GetDirectoryInfo(0);
-        return FindParentIndexInChildren(assetsDirectory, parentFolder);
+        Ref<Directory> assetsDirectory = GetAsset<Directory>(0);
+        return FindParentHandleInChildren(assetsDirectory, parentFolder);
     }
 
     void AssetManager::OnFileSystemChanged(FileSystemChangedEvent e) {
         e.NewName = Utils::RemoveExtension(e.NewName);
         e.OldName = Utils::RemoveExtension(e.OldName);
 
-        int parentIndex = FindParentIndex(e.FilePath);
+        AssetHandle parentHandle = FindParentHandle(e.FilePath);
 
         if (e.Action == FileSystemAction::Added) {
             if (e.IsDirectory)
-                ProcessDirectory(e.FilePath, parentIndex);
+                ProcessDirectory(e.FilePath, parentHandle);
             else
-                ImportAsset(e.FilePath, false, parentIndex);
+                ImportAsset(e.FilePath, parentHandle);
         }
 
         if (e.Action == FileSystemAction::Modified) {
             if (!e.IsDirectory)
-                ImportAsset(e.FilePath, true, parentIndex);
+                ImportAsset(e.FilePath, parentHandle);
         }
 
         if (e.Action == FileSystemAction::Rename) {
-            if (e.IsDirectory) {
-                for (auto &dir : s_Directories) {
-                    if (dir.DirectoryName == e.OldName) {
-                        dir.FilePath = e.FilePath;
-                        dir.DirectoryName = e.NewName;
-                    }
-                }
-            } else {
-                for (auto it = s_LoadedAssets.begin(); it != s_LoadedAssets.end(); it++) {
-                    if (it->second->FileName == e.OldName) {
-                        it->second->FilePath = e.FilePath;
-                        it->second->FileName = e.NewName;
-                    }
+            for (auto it = s_LoadedAssets.begin(); it != s_LoadedAssets.end(); it++) {
+                if (it->second->FileName == e.OldName) {
+                    it->second->FilePath = e.FilePath;
+                    it->second->FileName = e.NewName;
                 }
             }
         }
 
         if (e.Action == FileSystemAction::Delete) {
-            if (e.IsDirectory) {
-                /*for (auto it = s_Directories.begin(); it != s_Directories.end(); it++)
-                {
-                        if (it->FilePath != e.FilePath)
-                                continue;
+            for (auto it = s_LoadedAssets.begin(); it != s_LoadedAssets.end(); it++) {
+                if (it->second->FilePath != e.FilePath)
+                    continue;
 
-                        RemoveDirectory(*it);
-                        break;
-                }*/
-            } else {
-                for (auto it = s_LoadedAssets.begin(); it != s_LoadedAssets.end(); it++) {
-                    if (it->second->FilePath != e.FilePath)
-                        continue;
-
-                    s_LoadedAssets.erase(it);
-                    break;
-                }
+                RemoveAsset(it->first);
+                break;
             }
         }
 
         s_AssetsChangeCallback();
     }
 
-    SearchResults AssetManager::SearchFiles(const std::string &query, const std::string &searchPath) {
-        SearchResults results;
+    std::vector<Ref<Asset>> AssetManager::SearchFiles(const std::string &query, const std::string &searchPath) {
+        std::vector<Ref<Asset>> results;
 
         if (!searchPath.empty()) {
-            for (const auto &dir : s_Directories) {
-                if (dir.DirectoryName.find(query) != std::string::npos &&
-                    dir.FilePath.find(searchPath) != std::string::npos) {
-                    results.Directories.push_back(dir);
-                }
-            }
-
             for (const auto &[key, asset] : s_LoadedAssets) {
                 if (asset->FileName.find(query) != std::string::npos &&
                     asset->FilePath.find(searchPath) != std::string::npos) {
-                    results.Assets.push_back(asset);
+                    results.push_back(asset);
                 }
             }
         }
@@ -218,8 +186,8 @@ namespace Monado {
     }
 
     bool AssetManager::IsDirectory(const std::string &filepath) {
-        for (auto &dir : s_Directories) {
-            if (dir.FilePath == filepath)
+        for (auto &[handle, asset] : s_LoadedAssets) {
+            if (asset->Type == AssetType::Directory && asset->FilePath == filepath)
                 return true;
         }
 
@@ -236,7 +204,7 @@ namespace Monado {
     }
 
     bool AssetManager::IsAssetHandleValid(AssetHandle assetHandle) {
-        return assetHandle != 0 && s_LoadedAssets.find(assetHandle) != s_LoadedAssets.end();
+        return s_LoadedAssets.find(assetHandle) != s_LoadedAssets.end();
     }
 
     void AssetManager::Rename(Ref<Asset> &asset, const std::string &newName) {
@@ -246,70 +214,39 @@ namespace Monado {
         asset->FileName = newName;
 
         if (FileSystem::Exists(oldFilePath + ".meta")) {
-            FileSystem::Rename(oldFilePath + ".meta", newName + "." + asset->Extension);
+            std::string metaFileName = oldFilePath;
+
+            if (asset->Extension != "")
+                metaFileName += "." + asset->Extension;
+
+            FileSystem::Rename(oldFilePath + ".meta", metaFileName);
             AssetSerializer::CreateMetaFile(asset);
         }
     }
 
-    void AssetManager::Rename(int directoryIndex, const std::string &newName) {
-        DirectoryInfo &dir = GetDirectoryInfo(directoryIndex);
-        std::string newFilePath = FileSystem::Rename(dir.FilePath, newName);
-        dir.FilePath = newFilePath;
-        dir.DirectoryName = newName;
-    }
+    void AssetManager::RemoveAsset(AssetHandle assetHandle) {
+        Ref<Asset> asset = s_LoadedAssets[assetHandle];
+        if (asset->Type == AssetType::Directory) {
+            if (IsAssetHandleValid(asset->ParentDirectory)) {
+                auto &childList = s_LoadedAssets[asset->ParentDirectory].As<Directory>()->ChildDirectories;
+                childList.erase(std::remove(childList.begin(), childList.end(), assetHandle), childList.end());
+            }
 
-    void AssetManager::RemoveDirectory(int directory) {
-        for (auto it = s_Directories.begin(); it != s_Directories.end();) {
-            if (it->DirectoryIndex == directory) {
-                for (auto child : it->ChildrenIndices)
-                    RemoveDirectory(child);
+            for (auto child : asset.As<Directory>()->ChildDirectories)
+                RemoveAsset(child);
 
-                auto assets = GetAssetsInDirectory(directory);
-                for (auto &asset : assets) {
-                    RemoveAsset(asset->Handle);
+            for (auto it = s_LoadedAssets.begin(); it != s_LoadedAssets.end();) {
+                if (it->second->ParentDirectory != assetHandle) {
+                    it++;
+                    continue;
                 }
 
-                it = s_Directories.erase(it);
-            } else {
-                it++;
+                it = s_LoadedAssets.erase(it);
             }
         }
+
+        s_LoadedAssets.erase(assetHandle);
     }
-
-    void AssetManager::RemoveAsset(AssetHandle assetHandle) { s_LoadedAssets.erase(assetHandle); }
-
-    /*void AssetManager::RemoveDirectory(DirectoryInfo& dir)
-    {
-            // Remove us from our parent
-            auto& parentChildren = GetDirectoryInfo(dir.ParentIndex).ChildrenIndices;
-            parentChildren.erase(std::remove(parentChildren.begin(), parentChildren.end(), dir.DirectoryIndex),
-    parentChildren.end());
-
-            for (auto it = s_LoadedAssets.begin(); it != s_LoadedAssets.end(); )
-            {
-                    if (it->second.ParentDirectory != dir.DirectoryIndex)
-                    {
-                            it++;
-                            continue;
-                    }
-
-                    delete it->second.Data;
-                    it = s_LoadedAssets.erase(it);
-            }
-
-            // Erase our children and assets
-            for (int childIndex : dir.ChildrenIndices)
-                    RemoveDirectory(GetDirectoryInfo(childIndex));
-
-            for (auto it = s_Directories.begin(); it != s_Directories.end(); it++)
-            {
-                    if (it->DirectoryIndex == dir.DirectoryIndex)
-                    {
-                            s_Directories.erase(it);
-                            break;
-                    }
-            }
-    }*/
 
     std::string AssetManager::StripExtras(const std::string &filename) {
         std::vector<std::string> out;
@@ -340,13 +277,13 @@ namespace Monado {
         return newFileName;
     }
 
-    void AssetManager::ImportAsset(const std::string &filepath, bool reimport, int parentIndex) {
+    void AssetManager::ImportAsset(const std::string &filepath, AssetHandle parentHandle) {
         std::string extension = Utils::GetExtension(filepath);
         if (extension == "meta")
             return;
 
         AssetType type = AssetTypes::GetAssetTypeFromExtension(extension);
-        Ref<Asset> asset = AssetSerializer::LoadAssetInfo(filepath, parentIndex, type);
+        Ref<Asset> asset = AssetSerializer::LoadAssetInfo(filepath, parentHandle, type);
 
         if (s_LoadedAssets.find(asset->Handle) != s_LoadedAssets.end()) {
             if (s_LoadedAssets[asset->Handle]->IsDataLoaded) {
@@ -357,32 +294,27 @@ namespace Monado {
         s_LoadedAssets[asset->Handle] = asset;
     }
 
-    int AssetManager::ProcessDirectory(const std::string &directoryPath, int parentIndex) {
-        DirectoryInfo dirInfo;
-        dirInfo.DirectoryName = std::filesystem::path(directoryPath).filename().string();
-        dirInfo.ParentIndex = parentIndex;
-        dirInfo.FilePath = directoryPath;
-        s_Directories.push_back(dirInfo);
-        int currentIndex = s_Directories.size() - 1;
-        s_Directories[currentIndex].DirectoryIndex = currentIndex;
+    AssetHandle AssetManager::ProcessDirectory(const std::string &directoryPath, AssetHandle parentHandle) {
+        Ref<Directory> dirInfo =
+            AssetSerializer::LoadAssetInfo(directoryPath, parentHandle, AssetType::Directory).As<Directory>();
+        s_LoadedAssets[dirInfo->Handle] = dirInfo;
 
-        if (parentIndex != -1)
-            s_Directories[parentIndex].ChildrenIndices.push_back(currentIndex);
+        if (parentHandle != dirInfo->Handle && IsAssetHandleValid(parentHandle))
+            s_LoadedAssets[parentHandle].As<Directory>()->ChildDirectories.push_back(dirInfo->Handle);
 
         for (auto entry : std::filesystem::directory_iterator(directoryPath)) {
             if (entry.is_directory())
-                ProcessDirectory(entry.path().string(), currentIndex);
+                ProcessDirectory(entry.path().string(), dirInfo->Handle);
             else
-                ImportAsset(entry.path().string(), false, currentIndex);
+                ImportAsset(entry.path().string(), dirInfo->Handle);
         }
 
-        return dirInfo.DirectoryIndex;
+        return dirInfo->Handle;
     }
 
-    void AssetManager::ReloadAssets() { ProcessDirectory("assets"); }
+    void AssetManager::ReloadAssets() { ProcessDirectory("assets", 0); }
 
     std::unordered_map<AssetHandle, Ref<Asset>> AssetManager::s_LoadedAssets;
-    std::vector<DirectoryInfo> AssetManager::s_Directories;
     AssetManager::AssetsChangeEventFn AssetManager::s_AssetsChangeCallback;
 
 } // namespace Monado

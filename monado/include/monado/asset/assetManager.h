@@ -21,19 +21,6 @@ namespace Monado {
         static std::map<std::string, AssetType> s_Types;
     };
 
-    struct DirectoryInfo {
-        std::string DirectoryName;
-        std::string FilePath;
-        int DirectoryIndex;
-        int ParentIndex;
-        std::vector<int> ChildrenIndices;
-    };
-
-    struct SearchResults {
-        std::vector<DirectoryInfo> Directories;
-        std::vector<Ref<Asset>> Assets;
-    };
-
     class AssetManager {
     public:
         using AssetsChangeEventFn = std::function<void()>;
@@ -43,10 +30,9 @@ namespace Monado {
         static void SetAssetChangeCallback(const AssetsChangeEventFn &callback);
         static void Shutdown();
 
-        static DirectoryInfo &GetDirectoryInfo(int index);
-        static std::vector<Ref<Asset>> GetAssetsInDirectory(int dirIndex);
+        static std::vector<Ref<Asset>> GetAssetsInDirectory(AssetHandle directoryHandle);
 
-        static SearchResults SearchFiles(const std::string &query, const std::string &searchPath);
+        static std::vector<Ref<Asset>> SearchFiles(const std::string &query, const std::string &searchPath);
         static std::string GetParentPath(const std::string &path);
 
         static bool IsDirectory(const std::string &filepath);
@@ -55,23 +41,21 @@ namespace Monado {
         static bool IsAssetHandleValid(AssetHandle assetHandle);
 
         static void Rename(Ref<Asset> &asset, const std::string &newName);
-        static void Rename(int directoryIndex, const std::string &newName);
-
-        static void RemoveDirectory(int directory);
         static void RemoveAsset(AssetHandle assetHandle);
 
         template <typename T, typename... Args>
-        static Ref<T> CreateAsset(const std::string &filename, AssetType type, int directoryIndex, Args &&...args) {
+        static Ref<T> CreateAsset(const std::string &filename, AssetType type, AssetHandle directoryHandle,
+                                  Args &&...args) {
             static_assert(std::is_base_of<Asset, T>::value, "CreateAsset only works for types derived from Asset");
 
-            auto &directory = GetDirectoryInfo(directoryIndex);
+            auto directory = GetAsset<Directory>(directoryHandle);
 
             Ref<T> asset = Ref<T>::Create(std::forward<Args>(args)...);
             asset->Type = type;
-            asset->FilePath = directory.FilePath + "/" + filename;
+            asset->FilePath = directory->FilePath + "/" + filename;
             asset->FileName = Utils::RemoveExtension(Utils::GetFilename(asset->FilePath));
             asset->Extension = Utils::GetFilename(filename);
-            asset->ParentDirectory = directoryIndex;
+            asset->ParentDirectory = directoryHandle;
             asset->Handle = std::hash<std::string>()(asset->FilePath);
             asset->IsDataLoaded = true;
             s_LoadedAssets[asset->Handle] = asset;
@@ -84,12 +68,12 @@ namespace Monado {
         template <typename T>
         static Ref<T> GetAsset(AssetHandle assetHandle) {
             MND_CORE_ASSERT(s_LoadedAssets.find(assetHandle) != s_LoadedAssets.end());
-            Ref<Asset> asset = (Ref<Asset>)s_LoadedAssets[assetHandle];
+            Ref<Asset> asset = s_LoadedAssets[assetHandle];
 
             if (!asset->IsDataLoaded)
                 asset = AssetSerializer::LoadAssetData(asset);
 
-            return (Ref<T>)asset;
+            return asset.As<T>();
         }
 
         static bool IsAssetType(AssetHandle assetHandle, AssetType type) {
@@ -100,21 +84,18 @@ namespace Monado {
         static std::string StripExtras(const std::string &filename);
 
     private:
-        // static void RemoveDirectory(DirectoryInfo& dir);
-
-        static void ImportAsset(const std::string &filepath, bool reimport = false, int parentIndex = -1);
+        static void ImportAsset(const std::string &filepath, AssetHandle parentHandle);
         static void ConvertAsset(const std::string &assetPath, const std::string &conversionType);
-        static int ProcessDirectory(const std::string &directoryPath, int parentIndex = -1);
+        static AssetHandle ProcessDirectory(const std::string &directoryPath, AssetHandle parentHandle);
         static void ReloadAssets();
 
         static void OnFileSystemChanged(FileSystemChangedEvent e);
 
-        static int FindParentIndexInChildren(DirectoryInfo &dir, const std::string &dirName);
-        static int FindParentIndex(const std::string &filepath);
+        static AssetHandle FindParentHandleInChildren(Ref<Directory> &dir, const std::string &dirName);
+        static AssetHandle FindParentHandle(const std::string &filepath);
 
     private:
         static std::unordered_map<AssetHandle, Ref<Asset>> s_LoadedAssets;
-        static std::vector<DirectoryInfo> s_Directories;
         static AssetsChangeEventFn s_AssetsChangeCallback;
     };
 

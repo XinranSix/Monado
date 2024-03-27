@@ -5,6 +5,9 @@ namespace Monado {
     PhysicsMaterialEditor::PhysicsMaterialEditor() : AssetEditor("Edit Physics Material") {}
 
     void PhysicsMaterialEditor::Render() {
+        if (!m_Asset)
+            SetOpen(false);
+
         UI::BeginPropertyGrid();
         UI::Property("Static Friction", m_Asset->StaticFriction);
         UI::Property("Dynamic Friction", m_Asset->DynamicFriction);
@@ -18,6 +21,9 @@ namespace Monado {
     }
 
     void TextureEditor::Render() {
+        if (!m_Asset)
+            SetOpen(false);
+
         float textureWidth = m_Asset->GetWidth();
         float textureHeight = m_Asset->GetHeight();
         float bitsPerPixel = Texture::GetBPP(m_Asset->GetFormat());
