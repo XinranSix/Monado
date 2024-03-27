@@ -3,7 +3,6 @@
 #include "monado/asset/assetManager.h"
 
 namespace Monado {
-
     AssetEditor::AssetEditor(const char *title) : m_Title(title), m_MinSize(200, 400), m_MaxSize(2000, 2000) {}
 
     void AssetEditor::OnImGuiRender() {
@@ -41,7 +40,7 @@ namespace Monado {
     }
 
     void AssetEditorPanel::RegisterDefaultEditors() {
-        RegisterEditor<TextureEditor>(AssetType::Texture);
+        RegisterEditor<TextureViewer>(AssetType::Texture);
         RegisterEditor<PhysicsMaterialEditor>(AssetType::PhysicsMat);
     }
 

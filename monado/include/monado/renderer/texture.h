@@ -2,7 +2,7 @@
 
 #include "monado/core/base.h"
 #include "monado/core/buffer.h"
-#include "monado/asset/assets.h"
+#include "monado/asset/asset.h"
 #include "rendererAPI.h"
 
 namespace Monado {

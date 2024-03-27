@@ -13,22 +13,20 @@ namespace Monado {
     AssetManagerPanel::AssetManagerPanel() {
         AssetManager::SetAssetChangeCallback([&]() { UpdateCurrentDirectory(m_CurrentDirHandle); });
 
-        m_FolderTex = Texture2D::Create("assets/editor/folder.png");
-        m_AssetIconMap[-1] = Texture2D::Create("assets/editor/file.png");
-        m_AssetIconMap[0] = m_FolderTex;
-        m_AssetIconMap[AssetTypes::GetAssetTypeID("hdr")] = Texture2D::Create("assets/editor/file.png");
-        m_AssetIconMap[AssetTypes::GetAssetTypeID("fbx")] = Texture2D::Create("assets/editor/fbx.png");
-        m_AssetIconMap[AssetTypes::GetAssetTypeID("obj")] = Texture2D::Create("assets/editor/obj.png");
-        m_AssetIconMap[AssetTypes::GetAssetTypeID("wav")] = Texture2D::Create("assets/editor/wav.png");
-        m_AssetIconMap[AssetTypes::GetAssetTypeID("cs")] = Texture2D::Create("assets/editor/csc.png");
-        m_AssetIconMap[AssetTypes::GetAssetTypeID("png")] = Texture2D::Create("assets/editor/png.png");
-        m_AssetIconMap[AssetTypes::GetAssetTypeID("blend")] = Texture2D::Create("assets/editor/blend.png");
-        m_AssetIconMap[AssetTypes::GetAssetTypeID("msc")] = Texture2D::Create("assets/editor/monado.png");
+        m_FileTex = AssetManager::GetAsset<Texture2D>("assets/editor/file.png");
+        m_AssetIconMap[""] = AssetManager::GetAsset<Texture2D>("assets/editor/folder.png");
+        m_AssetIconMap["fbx"] = AssetManager::GetAsset<Texture2D>("assets/editor/fbx.png");
+        m_AssetIconMap["obj"] = AssetManager::GetAsset<Texture2D>("assets/editor/obj.png");
+        m_AssetIconMap["wav"] = AssetManager::GetAsset<Texture2D>("assets/editor/wav.png");
+        m_AssetIconMap["cs"] = AssetManager::GetAsset<Texture2D>("assets/editor/csc.png");
+        m_AssetIconMap["png"] = AssetManager::GetAsset<Texture2D>("assets/editor/png.png");
+        m_AssetIconMap["blend"] = AssetManager::GetAsset<Texture2D>("assets/editor/blend.png");
+        m_AssetIconMap["hsc"] = AssetManager::GetAsset<Texture2D>("assets/editor/monado.png");
 
-        m_BackbtnTex = Texture2D::Create("assets/editor/btn_back.png");
-        m_FwrdbtnTex = Texture2D::Create("assets/editor/btn_fwrd.png");
-        m_FolderRightTex = Texture2D::Create("assets/editor/folder_hierarchy.png");
-        m_SearchTex = Texture2D::Create("assets/editor/search.png");
+        m_BackbtnTex = AssetManager::GetAsset<Texture2D>("assets/editor/btn_back.png");
+        m_FwrdbtnTex = AssetManager::GetAsset<Texture2D>("assets/editor/btn_fwrd.png");
+        m_FolderRightTex = AssetManager::GetAsset<Texture2D>("assets/editor/folder_hierarchy.png");
+        m_SearchTex = AssetManager::GetAsset<Texture2D>("assets/editor/search.png");
 
         m_BaseDirectoryHandle = AssetManager::GetAssetHandleFromFilePath("assets");
         m_BaseDirectory = AssetManager::GetAsset<Directory>(m_BaseDirectoryHandle);
@@ -189,9 +187,9 @@ namespace Monado {
         ImGui::PushID(&asset->Handle);
         ImGui::BeginGroup();
 
-        size_t fileID = AssetTypes::GetAssetTypeID(asset->Extension);
-        fileID = m_AssetIconMap.find(fileID) != m_AssetIconMap.end() ? fileID : -1;
-        RendererID iconRef = m_AssetIconMap[fileID]->GetRendererID();
+        RendererID iconRef = m_AssetIconMap.find(asset->Extension) != m_AssetIconMap.end()
+                                 ? m_AssetIconMap[asset->Extension]->GetRendererID()
+                                 : m_FileTex->GetRendererID();
 
         if (m_SelectedAssets.IsSelected(assetHandle))
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.25f, 0.25f, 0.75f));
@@ -212,6 +210,8 @@ namespace Monado {
                     m_PrevDirHandle = m_CurrentDirHandle;
                     m_CurrentDirHandle = assetHandle;
                     m_UpdateDirectoryNextFrame = true;
+                } else if (asset->Type == AssetType::Scene) {
+                    // SceneManager::OpenScene(asset);
                 } else {
                     AssetEditorPanel::OpenEditor(asset);
                 }
@@ -359,7 +359,7 @@ namespace Monado {
             ImGui::PushItemWidth(200);
             char *buf = m_InputBuffer;
             if (m_RenamingSelected)
-                buf = (char *)"\0";
+                buf = "\0";
 
             if (ImGui::InputTextWithHint("", "Search...", buf, MAX_INPUT_BUFFER_LENGTH)) {
                 if (strlen(m_InputBuffer) == 0) {

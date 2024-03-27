@@ -11,7 +11,7 @@
 #include "monado/core/uuid.h"
 #include "monado/renderer/sceneEnvironment.h"
 #include "monado/scene/sceneCamera.h"
-#include "monado/asset/assets.h"
+#include "monado/asset/asset.h"
 
 namespace Monado {
 

@@ -22,18 +22,6 @@ namespace Monado {
         s_Types["cs"] = AssetType::Script;
     }
 
-    size_t AssetTypes::GetAssetTypeID(const std::string &extension) {
-        if (extension == "")
-            return 0;
-
-        for (auto &kv : s_Types) {
-            if (kv.first == extension)
-                return std::hash<std::string>()(extension);
-        }
-
-        return -1;
-    }
-
     AssetType AssetTypes::GetAssetTypeFromExtension(const std::string &extension) {
         return s_Types.find(extension) != s_Types.end() ? s_Types[extension] : AssetType::Other;
     }

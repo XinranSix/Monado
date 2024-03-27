@@ -1,6 +1,6 @@
 #pragma once
 
-#include "assets.h"
+#include "asset.h"
 #include "assetSerializer.h"
 #include "monado/utilities/fileSystem.h"
 #include "monado/core/log.h"
@@ -14,7 +14,6 @@ namespace Monado {
     class AssetTypes {
     public:
         static void Init();
-        static size_t GetAssetTypeID(const std::string &extension);
         static AssetType GetAssetTypeFromExtension(const std::string &extension);
 
     private:
@@ -67,13 +66,18 @@ namespace Monado {
 
         template <typename T>
         static Ref<T> GetAsset(AssetHandle assetHandle, bool loadData = true) {
-            MND_CORE_ASSERT(s_LoadedAssets.find(assetHandle) != s_LoadedAssets.end());
+            HZ_CORE_ASSERT(s_LoadedAssets.find(assetHandle) != s_LoadedAssets.end());
             Ref<Asset> asset = s_LoadedAssets[assetHandle];
 
             if (!asset->IsDataLoaded && loadData)
                 asset = AssetSerializer::LoadAssetData(asset);
 
             return asset.As<T>();
+        }
+
+        template <typename T>
+        static Ref<T> GetAsset(const std::string &filepath, bool loadData = true) {
+            return GetAsset<T>(GetAssetHandleFromFilePath(filepath), loadData);
         }
 
         static bool IsAssetType(AssetHandle assetHandle, AssetType type) {

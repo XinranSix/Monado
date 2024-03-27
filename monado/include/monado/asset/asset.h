@@ -8,14 +8,14 @@
 
 namespace Monado {
 
-    enum class AssetType { Scene, Mesh, Texture, EnvMap, Audio, Script, PhysicsMat, Directory, Other, Any };
+    enum class AssetType { Scene, Mesh, Texture, EnvMap, Audio, Script, PhysicsMat, Directory, Other, None };
 
     using AssetHandle = UUID;
 
     class Asset : public RefCounted {
     public:
         AssetHandle Handle;
-        AssetType Type;
+        AssetType Type = AssetType::None;
 
         std::string FilePath;
         std::string FileName;

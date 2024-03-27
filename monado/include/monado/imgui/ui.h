@@ -28,7 +28,7 @@
 #include "monado/core/application.h"
 #include "monado/physics/pxPhysicsWrappers.h"
 #include "monado/renderer/meshFactory.h"
-#include "monado/asset/assets.h"
+#include "monado/asset/asset.h"
 #include "monado/asset/assetManager.h"
 
 namespace Monado::UI {
@@ -292,7 +292,7 @@ namespace Monado::UI {
     }
 
     template <typename T>
-    static bool PropertyAssetReference(const char *label, Ref<T> &object, AssetType supportedType = AssetType::Any) {
+    static bool PropertyAssetReference(const char *label, Ref<T> &object, AssetType supportedType) {
         bool modified = false;
 
         ImGui::Text(label);
@@ -311,7 +311,7 @@ namespace Monado::UI {
 
             if (data) {
                 AssetHandle assetHandle = *(AssetHandle *)data->Data;
-                if (supportedType == AssetType::Any || AssetManager::IsAssetType(assetHandle, supportedType)) {
+                if (AssetManager::IsAssetType(assetHandle, supportedType)) {
                     object = AssetManager::GetAsset<T>(assetHandle);
                     modified = true;
                 }

@@ -18,9 +18,9 @@ namespace Monado {
         Ref<PhysicsMaterial> m_Asset;
     };
 
-    class TextureEditor : public AssetEditor {
+    class TextureViewer : public AssetEditor {
     public:
-        TextureEditor();
+        TextureViewer();
 
         virtual void SetAsset(const Ref<Asset> &asset) override { m_Asset = (Ref<Texture>)asset; }
 

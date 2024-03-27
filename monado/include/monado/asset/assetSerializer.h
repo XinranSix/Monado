@@ -1,9 +1,8 @@
 #pragma once
 
-#include "assets.h"
+#include "asset.h"
 
 namespace Monado {
-
     class AssetSerializer {
     public:
         template <typename T>

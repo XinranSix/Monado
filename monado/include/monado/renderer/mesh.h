@@ -14,7 +14,7 @@
 #include "monado/Renderer/indexBuffer.h"
 #include "monado/renderer/vertexBuffer.h"
 #include "monado/renderer/shader.h"
-#include "monado/asset/assets.h"
+#include "monado/asset/asset.h"
 
 struct aiNode;
 struct aiAnimation;
