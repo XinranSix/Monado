@@ -48,7 +48,12 @@ namespace Monado {
 
         if (m_Context) {
             uint32_t entityCount = 0, meshCount = 0;
-            m_Context->m_Registry.each([&](auto entity) {
+            // m_Context->m_Registry.each([&](auto entity) {
+            //     Entity e(entity, m_Context.Raw());
+            //     if (e.HasComponent<IDComponent>() && e.GetParentUUID() == 0)
+            //         DrawEntityNode(e);
+            // });
+            m_Context->m_Registry.view<entt::entity>().each([&](auto entity) {
                 Entity e(entity, m_Context.Raw());
                 if (e.HasComponent<IDComponent>() && e.GetParentUUID() == 0)
                     DrawEntityNode(e);
