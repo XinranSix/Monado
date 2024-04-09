@@ -77,7 +77,7 @@ namespace Monado {
         m_SceneState = SceneState::Play;
 
         if (m_ReloadScriptOnPlay)
-            ScriptEngine::ReloadAssembly("ExampleApp.dll");
+            ScriptEngine::ReloadAssembly("./assets/script/ExampleApp.dll");
 
         m_RuntimeScene = Ref<Scene>::Create();
         m_EditorScene->CopyTo(m_RuntimeScene);
@@ -682,7 +682,7 @@ namespace Monado {
 
             if (ImGui::BeginMenu("Script")) {
                 if (ImGui::MenuItem("Reload C# Assembly"))
-                    ScriptEngine::ReloadAssembly("ExampleApp.dll");
+                    ScriptEngine::ReloadAssembly("./assets/script/ExampleApp.dll");
 
                 ImGui::MenuItem("Reload assembly on play", nullptr, &m_ReloadScriptOnPlay);
                 ImGui::EndMenu();

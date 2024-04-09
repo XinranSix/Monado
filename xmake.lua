@@ -91,6 +91,7 @@ target("sandbox")
 
 target("alvis")
     set_kind("binary")
+    set_rundir("$(projectdir)")
     add_files("alvis/**.cpp")
     add_deps("monado") 
     add_packages("opengl", "glfw", "glad", "stb", "glm", "stb", "spdlog", "entt", "box2d", "assimp")
@@ -103,6 +104,6 @@ target("alvis")
         else
             os.cp("./libs/mono/bin/Release/**.*", target:targetdir())
         end
-        os.runv("buildScript.bat", {target:targetdir()})
+        os.runv("buildScript.bat", {"./assets/script"})
     end)
 
