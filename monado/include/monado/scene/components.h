@@ -5,7 +5,6 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/quaternion.hpp"
 
-#include "monado/renderer/texture.h"
 #include "monado/renderer/mesh.h"
 #include "sceneCamera.h"
 #include "monado/core/uuid.h"
@@ -138,7 +137,7 @@ namespace Monado {
 
     struct RigidBodyComponent {
         enum class Type { Static, Dynamic };
-        Type BodyType;
+        Type BodyType = Type::Static;
         float Mass = 1.0f;
         float LinearDrag = 0.0f;
         float AngularDrag = 0.05F;

@@ -10,10 +10,9 @@
 #undef MoveFile
 
 namespace Monado {
-
     FileSystem::FileSystemChangedCallbackFn FileSystem::s_Callback;
 
-    static bool s_Watching = true;
+    static bool s_Watching = false;
     static bool s_IgnoreNextChange = false;
     static HANDLE s_WatcherThread;
 
@@ -103,13 +102,14 @@ namespace Monado {
 
     unsigned long FileSystem::Watch(void *param) {
         LPCWSTR filepath = L"assets";
-        BYTE *buffer = new BYTE[10 * 1024]; // 1 MB
+        std::vector<BYTE> buffer;
+        buffer.resize(10 * 1024);
         OVERLAPPED overlapped = { 0 };
         HANDLE handle = NULL;
         DWORD bytesReturned = 0;
 
-        handle = CreateFileW(filepath, FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
-                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
+        handle = CreateFileW(filepath, FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                             NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
 
         ZeroMemory(&overlapped, sizeof(overlapped));
 
@@ -124,7 +124,7 @@ namespace Monado {
         }
 
         while (s_Watching) {
-            DWORD status = ReadDirectoryChangesW(handle, buffer, 10 * 1024 * sizeof(BYTE), TRUE,
+            DWORD status = ReadDirectoryChangesW(handle, &buffer[0], buffer.size(), TRUE,
                                                  FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_FILE_NAME |
                                                      FILE_NOTIFY_CHANGE_DIR_NAME,
                                                  &bytesReturned, &overlapped, NULL);
@@ -142,10 +142,11 @@ namespace Monado {
             std::string oldName;
             char fileName[MAX_PATH * 10] = "";
 
-            FILE_NOTIFY_INFORMATION *current = (FILE_NOTIFY_INFORMATION *)buffer;
+            BYTE *buf = buffer.data();
             for (;;) {
+                FILE_NOTIFY_INFORMATION &fni = *(FILE_NOTIFY_INFORMATION *)buf;
                 ZeroMemory(fileName, sizeof(fileName));
-                WideCharToMultiByte(CP_ACP, 0, current->FileName, current->FileNameLength / sizeof(WCHAR), fileName,
+                WideCharToMultiByte(CP_ACP, 0, fni.FileName, fni.FileNameLength / sizeof(WCHAR), fileName,
                                     sizeof(fileName), NULL, NULL);
                 std::filesystem::path filepath = "assets/" + std::string(fileName);
 
@@ -155,7 +156,7 @@ namespace Monado {
                 e.OldName = filepath.filename().string();
                 e.IsDirectory = std::filesystem::is_directory(filepath);
 
-                switch (current->Action) {
+                switch (fni.Action) {
                 case FILE_ACTION_ADDED: {
                     e.Action = FileSystemAction::Added;
                     s_Callback(e);
@@ -184,14 +185,13 @@ namespace Monado {
                 }
                 }
 
-                if (!current->NextEntryOffset)
+                if (!fni.NextEntryOffset)
                     break;
 
-                current += current->NextEntryOffset;
+                buf += fni.NextEntryOffset;
             }
         }
 
         return 0;
     }
-
 } // namespace Monado

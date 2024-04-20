@@ -1,6 +1,7 @@
 #pragma once
 
 #include "monado/core/window.h"
+#include "monado/renderer/rendererContext.h"
 
 // clang-format off
 #include "glad/glad.h"
@@ -14,7 +15,8 @@ namespace Monado {
         WindowsWindow(const WindowProps &props);
         virtual ~WindowsWindow();
 
-        void OnUpdate() override;
+        virtual void ProcessEvents() override;
+        virtual void SwapBuffers() override;
 
         inline unsigned int GetWidth() const override { return m_Data.Width; }
         inline unsigned int GetHeight() const override { return m_Data.Height; }
@@ -32,7 +34,9 @@ namespace Monado {
         virtual const std::string &GetTitle() const override { return m_Data.Title; }
         virtual void SetTitle(const std::string &title) override;
 
-        inline void *GetNativeWindow() const override { return m_Window; }
+        inline void *GetNativeWindow() const { return m_Window; }
+
+        virtual Ref<RendererContext> GetRenderContext() override { return m_RendererContext; }
 
     private:
         virtual void Init(const WindowProps &props);
@@ -52,6 +56,8 @@ namespace Monado {
 
         WindowData m_Data;
         float m_LastFrameTime = 0.0f;
+
+        Ref<RendererContext> m_RendererContext;
     };
 
 } // namespace Monado

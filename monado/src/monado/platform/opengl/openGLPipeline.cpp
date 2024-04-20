@@ -27,7 +27,11 @@ namespace Monado {
         return 0;
     }
 
-    OpenGLPipeline::OpenGLPipeline(const PipelineSpecification &spec) : m_Specification(spec) { Invalidate(); }
+    OpenGLPipeline::OpenGLPipeline(const PipelineSpecification &spec) : m_Specification(spec) {
+        MND_CORE_ASSERT(spec.Shader);
+        MND_CORE_ASSERT(spec.RenderPass);
+        Invalidate();
+    }
 
     OpenGLPipeline::~OpenGLPipeline() {
         GLuint rendererID = m_VertexArrayRendererID;

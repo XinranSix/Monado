@@ -8,6 +8,7 @@ namespace Monado {
 
     struct RenderPassSpecification {
         Ref<Framebuffer> TargetFramebuffer;
+        std::string DebugName;
     };
 
     class RenderPass : public RefCounted {
@@ -19,4 +20,5 @@ namespace Monado {
 
         static Ref<RenderPass> Create(const RenderPassSpecification &spec);
     };
+
 } // namespace Monado

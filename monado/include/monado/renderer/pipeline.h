@@ -2,15 +2,19 @@
 
 #include "monado/core/ref.h"
 
-#include "rendererAPI.h"
+// #include "rendererAPI.h"
 #include "vertexBuffer.h"
 #include "shader.h"
+#include "monado/renderer/renderPass.h"
 
 namespace Monado {
 
     struct PipelineSpecification {
-        Ref<Monado::Shader> Shader;
+        Ref<Shader> Shader;
         VertexBufferLayout Layout;
+        Ref<RenderPass> RenderPass;
+
+        std::string DebugName;
     };
 
     class Pipeline : public RefCounted {

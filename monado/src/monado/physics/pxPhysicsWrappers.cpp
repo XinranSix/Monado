@@ -18,8 +18,9 @@ namespace Monado {
     static physx::PxPhysics *s_Physics;
     static physx::PxCooking *s_CookingFactory;
     static physx::PxOverlapHit s_OverlapBuffer[OVERLAP_MAX_COLLIDERS];
+    static physx::PxDefaultCpuDispatcher *s_CPUDispatcher;
 
-    static ContactListener s_ContactListener;
+    static ContactListener3D s_ContactListener;
 
     void PhysicsErrorCallback::reportError(physx::PxErrorCode::Enum code, const char *message, const char *file,
                                            int line) {
@@ -61,12 +62,12 @@ namespace Monado {
         }
     }
 
-    void ContactListener::onConstraintBreak(physx::PxConstraintInfo *constraints, physx::PxU32 count) {
+    void ContactListener3D::onConstraintBreak(physx::PxConstraintInfo *constraints, physx::PxU32 count) {
         PX_UNUSED(constraints);
         PX_UNUSED(count);
     }
 
-    void ContactListener::onWake(physx::PxActor **actors, physx::PxU32 count) {
+    void ContactListener3D::onWake(physx::PxActor **actors, physx::PxU32 count) {
         for (uint32_t i = 0; i < count; i++) {
             physx::PxActor &actor = *actors[i];
             Entity &entity = *(Entity *)actor.userData;
@@ -76,7 +77,7 @@ namespace Monado {
         }
     }
 
-    void ContactListener::onSleep(physx::PxActor **actors, physx::PxU32 count) {
+    void ContactListener3D::onSleep(physx::PxActor **actors, physx::PxU32 count) {
         for (uint32_t i = 0; i < count; i++) {
             physx::PxActor &actor = *actors[i];
             Entity &entity = *(Entity *)actor.userData;
@@ -86,8 +87,8 @@ namespace Monado {
         }
     }
 
-    void ContactListener::onContact(const physx::PxContactPairHeader &pairHeader, const physx::PxContactPair *pairs,
-                                    physx::PxU32 nbPairs) {
+    void ContactListener3D::onContact(const physx::PxContactPairHeader &pairHeader, const physx::PxContactPair *pairs,
+                                      physx::PxU32 nbPairs) {
         Entity &a = *(Entity *)pairHeader.actors[0]->userData;
         Entity &b = *(Entity *)pairHeader.actors[1]->userData;
 
@@ -104,7 +105,7 @@ namespace Monado {
         }
     }
 
-    void ContactListener::onTrigger(physx::PxTriggerPair *pairs, physx::PxU32 count) {
+    void ContactListener3D::onTrigger(physx::PxTriggerPair *pairs, physx::PxU32 count) {
         Entity &a = *(Entity *)pairs->triggerActor->userData;
         Entity &b = *(Entity *)pairs->otherActor->userData;
 
@@ -121,8 +122,8 @@ namespace Monado {
         }
     }
 
-    void ContactListener::onAdvance(const physx::PxRigidBody *const *bodyBuffer, const physx::PxTransform *poseBuffer,
-                                    const physx::PxU32 count) {
+    void ContactListener3D::onAdvance(const physx::PxRigidBody *const *bodyBuffer, const physx::PxTransform *poseBuffer,
+                                      const physx::PxU32 count) {
         PX_UNUSED(bodyBuffer);
         PX_UNUSED(poseBuffer);
         PX_UNUSED(count);
@@ -149,13 +150,16 @@ namespace Monado {
     }
 
     physx::PxScene *PXPhysicsWrappers::CreateScene() {
+        if (!s_CPUDispatcher)
+            s_CPUDispatcher = physx::PxDefaultCpuDispatcherCreate(1);
+
         physx::PxSceneDesc sceneDesc(s_Physics->getTolerancesScale());
 
         const PhysicsSettings &settings = Physics::GetSettings();
 
         sceneDesc.gravity = ToPhysXVector(settings.Gravity);
         sceneDesc.broadPhaseType = MonadoToPhysXBroadphaseType(settings.BroadphaseAlgorithm);
-        sceneDesc.cpuDispatcher = physx::PxDefaultCpuDispatcherCreate(1);
+        sceneDesc.cpuDispatcher = s_CPUDispatcher;
         sceneDesc.filterShader = MonadoFilterShader;
         sceneDesc.simulationEventCallback = &s_ContactListener;
         sceneDesc.frictionType = MonadoToPhysXFrictionType(settings.FrictionModel);
@@ -168,64 +172,55 @@ namespace Monado {
         auto &collider = actor.m_Entity.GetComponent<BoxColliderComponent>();
 
         if (!collider.Material)
-            collider.Material = Ref<PhysicsMaterial>::Create(0.6F, 0.6F, 0.0F);
+            collider.Material = Ref<PhysicsMaterial>::Create(0.6f, 0.6f, 0.0f);
 
-        glm::vec3 size = actor.m_Entity.Transform().Scale;
-        glm::vec3 colliderSize = collider.Size;
-
-        if (size.x != 0.0F)
-            colliderSize.x *= size.x;
-        if (size.y != 0.0F)
-            colliderSize.y *= size.y;
-        if (size.z != 0.0F)
-            colliderSize.z *= size.z;
-
+        glm::vec3 colliderSize = actor.m_Entity.Transform().Scale * collider.Size;
         physx::PxBoxGeometry boxGeometry =
-            physx::PxBoxGeometry(colliderSize.x / 2.0F, colliderSize.y / 2.0F, colliderSize.z / 2.0F);
+            physx::PxBoxGeometry(colliderSize.x / 2.0f, colliderSize.y / 2.0f, colliderSize.z / 2.0f);
         physx::PxMaterial *material = s_Physics->createMaterial(
             collider.Material->StaticFriction, collider.Material->DynamicFriction, collider.Material->Bounciness);
         physx::PxShape *shape =
             physx::PxRigidActorExt::createExclusiveShape(*actor.m_ActorInternal, boxGeometry, *material);
         shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, !collider.IsTrigger);
         shape->setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, collider.IsTrigger);
-        shape->setLocalPose(ToPhysXTransform(glm::translate(glm::mat4(1.0F), collider.Offset)));
+        shape->setLocalPose(ToPhysXTransform(glm::translate(glm::mat4(1.0f), collider.Offset)));
+
+        material->release();
     }
 
     void PXPhysicsWrappers::AddSphereCollider(PhysicsActor &actor) {
         auto &collider = actor.m_Entity.GetComponent<SphereColliderComponent>();
 
         if (!collider.Material)
-            collider.Material = Ref<PhysicsMaterial>::Create(0.6F, 0.6F, 0.0F);
+            collider.Material = Ref<PhysicsMaterial>::Create(0.6f, 0.6f, 0.0f);
 
-        float colliderRadius = collider.Radius;
-        glm::vec3 size = actor.m_Entity.Transform().Scale;
-        if (size.x != 0.0F)
-            colliderRadius *= size.x;
+        glm::vec3 actorScale = actor.m_Entity.Transform().Scale;
+        // We effectively do the same thing as Unitys SphereColliders here, where the radius is multiplied with the
+        // biggest scale value
+        float largestComponent = glm::max(actorScale.x, glm::max(actorScale.y, actorScale.z));
 
-        physx::PxSphereGeometry sphereGeometry = physx::PxSphereGeometry(colliderRadius);
+        physx::PxSphereGeometry sphereGeometry = physx::PxSphereGeometry(largestComponent * collider.Radius);
         physx::PxMaterial *material = s_Physics->createMaterial(
             collider.Material->StaticFriction, collider.Material->DynamicFriction, collider.Material->Bounciness);
         physx::PxShape *shape =
             physx::PxRigidActorExt::createExclusiveShape(*actor.m_ActorInternal, sphereGeometry, *material);
         shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, !collider.IsTrigger);
         shape->setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, collider.IsTrigger);
+
+        material->release();
     }
 
     void PXPhysicsWrappers::AddCapsuleCollider(PhysicsActor &actor) {
         auto &collider = actor.m_Entity.GetComponent<CapsuleColliderComponent>();
 
         if (!collider.Material)
-            collider.Material = Ref<PhysicsMaterial>::Create(0.6F, 0.6F, 0.0F);
+            collider.Material = Ref<PhysicsMaterial>::Create(0.6f, 0.6f, 0.0f);
 
-        float colliderRadius = collider.Radius;
-        float colliderHeight = collider.Height;
         glm::vec3 size = actor.m_Entity.Transform().Scale;
-        if (size.x != 0.0F)
-            colliderRadius *= (size.x / 2.0F);
-        if (size.y != 0.0F)
-            colliderHeight *= size.y;
-
-        physx::PxCapsuleGeometry capsuleGeometry = physx::PxCapsuleGeometry(colliderRadius, colliderHeight / 2.0F);
+        // NOTE(Peter): CapsuleGeometry expects half height
+        float radiusScale = glm::max(size.x, size.z);
+        physx::PxCapsuleGeometry capsuleGeometry =
+            physx::PxCapsuleGeometry(radiusScale * collider.Radius, size.y * (collider.Height / 2.0f));
         physx::PxMaterial *material = s_Physics->createMaterial(
             collider.Material->StaticFriction, collider.Material->DynamicFriction, collider.Material->Bounciness);
         physx::PxShape *shape =
@@ -233,13 +228,15 @@ namespace Monado {
         shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, !collider.IsTrigger);
         shape->setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, collider.IsTrigger);
         shape->setLocalPose(physx::PxTransform(physx::PxQuat(physx::PxHalfPi, physx::PxVec3(0, 0, 1))));
+
+        material->release();
     }
 
     void PXPhysicsWrappers::AddMeshCollider(PhysicsActor &actor) {
         auto &collider = actor.m_Entity.GetComponent<MeshColliderComponent>();
 
         if (!collider.Material)
-            collider.Material = Ref<PhysicsMaterial>::Create(0.6F, 0.6F, 0.0F);
+            collider.Material = Ref<PhysicsMaterial>::Create(0.6f, 0.6f, 0.0f);
 
         glm::vec3 size = actor.m_Entity.Transform().Scale;
         physx::PxMaterial *material = s_Physics->createMaterial(
@@ -267,17 +264,24 @@ namespace Monado {
                 actor.AddCollisionShape(shape);
             }
         }
+
+        material->release();
     }
 
+    struct ColliderData {
+        byte *Data;
+        uint32_t Size;
+    };
+
     std::vector<physx::PxShape *> PXPhysicsWrappers::CreateConvexMesh(MeshColliderComponent &collider,
-                                                                      const glm::vec3 &size, bool invalidateOld) {
+                                                                      const glm::vec3 &scale, bool invalidateOld) {
         std::vector<physx::PxShape *> shapes;
 
         collider.ProcessedMeshes.clear();
 
         const physx::PxCookingParams &currentParams = s_CookingFactory->getParams();
         physx::PxCookingParams newParams = currentParams;
-        newParams.planeTolerance = 0.0F;
+        newParams.planeTolerance = 0.0f;
         newParams.meshPreprocessParams =
             physx::PxMeshPreprocessingFlags(physx::PxMeshPreprocessingFlag::eWELD_VERTICES);
         newParams.meshWeldTolerance = 0.01f;
@@ -289,6 +293,9 @@ namespace Monado {
         if (!PhysicsMeshSerializer::IsSerialized(collider.CollisionMesh->GetFilePath())) {
             const std::vector<Vertex> &vertices = collider.CollisionMesh->GetStaticVertices();
             const std::vector<Index> &indices = collider.CollisionMesh->GetIndices();
+
+            std::unordered_map<std::string, ColliderData> colliderData;
+            uint32_t bufferSize = 0;
 
             for (const auto &submesh : collider.CollisionMesh->GetSubmeshes()) {
                 physx::PxConvexMeshDesc convexDesc;
@@ -307,32 +314,79 @@ namespace Monado {
                     continue;
                 }
 
-                PhysicsMeshSerializer::SerializeMesh(collider.CollisionMesh->GetFilePath(), buf, submesh.MeshName);
+                ColliderData data;
+                data.Size = buf.getSize();
+                data.Data = new byte[data.Size];
+                memcpy(data.Data, buf.getData(), data.Size);
+                colliderData[submesh.MeshName] = data;
+                bufferSize += sizeof(uint32_t);
+                bufferSize += data.Size;
+
+                glm::vec3 submeshTranslation, submeshRotation, submeshScale;
+                Math::DecomposeTransform(submesh.Transform, submeshTranslation, submeshRotation, submeshScale);
+
                 physx::PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
                 physx::PxConvexMesh *convexMesh = s_Physics->createConvexMesh(input);
                 physx::PxConvexMeshGeometry convexGeometry =
-                    physx::PxConvexMeshGeometry(convexMesh, physx::PxMeshScale(ToPhysXVector(size)));
+                    physx::PxConvexMeshGeometry(convexMesh, physx::PxMeshScale(ToPhysXVector(submeshScale * scale)));
                 convexGeometry.meshFlags = physx::PxConvexMeshGeometryFlag::eTIGHT_BOUNDS;
                 physx::PxMaterial *material =
                     s_Physics->createMaterial(0, 0, 0); // Dummy material, will be replaced at runtime.
                 physx::PxShape *shape = s_Physics->createShape(convexGeometry, *material, true);
-                shape->setLocalPose(ToPhysXTransform(submesh.Transform));
+                shape->setLocalPose(ToPhysXTransform(submeshTranslation, submeshRotation));
                 shapes.push_back(shape);
+
+                material->release();
+                convexMesh->release();
             }
+
+            Buffer colliderBuffer;
+            colliderBuffer.Allocate(bufferSize);
+
+            uint32_t offset = 0;
+            for (auto &[submeshName, data] : colliderData) {
+                colliderBuffer.Write(&data.Size, sizeof(uint32_t), offset);
+                offset += sizeof(uint32_t);
+                colliderBuffer.Write(data.Data, data.Size, offset);
+                offset += data.Size;
+
+                delete[] data.Data;
+            }
+
+            PhysicsMeshSerializer::SerializeMesh(collider.CollisionMesh->GetFilePath(), colliderBuffer);
+            colliderBuffer.Release();
         } else {
+            Buffer colliderBuffer = PhysicsMeshSerializer::DeserializeMesh(collider.CollisionMesh->GetFilePath());
+            uint32_t offset = 0;
+
             for (const auto &submesh : collider.CollisionMesh->GetSubmeshes()) {
-                physx::PxDefaultMemoryInputData meshData =
-                    PhysicsMeshSerializer::DeserializeMesh(collider.CollisionMesh->GetFilePath(), submesh.MeshName);
+                // NOTE(Peter): This way of reading the data requires that the submeshes are always in the same order
+                uint32_t dataSize = colliderBuffer.Read<uint32_t>(offset);
+                offset += sizeof(uint32_t);
+                byte *data = colliderBuffer.ReadBytes(dataSize, offset);
+                offset += dataSize;
+
+                glm::vec3 submeshTranslation, submeshRotation, submeshScale;
+                Math::DecomposeTransform(submesh.Transform, submeshTranslation, submeshRotation, submeshScale);
+
+                physx::PxDefaultMemoryInputData meshData(data, dataSize);
                 physx::PxConvexMesh *convexMesh = s_Physics->createConvexMesh(meshData);
                 physx::PxConvexMeshGeometry convexGeometry =
-                    physx::PxConvexMeshGeometry(convexMesh, physx::PxMeshScale(ToPhysXVector(size)));
+                    physx::PxConvexMeshGeometry(convexMesh, physx::PxMeshScale(ToPhysXVector(submeshScale * scale)));
                 convexGeometry.meshFlags = physx::PxConvexMeshGeometryFlag::eTIGHT_BOUNDS;
                 physx::PxMaterial *material =
                     s_Physics->createMaterial(0, 0, 0); // Dummy material, will be replaced at runtime.
                 physx::PxShape *shape = s_Physics->createShape(convexGeometry, *material, true);
-                shape->setLocalPose(ToPhysXTransform(submesh.Transform));
+                shape->setLocalPose(ToPhysXTransform(submeshTranslation, submeshRotation));
                 shapes.push_back(shape);
+
+                material->release();
+                convexMesh->release();
+
+                delete[] data;
             }
+
+            colliderBuffer.Release();
         }
 
         if (collider.ProcessedMeshes.size() <= 0) {
@@ -402,6 +456,9 @@ namespace Monado {
             const std::vector<Vertex> &vertices = collider.CollisionMesh->GetStaticVertices();
             const std::vector<Index> &indices = collider.CollisionMesh->GetIndices();
 
+            std::unordered_map<std::string, ColliderData> colliderData;
+            uint32_t bufferSize = 0;
+
             for (const auto &submesh : collider.CollisionMesh->GetSubmeshes()) {
                 physx::PxTriangleMeshDesc triangleDesc;
                 triangleDesc.points.count = submesh.VertexCount;
@@ -418,10 +475,16 @@ namespace Monado {
                     continue;
                 }
 
-                PhysicsMeshSerializer::SerializeMesh(collider.CollisionMesh->GetFilePath(), buf, submesh.MeshName);
+                ColliderData data;
+                data.Size = buf.getSize();
+                data.Data = new byte[data.Size];
+                memcpy(data.Data, buf.getData(), data.Size);
+                colliderData[submesh.MeshName] = data;
+                bufferSize += sizeof(uint32_t);
+                bufferSize += data.Size;
 
                 glm::vec3 submeshTranslation, submeshRotation, submeshScale;
-                Math::DecomposeTransform(submesh.LocalTransform, submeshTranslation, submeshRotation, submeshScale);
+                Math::DecomposeTransform(submesh.Transform, submeshTranslation, submeshRotation, submeshScale);
 
                 physx::PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
                 physx::PxTriangleMesh *trimesh = s_Physics->createTriangleMesh(input);
@@ -432,14 +495,41 @@ namespace Monado {
                 physx::PxShape *shape = s_Physics->createShape(triangleGeometry, *material, true);
                 shape->setLocalPose(ToPhysXTransform(submeshTranslation, submeshRotation));
                 shapes.push_back(shape);
-            }
-        } else {
-            for (const auto &submesh : collider.CollisionMesh->GetSubmeshes()) {
-                glm::vec3 submeshTranslation, submeshRotation, submeshScale;
-                Math::DecomposeTransform(submesh.LocalTransform, submeshTranslation, submeshRotation, submeshScale);
 
-                physx::PxDefaultMemoryInputData meshData =
-                    PhysicsMeshSerializer::DeserializeMesh(collider.CollisionMesh->GetFilePath(), submesh.MeshName);
+                material->release();
+                trimesh->release();
+            }
+
+            Buffer colliderBuffer;
+            colliderBuffer.Allocate(bufferSize);
+
+            uint32_t offset = 0;
+            for (auto &[submeshName, data] : colliderData) {
+                colliderBuffer.Write(&data.Size, sizeof(uint32_t), offset);
+                offset += sizeof(uint32_t);
+                colliderBuffer.Write(data.Data, data.Size, offset);
+                offset += data.Size;
+
+                delete[] data.Data;
+            }
+
+            PhysicsMeshSerializer::SerializeMesh(collider.CollisionMesh->GetFilePath(), colliderBuffer);
+            colliderBuffer.Release();
+        } else {
+            Buffer colliderBuffer = PhysicsMeshSerializer::DeserializeMesh(collider.CollisionMesh->GetFilePath());
+            uint32_t offset = 0;
+
+            for (const auto &submesh : collider.CollisionMesh->GetSubmeshes()) {
+                // NOTE(Peter): This way of reading the data requires that the submeshes are always in the same order
+                uint32_t dataSize = colliderBuffer.Read<uint32_t>(offset);
+                offset += sizeof(uint32_t);
+                byte *data = colliderBuffer.ReadBytes(dataSize, offset);
+                offset += dataSize;
+
+                glm::vec3 submeshTranslation, submeshRotation, submeshScale;
+                Math::DecomposeTransform(submesh.Transform, submeshTranslation, submeshRotation, submeshScale);
+
+                physx::PxDefaultMemoryInputData meshData(data, dataSize);
                 physx::PxTriangleMesh *trimesh = s_Physics->createTriangleMesh(meshData);
                 physx::PxTriangleMeshGeometry triangleGeometry =
                     physx::PxTriangleMeshGeometry(trimesh, physx::PxMeshScale(ToPhysXVector(submeshScale * scale)));
@@ -448,7 +538,14 @@ namespace Monado {
                 physx::PxShape *shape = s_Physics->createShape(triangleGeometry, *material, true);
                 shape->setLocalPose(ToPhysXTransform(submeshTranslation, submeshRotation));
                 shapes.push_back(shape);
+
+                material->release();
+                trimesh->release();
+
+                delete[] data;
             }
+
+            colliderBuffer.Release();
         }
 
         if (collider.ProcessedMeshes.size() <= 0) {
@@ -479,8 +576,7 @@ namespace Monado {
                     indices.push_back(index);
                 }
 
-                glm::mat4 scale = glm::scale(glm::mat4(1.0f), *(glm::vec3 *)&triangleGeometry.scale.scale);
-                // scale = glm::mat4(1.0f);
+                glm::mat4 scale = glm::scale(glm::mat4(1.0f), FromPhysXVector(triangleGeometry.scale.scale));
                 glm::mat4 transform = FromPhysXTransform(shape->getLocalPose()) * scale;
                 collider.ProcessedMeshes.push_back(Ref<Mesh>::Create(vertices, indices, transform));
             }
@@ -515,7 +611,7 @@ namespace Monado {
         memset(s_OverlapBuffer, 0, sizeof(s_OverlapBuffer));
         physx::PxOverlapBuffer buf(s_OverlapBuffer, OVERLAP_MAX_COLLIDERS);
         physx::PxBoxGeometry geometry = physx::PxBoxGeometry(halfSize.x, halfSize.y, halfSize.z);
-        physx::PxTransform pose = ToPhysXTransform(glm::translate(glm::mat4(1.0F), origin));
+        physx::PxTransform pose = ToPhysXTransform(glm::translate(glm::mat4(1.0f), origin));
 
         bool result = scene->overlap(geometry, pose, buf);
 
@@ -536,7 +632,7 @@ namespace Monado {
         memset(s_OverlapBuffer, 0, sizeof(s_OverlapBuffer));
         physx::PxOverlapBuffer buf(s_OverlapBuffer, OVERLAP_MAX_COLLIDERS);
         physx::PxCapsuleGeometry geometry = physx::PxCapsuleGeometry(radius, halfHeight);
-        physx::PxTransform pose = ToPhysXTransform(glm::translate(glm::mat4(1.0F), origin));
+        physx::PxTransform pose = ToPhysXTransform(glm::translate(glm::mat4(1.0f), origin));
 
         bool result = scene->overlap(geometry, pose, buf);
 
@@ -557,7 +653,7 @@ namespace Monado {
         memset(s_OverlapBuffer, 0, sizeof(s_OverlapBuffer));
         physx::PxOverlapBuffer buf(s_OverlapBuffer, OVERLAP_MAX_COLLIDERS);
         physx::PxSphereGeometry geometry = physx::PxSphereGeometry(radius);
-        physx::PxTransform pose = ToPhysXTransform(glm::translate(glm::mat4(1.0F), origin));
+        physx::PxTransform pose = ToPhysXTransform(glm::translate(glm::mat4(1.0f), origin));
 
         bool result = scene->overlap(geometry, pose, buf);
 
@@ -596,9 +692,15 @@ namespace Monado {
     }
 
     void PXPhysicsWrappers::Shutdown() {
+        s_CPUDispatcher->release();
         s_CookingFactory->release();
+        s_CookingFactory = nullptr;
+
         s_Physics->release();
+        s_Physics = nullptr;
+
         s_Foundation->release();
+        s_Foundation = nullptr;
     }
 
     physx::PxAllocatorCallback &PXPhysicsWrappers::GetAllocator() { return s_Allocator; }

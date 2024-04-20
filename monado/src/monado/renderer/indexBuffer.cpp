@@ -1,6 +1,8 @@
 #include "monado/renderer/indexBuffer.h"
 #include "monado/renderer/renderer.h"
+#include "monado/renderer/rendererAPI.h"
 #include "monado/platform/opengl/openGLIndexBuffer.h"
+#include "monado/platform/vulkan/vulkanFramebuffer.h"
 
 namespace Monado {
 
@@ -8,6 +10,7 @@ namespace Monado {
         switch (RendererAPI::Current()) {
         case RendererAPIType::None: return nullptr;
         case RendererAPIType::OpenGL: return Ref<OpenGLIndexBuffer>::Create(size);
+        case RendererAPIType::Vulkan: return Ref<VulkanIndexBuffer>::Create(size);
         }
         MND_CORE_ASSERT(false, "Unknown RendererAPI");
         return nullptr;
@@ -17,6 +20,7 @@ namespace Monado {
         switch (RendererAPI::Current()) {
         case RendererAPIType::None: return nullptr;
         case RendererAPIType::OpenGL: return Ref<OpenGLIndexBuffer>::Create(data, size);
+        case RendererAPIType::Vulkan: return Ref<VulkanIndexBuffer>::Create(data, size);
         }
         MND_CORE_ASSERT(false, "Unknown RendererAPI");
         return nullptr;

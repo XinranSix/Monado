@@ -6,12 +6,16 @@
 namespace Monado {
 
     void InitializeCore() {
-        Monado::Log::Init();
+        Log::Init();
 
         MND_CORE_TRACE("Monado Engine {}", MONADO_BUILD_ID);
         MND_CORE_TRACE("Initializing...");
     }
 
-    void ShutdownCore() { MND_CORE_TRACE("Shutting down..."); }
+    void ShutdownCore() {
+        MND_CORE_TRACE("Shutting down...");
+        
+        Log::Shutdown();
+    }
 
 } // namespace Monado

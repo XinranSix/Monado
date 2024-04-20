@@ -22,6 +22,7 @@ namespace Monado {
         virtual ~Application();
 
         void Run();
+        void Close();
 
         virtual void OnInit() {}
         virtual void OnShutdown() {}
@@ -62,6 +63,6 @@ namespace Monado {
     };
 
     // Implemented by CLIENT
-    Application *CreateApplication();
+    Application *CreateApplication(int argc, char **argv);
 
 } // namespace Monado

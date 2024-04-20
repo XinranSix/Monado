@@ -2,7 +2,7 @@
 
 #include "monado/core/ref.h"
 
-#include "rendererAPI.h"
+#include "rendererTypes.h"
 
 namespace Monado {
 

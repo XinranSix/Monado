@@ -19,9 +19,14 @@
 #include <Windows.h>
 #include <Commdlg.h>
 
+#include "monado/platform/vulkan/vulkanRenderer.h"
+
+extern bool g_ApplicationRunning;
+
 namespace Monado {
 
 #define BIND_EVENT_FN(fn) std::bind(&Application::fn, this, std::placeholders::_1)
+
     Application *Application::s_Instance = nullptr;
 
     Application::Application(const ApplicationProps &props) {
@@ -31,29 +36,35 @@ namespace Monado {
             std::unique_ptr<Window>(Window::Create(WindowProps(props.Name, props.WindowWidth, props.WindowHeight)));
         m_Window->SetEventCallback(BIND_EVENT_FN(OnEvent));
         m_Window->Maximize();
-        m_Window->SetVSync(true);
+        m_Window->SetVSync(false);
 
-        m_ImGuiLayer = new ImGuiLayer("ImGui");
-        PushOverlay(m_ImGuiLayer);
-
-        ScriptEngine::Init("./assets/script/ExampleApp.dll");
-        Physics::Init();
-
+        // Init renderer and execute command queue to compile all shaders
         Renderer::Init();
         Renderer::WaitAndRender();
 
-        AssetTypes::Init();
+        m_ImGuiLayer = ImGuiLayer::Create();
+        PushOverlay(m_ImGuiLayer);
+
+        ScriptEngine::Init("assets/scripts/ExampleApp.dll");
+        Physics::Init();
+
         AssetManager::Init();
     }
 
     Application::~Application() {
-        for (Layer *layer : m_LayerStack)
+        for (Layer *layer : m_LayerStack) {
             layer->OnDetach();
+            delete layer;
+        }
+
+        FramebufferPool::GetGlobal()->GetAll().clear();
 
         Physics::Shutdown();
         ScriptEngine::Shutdown();
-
         AssetManager::Shutdown();
+
+        Renderer::WaitAndRender();
+        Renderer::Shutdown();
     }
 
     void Application::PushLayer(Layer *layer) {
@@ -68,9 +79,8 @@ namespace Monado {
 
     void Application::RenderImGui() {
         m_ImGuiLayer->Begin();
-
         ImGui::Begin("Renderer");
-        auto &caps = RendererAPI::GetCapabilities();
+        auto &caps = Renderer::GetCapabilities();
         ImGui::Text("Vendor: %s", caps.Vendor.c_str());
         ImGui::Text("Renderer: %s", caps.Renderer.c_str());
         ImGui::Text("Version: %s", caps.Version.c_str());
@@ -79,31 +89,44 @@ namespace Monado {
 
         for (Layer *layer : m_LayerStack)
             layer->OnImGuiRender();
-
-        m_ImGuiLayer->End();
     }
 
     void Application::Run() {
         OnInit();
         while (m_Running) {
+            static uint64_t frameCounter = 0;
+            // HZ_CORE_INFO("-- BEGIN FRAME {0}", frameCounter);
+            m_Window->ProcessEvents();
+
             if (!m_Minimized) {
+                Renderer::BeginFrame();
+                // VulkanRenderer::BeginFrame();
                 for (Layer *layer : m_LayerStack)
                     layer->OnUpdate(m_TimeStep);
 
                 // Render ImGui on render thread
                 Application *app = this;
                 Renderer::Submit([app]() { app->RenderImGui(); });
+                Renderer::Submit([=]() { m_ImGuiLayer->End(); });
+                Renderer::EndFrame();
 
+                // On Render thread
+                m_Window->GetRenderContext()->BeginFrame();
                 Renderer::WaitAndRender();
+                m_Window->SwapBuffers();
             }
-            m_Window->OnUpdate();
 
             float time = GetTime();
             m_TimeStep = time - m_LastFrameTime;
             m_LastFrameTime = time;
+
+            // HZ_CORE_INFO("-- END FRAME {0}", frameCounter);
+            frameCounter++;
         }
         OnShutdown();
     }
+
+    void Application::Close() { m_Running = false; }
 
     void Application::OnEvent(Event &event) {
         EventDispatcher dispatcher(event);
@@ -124,7 +147,9 @@ namespace Monado {
             return false;
         }
         m_Minimized = false;
-        Renderer::Submit([=]() { glViewport(0, 0, width, height); });
+
+        m_Window->GetRenderContext()->OnResize(width, height);
+
         auto &fbs = FramebufferPool::GetGlobal()->GetAll();
         for (auto &fb : fbs) {
             if (!fb->GetSpecification().NoResize)
@@ -136,6 +161,7 @@ namespace Monado {
 
     bool Application::OnWindowClose(WindowCloseEvent &e) {
         m_Running = false;
+        g_ApplicationRunning = false; // Request close
         return true;
     }
 

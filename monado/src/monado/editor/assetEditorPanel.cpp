@@ -3,18 +3,29 @@
 #include "monado/asset/assetManager.h"
 
 namespace Monado {
+
     AssetEditor::AssetEditor(const char *title) : m_Title(title), m_MinSize(200, 400), m_MaxSize(2000, 2000) {}
 
     void AssetEditor::OnImGuiRender() {
         if (!m_IsOpen)
             return;
 
+        bool was_open = m_IsOpen;
         // NOTE(Peter): SetNextWindowSizeConstraints requires a max constraint that's above 0. For now we're just
         // setting it to a large value
         ImGui::SetNextWindowSizeConstraints(m_MinSize, m_MaxSize);
         ImGui::Begin(m_Title, &m_IsOpen, m_Flags);
         Render();
         ImGui::End();
+
+        if (was_open && !m_IsOpen)
+            OnClose();
+    }
+
+    void AssetEditor::SetOpen(bool isOpen) {
+        m_IsOpen = isOpen;
+        if (!m_IsOpen)
+            OnClose();
     }
 
     void AssetEditor::SetMinSize(uint32_t width, uint32_t height) {
@@ -43,6 +54,8 @@ namespace Monado {
         RegisterEditor<TextureViewer>(AssetType::Texture);
         RegisterEditor<PhysicsMaterialEditor>(AssetType::PhysicsMat);
     }
+
+    void AssetEditorPanel::UnregisterAllEditors() { s_Editors.clear(); }
 
     void AssetEditorPanel::OnImGuiRender() {
         for (auto &kv : s_Editors)

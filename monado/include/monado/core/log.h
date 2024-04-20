@@ -3,8 +3,6 @@
 #include "base.h"
 
 #include "spdlog/spdlog.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/fmt/ostr.h"
 
 #include "glm/glm.hpp"
 
@@ -13,6 +11,7 @@ namespace Monado {
     class Log {
     public:
         static void Init();
+        static void Shutdown();
 
         inline static std::shared_ptr<spdlog::logger> &GetCoreLogger() { return s_CoreLogger; }
         inline static std::shared_ptr<spdlog::logger> &GetClientLogger() { return s_ClientLogger; }

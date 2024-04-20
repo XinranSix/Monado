@@ -20,7 +20,7 @@ namespace Monado {
         virtual void operator()(const char *exp, const char *file, int line, bool &ignore);
     };
 
-    class ContactListener : public physx::PxSimulationEventCallback {
+    class ContactListener3D : public physx::PxSimulationEventCallback {
     public:
         virtual void onConstraintBreak(physx::PxConstraintInfo *constraints, physx::PxU32 count) override;
         virtual void onWake(physx::PxActor **actors, physx::PxU32 count) override;
@@ -41,7 +41,8 @@ namespace Monado {
         static void AddCapsuleCollider(PhysicsActor &actor);
         static void AddMeshCollider(PhysicsActor &actor);
 
-        static std::vector<physx::PxShape *> CreateConvexMesh(MeshColliderComponent &collider, const glm::vec3 &size,
+        static std::vector<physx::PxShape *> CreateConvexMesh(MeshColliderComponent &collider,
+                                                              const glm::vec3 &scale = glm::vec3(1.0f),
                                                               bool invalidateOld = false);
         static std::vector<physx::PxShape *> CreateTriangleMesh(MeshColliderComponent &collider,
                                                                 const glm::vec3 &scale = glm::vec3(1.0f),

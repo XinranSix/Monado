@@ -8,7 +8,19 @@
 
 namespace Monado {
 
-    enum class AssetType { Scene, Mesh, Texture, EnvMap, Audio, Script, PhysicsMat, Directory, Other, None };
+    enum class AssetType : int8_t {
+        Scene,
+        Mesh,
+        Texture,
+        EnvMap,
+        Audio,
+        Script,
+        PhysicsMat,
+        Directory,
+        Other,
+        None,
+        Missing
+    };
 
     using AssetHandle = UUID;
 
@@ -23,6 +35,9 @@ namespace Monado {
         AssetHandle ParentDirectory;
         bool IsDataLoaded = false;
 
+        virtual bool operator==(const Asset &other) const { return Handle == other.Handle; }
+
+        virtual bool operator!=(const Asset &other) const { return !(*this == other); }
         virtual ~Asset() {}
     };
 
@@ -44,4 +59,5 @@ namespace Monado {
 
         Directory() = default;
     };
+
 } // namespace Monado

@@ -1,7 +1,9 @@
 #include "monado/renderer/renderPass.h"
 #include "monado/renderer/renderer.h"
+#include "monado/renderer/rendererAPI.h"
 #include "monado/core/log.h"
 #include "monado/platform/opengl/openGLRenderPass.h"
+#include "monado/Platform/vulkan/vulkanRenderPass.h"
 
 namespace Monado {
 
@@ -10,6 +12,7 @@ namespace Monado {
         case RendererAPIType::None:
             MND_CORE_ASSERT(false, "RendererAPI::None is currently not supported!");
             return nullptr;
+        case RendererAPIType::Vulkan: return Ref<VulkanRenderPass>::Create(spec);
         case RendererAPIType::OpenGL: return Ref<OpenGLRenderPass>::Create(spec);
         }
 

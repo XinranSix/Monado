@@ -87,6 +87,7 @@ namespace Monado {
                                              { ShaderDataType::Float2, "a_TexCoord" },
                                              { ShaderDataType::Float, "a_TexIndex" },
                                              { ShaderDataType::Float, "a_TilingFactor" } };
+            pipelineSpecification.DebugName = "Renderer2D-Quad";
             s_Data.QuadPipeline = Pipeline::Create(pipelineSpecification);
 
             s_Data.QuadVertexBuffer = VertexBuffer::Create(s_Data.MaxVertices * sizeof(QuadVertex));
@@ -111,7 +112,7 @@ namespace Monado {
             delete[] quadIndices;
         }
 
-        s_Data.WhiteTexture = Texture2D::Create(TextureFormat::RGBA, 1, 1);
+        s_Data.WhiteTexture = Texture2D::Create(ImageFormat::RGBA, 1, 1);
         uint32_t whiteTextureData = 0xffffffff;
         s_Data.WhiteTexture->Lock();
         s_Data.WhiteTexture->GetWriteableBuffer().Write(&whiteTextureData, sizeof(uint32_t));
@@ -134,6 +135,7 @@ namespace Monado {
             PipelineSpecification pipelineSpecification;
             pipelineSpecification.Layout = { { ShaderDataType::Float3, "a_Position" },
                                              { ShaderDataType::Float4, "a_Color" } };
+            pipelineSpecification.DebugName = "Renderer2D-Line";
             s_Data.LinePipeline = Pipeline::Create(pipelineSpecification);
 
             s_Data.LineVertexBuffer = VertexBuffer::Create(s_Data.MaxLineVertices * sizeof(LineVertex));
@@ -185,52 +187,57 @@ namespace Monado {
     }
 
     void Renderer2D::EndScene() {
-        uint32_t dataSize = (uint8_t *)s_Data.QuadVertexBufferPtr - (uint8_t *)s_Data.QuadVertexBufferBase;
-        if (dataSize) {
-            s_Data.QuadVertexBuffer->SetData(s_Data.QuadVertexBufferBase, dataSize);
+#if 0
+		uint32_t dataSize = (uint8_t*)s_Data.QuadVertexBufferPtr - (uint8_t*)s_Data.QuadVertexBufferBase;
+		if (dataSize)
+		{
+			s_Data.QuadVertexBuffer->SetData(s_Data.QuadVertexBufferBase, dataSize);
 
-            s_Data.TextureShader->Bind();
-            s_Data.TextureShader->SetMat4("u_ViewProjection", s_Data.CameraViewProj);
+			s_Data.TextureShader->Bind();
+			s_Data.TextureShader->SetMat4("u_ViewProjection", s_Data.CameraViewProj);
 
-            for (uint32_t i = 0; i < s_Data.TextureSlotIndex; i++)
-                s_Data.TextureSlots[i]->Bind(i);
+			for (uint32_t i = 0; i < s_Data.TextureSlotIndex; i++)
+				s_Data.TextureSlots[i]->Bind(i);
 
-            s_Data.QuadVertexBuffer->Bind();
-            s_Data.QuadPipeline->Bind();
-            s_Data.QuadIndexBuffer->Bind();
-            Renderer::DrawIndexed(s_Data.QuadIndexCount, PrimitiveType::Triangles, s_Data.DepthTest, false);
-            s_Data.Stats.DrawCalls++;
-        }
+			s_Data.QuadVertexBuffer->Bind();
+			s_Data.QuadPipeline->Bind();
+			s_Data.QuadIndexBuffer->Bind();
+			Renderer::DrawIndexed(s_Data.QuadIndexCount, PrimitiveType::Triangles, s_Data.DepthTest, false);
+			s_Data.Stats.DrawCalls++;
+		}
 
-        dataSize = (uint8_t *)s_Data.LineVertexBufferPtr - (uint8_t *)s_Data.LineVertexBufferBase;
-        if (dataSize) {
-            s_Data.LineVertexBuffer->SetData(s_Data.LineVertexBufferBase, dataSize);
+		dataSize = (uint8_t*)s_Data.LineVertexBufferPtr - (uint8_t*)s_Data.LineVertexBufferBase;
+		if (dataSize)
+		{
+			s_Data.LineVertexBuffer->SetData(s_Data.LineVertexBufferBase, dataSize);
 
-            s_Data.LineShader->Bind();
-            s_Data.LineShader->SetMat4("u_ViewProjection", s_Data.CameraViewProj);
+			s_Data.LineShader->Bind();
+			s_Data.LineShader->SetMat4("u_ViewProjection", s_Data.CameraViewProj);
 
-            s_Data.LineVertexBuffer->Bind();
-            s_Data.LinePipeline->Bind();
-            s_Data.LineIndexBuffer->Bind();
-            Renderer::SetLineThickness(2.0f);
-            Renderer::DrawIndexed(s_Data.LineIndexCount, PrimitiveType::Lines, false, false);
-            s_Data.Stats.DrawCalls++;
-        }
+			s_Data.LineVertexBuffer->Bind();
+			s_Data.LinePipeline->Bind();
+			s_Data.LineIndexBuffer->Bind();
+			Renderer::SetLineThickness(2.0f);
+			Renderer::DrawIndexed(s_Data.LineIndexCount, PrimitiveType::Lines, false, false);
+			s_Data.Stats.DrawCalls++;
+		}
 
-        dataSize = (uint8_t *)s_Data.CircleVertexBufferPtr - (uint8_t *)s_Data.CircleVertexBufferBase;
-        if (dataSize) {
-            s_Data.CircleVertexBuffer->SetData(s_Data.CircleVertexBufferBase, dataSize);
 
-            s_Data.CircleShader->Bind();
-            s_Data.CircleShader->SetMat4("u_ViewProjection", s_Data.CameraViewProj);
+		dataSize = (uint8_t*)s_Data.CircleVertexBufferPtr - (uint8_t*)s_Data.CircleVertexBufferBase;
+		if (dataSize)
+		{
+			s_Data.CircleVertexBuffer->SetData(s_Data.CircleVertexBufferBase, dataSize);
 
-            s_Data.CircleVertexBuffer->Bind();
-            s_Data.CirclePipeline->Bind();
-            s_Data.QuadIndexBuffer->Bind();
-            Renderer::DrawIndexed(s_Data.CircleIndexCount, PrimitiveType::Triangles, false, false);
-            s_Data.Stats.DrawCalls++;
-        }
+			s_Data.CircleShader->Bind();
+			s_Data.CircleShader->SetMat4("u_ViewProjection", s_Data.CameraViewProj);
 
+			s_Data.CircleVertexBuffer->Bind();
+			s_Data.CirclePipeline->Bind();
+			s_Data.QuadIndexBuffer->Bind();
+			Renderer::DrawIndexed(s_Data.CircleIndexCount, PrimitiveType::Triangles, false, false);
+			s_Data.Stats.DrawCalls++;
+	}
+#endif
 #if OLD
         Flush();
 #endif

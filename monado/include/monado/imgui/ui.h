@@ -30,6 +30,7 @@
 #include "monado/renderer/meshFactory.h"
 #include "monado/asset/asset.h"
 #include "monado/asset/assetManager.h"
+#include "monado/renderer/texture.h"
 
 namespace Monado::UI {
 
@@ -148,6 +149,86 @@ namespace Monado::UI {
         memset(s_IDBuffer + 2, 0, 14);
         itoa(s_Counter++, s_IDBuffer + 2, 16);
         if (ImGui::SliderInt(s_IDBuffer, &value, min, max))
+            modified = true;
+
+        ImGui::PopItemWidth();
+        ImGui::NextColumn();
+
+        return modified;
+    }
+
+    static bool PropertySlider(const char *label, float &value, float min, float max) {
+        bool modified = false;
+
+        ImGui::Text(label);
+        ImGui::NextColumn();
+        ImGui::PushItemWidth(-1);
+
+        s_IDBuffer[0] = '#';
+        s_IDBuffer[1] = '#';
+        memset(s_IDBuffer + 2, 0, 14);
+        itoa(s_Counter++, s_IDBuffer + 2, 16);
+        if (ImGui::SliderFloat(s_IDBuffer, &value, min, max))
+            modified = true;
+
+        ImGui::PopItemWidth();
+        ImGui::NextColumn();
+
+        return modified;
+    }
+
+    static bool PropertySlider(const char *label, glm::vec2 &value, float min, float max) {
+        bool modified = false;
+
+        ImGui::Text(label);
+        ImGui::NextColumn();
+        ImGui::PushItemWidth(-1);
+
+        s_IDBuffer[0] = '#';
+        s_IDBuffer[1] = '#';
+        memset(s_IDBuffer + 2, 0, 14);
+        itoa(s_Counter++, s_IDBuffer + 2, 16);
+        if (ImGui::SliderFloat2(s_IDBuffer, glm::value_ptr(value), min, max))
+            modified = true;
+
+        ImGui::PopItemWidth();
+        ImGui::NextColumn();
+
+        return modified;
+    }
+
+    static bool PropertySlider(const char *label, glm::vec3 &value, float min, float max) {
+        bool modified = false;
+
+        ImGui::Text(label);
+        ImGui::NextColumn();
+        ImGui::PushItemWidth(-1);
+
+        s_IDBuffer[0] = '#';
+        s_IDBuffer[1] = '#';
+        memset(s_IDBuffer + 2, 0, 14);
+        itoa(s_Counter++, s_IDBuffer + 2, 16);
+        if (ImGui::SliderFloat3(s_IDBuffer, glm::value_ptr(value), min, max))
+            modified = true;
+
+        ImGui::PopItemWidth();
+        ImGui::NextColumn();
+
+        return modified;
+    }
+
+    static bool PropertySlider(const char *label, glm::vec4 &value, float min, float max) {
+        bool modified = false;
+
+        ImGui::Text(label);
+        ImGui::NextColumn();
+        ImGui::PushItemWidth(-1);
+
+        s_IDBuffer[0] = '#';
+        s_IDBuffer[1] = '#';
+        memset(s_IDBuffer + 2, 0, 14);
+        itoa(s_Counter++, s_IDBuffer + 2, 16);
+        if (ImGui::SliderFloat4(s_IDBuffer, glm::value_ptr(value), min, max))
             modified = true;
 
         ImGui::PopItemWidth();
@@ -291,6 +372,36 @@ namespace Monado::UI {
         return changed;
     }
 
+    static bool PropertyDropdown(const char *label, const std::vector<std::string> &options, int32_t optionCount,
+                                 int32_t *selected) {
+        const char *current = options[*selected].c_str();
+        ImGui::Text(label);
+        ImGui::NextColumn();
+        ImGui::PushItemWidth(-1);
+
+        bool changed = false;
+
+        std::string id = "##" + std::string(label);
+        if (ImGui::BeginCombo(id.c_str(), current)) {
+            for (int i = 0; i < optionCount; i++) {
+                bool is_selected = (current == options[i]);
+                if (ImGui::Selectable(options[i].c_str(), is_selected)) {
+                    current = options[i].c_str();
+                    *selected = i;
+                    changed = true;
+                }
+                if (is_selected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
+        ImGui::PopItemWidth();
+        ImGui::NextColumn();
+
+        return changed;
+    }
+
     template <typename T>
     static bool PropertyAssetReference(const char *label, Ref<T> &object, AssetType supportedType) {
         bool modified = false;
@@ -300,8 +411,12 @@ namespace Monado::UI {
         ImGui::PushItemWidth(-1);
 
         if (object) {
-            char *assetName = ((Ref<Asset> &)object)->FileName.data();
-            ImGui::InputText("##assetRef", assetName, 256, ImGuiInputTextFlags_ReadOnly);
+            if (object->Type != AssetType::Missing) {
+                char *assetName = ((Ref<Asset> &)object)->FileName.data();
+                ImGui::InputText("##assetRef", assetName, 256, ImGuiInputTextFlags_ReadOnly);
+            } else {
+                ImGui::InputText("##assetRef", "Missing", 256, ImGuiInputTextFlags_ReadOnly);
+            }
         } else {
             ImGui::InputText("##assetRef", (char *)"Null", 256, ImGuiInputTextFlags_ReadOnly);
         }
@@ -311,8 +426,9 @@ namespace Monado::UI {
 
             if (data) {
                 AssetHandle assetHandle = *(AssetHandle *)data->Data;
-                if (AssetManager::IsAssetType(assetHandle, supportedType)) {
-                    object = AssetManager::GetAsset<T>(assetHandle);
+                Ref<Asset> asset = AssetManager::GetAsset<Asset>(assetHandle);
+                if (asset->Type == supportedType) {
+                    object = asset.As<T>();
                     modified = true;
                 }
             }
@@ -371,4 +487,18 @@ namespace Monado::UI {
         ImGui::NextColumn();
         s_CheckboxCount = 0;
     }
+
+    void Image(const Ref<Image2D> &image, const ImVec2 &size, const ImVec2 &uv0 = ImVec2(0, 0),
+               const ImVec2 &uv1 = ImVec2(1, 1), const ImVec4 &tint_col = ImVec4(1, 1, 1, 1),
+               const ImVec4 &border_col = ImVec4(0, 0, 0, 0));
+    void Image(const Ref<Texture2D> &texture, const ImVec2 &size, const ImVec2 &uv0 = ImVec2(0, 0),
+               const ImVec2 &uv1 = ImVec2(1, 1), const ImVec4 &tint_col = ImVec4(1, 1, 1, 1),
+               const ImVec4 &border_col = ImVec4(0, 0, 0, 0));
+    bool ImageButton(const Ref<Image2D> &image, const ImVec2 &size, const ImVec2 &uv0 = ImVec2(0, 0),
+                     const ImVec2 &uv1 = ImVec2(1, 1), int frame_padding = -1,
+                     const ImVec4 &bg_col = ImVec4(0, 0, 0, 0), const ImVec4 &tint_col = ImVec4(1, 1, 1, 1));
+    bool ImageButton(const Ref<Texture2D> &texture, const ImVec2 &size, const ImVec2 &uv0 = ImVec2(0, 0),
+                     const ImVec2 &uv1 = ImVec2(1, 1), int frame_padding = -1,
+                     const ImVec4 &bg_col = ImVec4(0, 0, 0, 0), const ImVec4 &tint_col = ImVec4(1, 1, 1, 1));
+
 } // namespace Monado::UI

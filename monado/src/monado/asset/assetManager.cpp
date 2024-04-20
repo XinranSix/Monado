@@ -9,35 +9,23 @@
 
 namespace Monado {
 
-    void AssetTypes::Init() {
-        s_Types["msc"] = AssetType::Scene;
-        s_Types["fbx"] = AssetType::Mesh;
-        s_Types["obj"] = AssetType::Mesh;
-        s_Types["blend"] = AssetType::Mesh;
-        s_Types["png"] = AssetType::Texture;
-        s_Types["hdr"] = AssetType::EnvMap;
-        s_Types["mpm"] = AssetType::PhysicsMat;
-        s_Types["wav"] = AssetType::Audio;
-        s_Types["ogg"] = AssetType::Audio;
-        s_Types["cs"] = AssetType::Script;
-    }
-
-    AssetType AssetTypes::GetAssetTypeFromExtension(const std::string &extension) {
-        return s_Types.find(extension) != s_Types.end() ? s_Types[extension] : AssetType::Other;
-    }
-
-    std::map<std::string, AssetType> AssetTypes::s_Types;
-
     void AssetManager::Init() {
+        AssetImporter::Init();
+
+        LoadAssetRegistry();
         FileSystem::SetChangeCallback(AssetManager::OnFileSystemChanged);
         ReloadAssets();
+        UpdateRegistryCache();
     }
 
     void AssetManager::SetAssetChangeCallback(const AssetsChangeEventFn &callback) {
         s_AssetsChangeCallback = callback;
     }
 
-    void AssetManager::Shutdown() { s_LoadedAssets.clear(); }
+    void AssetManager::Shutdown() {
+        s_AssetRegistry.clear();
+        s_LoadedAssets.clear();
+    }
 
     std::vector<Ref<Asset>> AssetManager::GetAssetsInDirectory(AssetHandle directoryHandle) {
         std::vector<Ref<Asset>> results;
@@ -87,10 +75,12 @@ namespace Monado {
                 ImportAsset(e.FilePath, parentHandle);
         }
 
-        if (e.Action == FileSystemAction::Modified) {
-            if (!e.IsDirectory)
-                ImportAsset(e.FilePath, parentHandle);
-        }
+        // TODO: Re import data if loaded
+        /*if (e.Action == FileSystemAction::Modified)
+        {
+                if (!e.IsDirectory)
+                        ImportAsset(e.FilePath, parentHandle);
+        }*/
 
         if (e.Action == FileSystemAction::Rename) {
             for (auto it = s_LoadedAssets.begin(); it != s_LoadedAssets.end(); it++) {
@@ -114,23 +104,34 @@ namespace Monado {
         s_AssetsChangeCallback();
     }
 
-    std::vector<Ref<Asset>> AssetManager::SearchFiles(const std::string &query, const std::string &searchPath) {
+    std::vector<Ref<Asset>> AssetManager::SearchAssets(const std::string &query, const std::string &searchPath,
+                                                       AssetType desiredType) {
         std::vector<Ref<Asset>> results;
 
         if (!searchPath.empty()) {
             for (const auto &[key, asset] : s_LoadedAssets) {
+                if (desiredType == AssetType::None && asset->Type == AssetType::Directory)
+                    continue;
+
+                if (desiredType != AssetType::None && asset->Type != desiredType)
+                    continue;
+
                 if (asset->FileName.find(query) != std::string::npos &&
                     asset->FilePath.find(searchPath) != std::string::npos) {
                     results.push_back(asset);
+                }
+
+                // Search extensions
+                if (query[0] == '.') {
+                    if (asset->Extension.find(std::string(&query[1])) != std::string::npos &&
+                        asset->FilePath.find(searchPath) != std::string::npos) {
+                        results.push_back(asset);
+                    }
                 }
             }
         }
 
         return results;
-    }
-
-    std::string AssetManager::GetParentPath(const std::string &path) {
-        return std::filesystem::path(path).parent_path().string();
     }
 
     bool AssetManager::IsDirectory(const std::string &filepath) {
@@ -143,8 +144,10 @@ namespace Monado {
     }
 
     AssetHandle AssetManager::GetAssetHandleFromFilePath(const std::string &filepath) {
+        std::string fixedFilepath = filepath;
+        std::replace(fixedFilepath.begin(), fixedFilepath.end(), '\\', '/');
         for (auto &[id, asset] : s_LoadedAssets) {
-            if (asset->FilePath == filepath)
+            if (asset->FilePath == fixedFilepath)
                 return id;
         }
 
@@ -155,21 +158,14 @@ namespace Monado {
         return assetHandle != 0 && s_LoadedAssets.find(assetHandle) != s_LoadedAssets.end();
     }
 
-    void AssetManager::Rename(Ref<Asset> &asset, const std::string &newName) {
+    void AssetManager::Rename(AssetHandle assetHandle, const std::string &newName) {
+        Ref<Asset> &asset = s_LoadedAssets[assetHandle];
+        AssetMetadata &metadata = s_AssetRegistry[asset->FilePath];
         std::string newFilePath = FileSystem::Rename(asset->FilePath, newName);
-        std::string oldFilePath = asset->FilePath;
         asset->FilePath = newFilePath;
         asset->FileName = newName;
-
-        if (FileSystem::Exists(oldFilePath + ".meta")) {
-            std::string metaFileName = oldFilePath;
-
-            if (asset->Extension != "")
-                metaFileName += "." + asset->Extension;
-
-            FileSystem::Rename(oldFilePath + ".meta", metaFileName);
-            AssetSerializer::CreateMetaFile(asset);
-        }
+        metadata.FilePath = newFilePath;
+        UpdateRegistryCache();
     }
 
     void AssetManager::RemoveAsset(AssetHandle assetHandle) {
@@ -189,62 +185,137 @@ namespace Monado {
                     continue;
                 }
 
+                s_AssetRegistry.erase(it->second->FilePath);
                 it = s_LoadedAssets.erase(it);
             }
         }
 
+        s_AssetRegistry.erase(asset->FilePath);
         s_LoadedAssets.erase(assetHandle);
+
+        UpdateRegistryCache();
     }
 
-    std::string AssetManager::StripExtras(const std::string &filename) {
-        std::vector<std::string> out;
-        size_t start;
-        size_t end = 0;
+    AssetType AssetManager::GetAssetTypeForFileType(const std::string &extension) {
+        if (extension == "msc")
+            return AssetType::Scene;
+        if (extension == "fbx")
+            return AssetType::Mesh;
+        if (extension == "obj")
+            return AssetType::Mesh;
+        if (extension == "png")
+            return AssetType::Texture;
+        if (extension == "hdr")
+            return AssetType::EnvMap;
+        if (extension == "mpm")
+            return AssetType::PhysicsMat;
+        if (extension == "wav")
+            return AssetType::Audio;
+        if (extension == "ogg")
+            return AssetType::Audio;
+        if (extension == "cs")
+            return AssetType::Script;
+        return AssetType::None;
+    }
 
-        while ((start = filename.find_first_not_of(".", end)) != std::string::npos) {
-            end = filename.find(".", start);
-            out.push_back(filename.substr(start, end - start));
+    void AssetManager::LoadAssetRegistry() {
+        if (!FileSystem::Exists("DataCache/AssetRegistryCache.mndr"))
+            return;
+
+        std::ifstream stream("DataCache/AssetRegistryCache.mndr");
+        MND_CORE_ASSERT(stream);
+        std::stringstream strStream;
+        strStream << stream.rdbuf();
+
+        YAML::Node data = YAML::Load(strStream.str());
+        auto handles = data["Assets"];
+        if (!handles) {
+            MND_CORE_ERROR("Failed to read Asset Registry file.");
+            return;
         }
 
-        if (out[0].length() >= 10) {
-            auto cutFilename = out[0].substr(0, 9) + "...";
-            return cutFilename;
+        for (auto entry : handles) {
+            AssetMetadata metadata;
+            metadata.Handle = entry["Handle"].as<uint64_t>();
+            metadata.FilePath = entry["FilePath"].as<std::string>();
+            metadata.Type = (AssetType)entry["Type"].as<int>();
+
+            if (!FileSystem::Exists(metadata.FilePath)) {
+                MND_CORE_WARN("Tried to load metadata for non-existing asset: {0}", metadata.FilePath);
+                continue;
+            }
+
+            if (metadata.Handle == 0) {
+                MND_CORE_WARN("AssetHandle for {0} is 0, this shouldn't happen.", metadata.FilePath);
+                continue;
+            }
+
+            s_AssetRegistry[metadata.FilePath] = metadata;
+        }
+    }
+
+    Ref<Asset> AssetManager::CreateAsset(const std::string &filepath, AssetType type, AssetHandle parentHandle) {
+        Ref<Asset> asset = Ref<Asset>::Create();
+
+        if (type == AssetType::Directory)
+            asset = Ref<Directory>::Create();
+
+        std::string extension = Utils::GetExtension(filepath);
+        asset->FilePath = filepath;
+        std::replace(asset->FilePath.begin(), asset->FilePath.end(), '\\', '/');
+
+        if (s_AssetRegistry.find(asset->FilePath) != s_AssetRegistry.end()) {
+            asset->Handle = s_AssetRegistry[asset->FilePath].Handle;
+            asset->Type = s_AssetRegistry[asset->FilePath].Type;
+
+            if (asset->Type != type) {
+                MND_CORE_WARN("AssetType for '{0}' was different than the metadata. Did the file type change?",
+                              asset->FilePath);
+                asset->Type = AssetType::None;
+            }
+        } else {
+            asset->Handle = AssetHandle();
+            asset->Type = type;
         }
 
-        auto filenameLength = out[0].length();
-        auto paddingToAdd = 9 - filenameLength;
-
-        std::string newFileName;
-
-        for (int i = 0; i <= paddingToAdd; i++) {
-            newFileName += " ";
-        }
-
-        newFileName += out[0];
-
-        return newFileName;
+        asset->FileName = Utils::RemoveExtension(Utils::GetFilename(asset->FilePath));
+        asset->Extension = extension;
+        asset->ParentDirectory = parentHandle;
+        asset->IsDataLoaded = false;
+        return asset;
     }
 
     void AssetManager::ImportAsset(const std::string &filepath, AssetHandle parentHandle) {
         std::string extension = Utils::GetExtension(filepath);
-        if (extension == "meta")
+        AssetType type = GetAssetTypeForFileType(extension);
+        Ref<Asset> asset = CreateAsset(filepath, type, parentHandle);
+
+        if (asset->Type == AssetType::None)
             return;
 
-        AssetType type = AssetTypes::GetAssetTypeFromExtension(extension);
-        Ref<Asset> asset = AssetSerializer::LoadAssetInfo(filepath, parentHandle, type);
-
-        if (s_LoadedAssets.find(asset->Handle) != s_LoadedAssets.end()) {
-            if (s_LoadedAssets[asset->Handle]->IsDataLoaded) {
-                asset = AssetSerializer::LoadAssetData(asset);
-            }
+        if (s_AssetRegistry.find(asset->FilePath) == s_AssetRegistry.end()) {
+            AssetMetadata metadata;
+            metadata.Handle = asset->Handle;
+            metadata.FilePath = asset->FilePath;
+            metadata.Type = asset->Type;
+            s_AssetRegistry[asset->FilePath] = metadata;
         }
 
         s_LoadedAssets[asset->Handle] = asset;
     }
 
     AssetHandle AssetManager::ProcessDirectory(const std::string &directoryPath, AssetHandle parentHandle) {
-        Ref<Directory> dirInfo =
-            AssetSerializer::LoadAssetInfo(directoryPath, parentHandle, AssetType::Directory).As<Directory>();
+        Ref<Directory> dirInfo = CreateAsset(directoryPath, AssetType::Directory, parentHandle).As<Directory>();
+        dirInfo->IsDataLoaded = true;
+
+        if (s_AssetRegistry.find(dirInfo->FilePath) == s_AssetRegistry.end()) {
+            AssetMetadata metadata;
+            metadata.Handle = dirInfo->Handle;
+            metadata.FilePath = dirInfo->FilePath;
+            metadata.Type = dirInfo->Type;
+            s_AssetRegistry[dirInfo->FilePath] = metadata;
+        }
+
         s_LoadedAssets[dirInfo->Handle] = dirInfo;
 
         if (IsAssetHandleValid(parentHandle))
@@ -260,9 +331,54 @@ namespace Monado {
         return dirInfo->Handle;
     }
 
-    void AssetManager::ReloadAssets() { ProcessDirectory("assets", 0); }
+    void AssetManager::ReloadAssets() {
+        ProcessDirectory("assets", 0);
+
+        // Sort the assets alphabetically (not the best impl)
+        std::vector<std::pair<std::string, Ref<Asset>>> sortedVec;
+        for (auto &[handle, asset] : s_LoadedAssets) {
+            std::string filename = asset->FileName;
+            std::for_each(filename.begin(), filename.end(), [](char &c) { c = std::tolower(c); });
+            sortedVec.push_back(std::make_pair(filename, asset));
+        }
+
+        std::sort(sortedVec.begin(), sortedVec.end());
+        s_LoadedAssets.clear();
+
+        for (auto &p : sortedVec)
+            s_LoadedAssets[p.second->Handle] = p.second;
+
+        // Remove any non-existent assets from the asset registry
+        for (auto it = s_AssetRegistry.begin(); it != s_AssetRegistry.end();) {
+            if (s_LoadedAssets.find(it->second.Handle) == s_LoadedAssets.end()) {
+                it = s_AssetRegistry.erase(it);
+            } else {
+                it++;
+            }
+        }
+    }
+
+    void AssetManager::UpdateRegistryCache() {
+        YAML::Emitter out;
+        out << YAML::BeginMap;
+
+        out << YAML::Key << "Assets" << YAML::BeginSeq;
+        for (auto &[filepath, metadata] : s_AssetRegistry) {
+            out << YAML::BeginMap;
+            out << YAML::Key << "Handle" << YAML::Value << metadata.Handle;
+            out << YAML::Key << "FilePath" << YAML::Value << metadata.FilePath;
+            out << YAML::Key << "Type" << YAML::Value << (int)metadata.Type;
+            out << YAML::EndMap;
+        }
+        out << YAML::EndSeq;
+        out << YAML::EndMap;
+
+        std::ofstream fout("DataCache/AssetRegistryCache.mndr");
+        fout << out.c_str();
+    }
 
     std::unordered_map<AssetHandle, Ref<Asset>> AssetManager::s_LoadedAssets;
+    std::unordered_map<std::string, AssetManager::AssetMetadata> AssetManager::s_AssetRegistry;
     AssetManager::AssetsChangeEventFn AssetManager::s_AssetsChangeCallback;
 
 } // namespace Monado

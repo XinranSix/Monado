@@ -23,19 +23,18 @@ namespace Monado {
     glm::vec4 FromPhysXVector(const physx::PxVec4 &vector);
     glm::quat FromPhysXQuat(const physx::PxQuat &quat);
 
-    physx::PxFilterFlags MonadoFilterShader(physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
-                                           physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
-                                           physx::PxPairFlags &pairFlags, const void *constantBlock,
-                                           physx::PxU32 constantBlockSize);
+    physx::PxFilterFlags MonadoFilterShader(physx::PxFilterObjectAttributes attributes0,
+                                            physx::PxFilterData filterData0,
+                                            physx::PxFilterObjectAttributes attributes1,
+                                            physx::PxFilterData filterData1, physx::PxPairFlags &pairFlags,
+                                            const void *constantBlock, physx::PxU32 constantBlockSize);
 
     class PhysicsMeshSerializer {
     public:
         static void DeleteIfSerialized(const std::string &filepath);
-        static void SerializeMesh(const std::string &filepath, const physx::PxDefaultMemoryOutputStream &data,
-                                  const std::string &submeshName = "");
+        static void SerializeMesh(const std::string &filepath, const Buffer &data);
         static bool IsSerialized(const std::string &filepath);
-        static physx::PxDefaultMemoryInputData DeserializeMesh(const std::string &filepath,
-                                                               const std::string &submeshName);
+        static Buffer DeserializeMesh(const std::string &filepath);
     };
 
 } // namespace Monado

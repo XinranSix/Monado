@@ -4,8 +4,8 @@
 #include "monado/core/timestep.h"
 
 #include "monado/renderer/camera.h"
-#include "monado/renderer/texture.h"
-#include "monado/renderer/material.h"
+// #include "monado/renderer/texture.h"
+// #include "monado/renderer/material.h"
 #include "monado/editor/editorCamera.h"
 #include "monado/renderer/sceneEnvironment.h"
 
@@ -15,120 +15,125 @@
 
 namespace Monado {
 
-    struct Light {
-        glm::vec3 Direction = { 0.0f, 0.0f, 0.0f };
-        glm::vec3 Radiance = { 0.0f, 0.0f, 0.0f };
+   struct Light
+	{
+		glm::vec3 Direction = { 0.0f, 0.0f, 0.0f };
+		glm::vec3 Radiance = { 0.0f, 0.0f, 0.0f };
 
-        float Multiplier = 1.0f;
-    };
+		float Multiplier = 1.0f;
+	};
 
-    struct DirectionalLight {
-        glm::vec3 Direction = { 0.0f, 0.0f, 0.0f };
-        glm::vec3 Radiance = { 0.0f, 0.0f, 0.0f };
-        float Multiplier = 0.0f;
+	struct DirectionalLight
+	{
+		glm::vec3 Direction = { 0.0f, 0.0f, 0.0f };
+		glm::vec3 Radiance = { 0.0f, 0.0f, 0.0f };
+		float Multiplier = 0.0f;
+		
+		// C++ only
+		bool CastShadows = true;
+	};
 
-        // C++ only
-        bool CastShadows = true;
-    };
+	struct LightEnvironment
+	{
+		DirectionalLight DirectionalLights[4];
+	};
 
-    struct LightEnvironment {
-        DirectionalLight DirectionalLights[4];
-    };
+	class Entity;
+	using EntityMap = std::unordered_map<UUID, Entity>;
 
-    class Entity;
-    using EntityMap = std::unordered_map<UUID, Entity>;
+	class Scene : public RefCounted
+	{
+	public:
+		Scene(const std::string& debugName = "Scene", bool isEditorScene = false);
+		~Scene();
+		
+		void Init();
 
-    class Scene : public RefCounted {
-    public:
-        Scene(const std::string &debugName = "Scene", bool isEditorScene = false);
-        ~Scene();
+		void OnUpdate(Timestep ts);
+		void OnRenderRuntime(Timestep ts);
+		void OnRenderEditor(Timestep ts, const EditorCamera& editorCamera);
+		void OnEvent(Event& e);
 
-        void Init();
+		// Runtime
+		void OnRuntimeStart();
+		void OnRuntimeStop();
 
-        void OnUpdate(Timestep ts);
-        void OnRenderRuntime(Timestep ts);
-        void OnRenderEditor(Timestep ts, const EditorCamera &editorCamera);
-        void OnEvent(Event &e);
+		void SetViewportSize(uint32_t width, uint32_t height);
 
-        // Runtime
-        void OnRuntimeStart();
-        void OnRuntimeStop();
+		const Ref<Environment>& GetEnvironment() const { return m_Environment; }
+		void SetSkybox(const Ref<TextureCube>& skybox);
 
-        void SetViewportSize(uint32_t width, uint32_t height);
+		Light& GetLight() { return m_Light; }
+		const Light& GetLight() const { return m_Light; }
 
-        const Ref<Environment> &GetEnvironment() const { return m_Environment; }
-        void SetSkybox(const Ref<TextureCube> &skybox);
+		Entity GetMainCameraEntity();
 
-        Light &GetLight() { return m_Light; }
-        const Light &GetLight() const { return m_Light; }
+		float& GetSkyboxLod() { return m_SkyboxLod; }
+		float GetSkyboxLod() const { return m_SkyboxLod; }
 
-        Entity GetMainCameraEntity();
+		Entity CreateEntity(const std::string& name = "");
+		Entity CreateEntityWithID(UUID uuid, const std::string& name = "", bool runtimeMap = false);
+		void DestroyEntity(Entity entity);
 
-        float &GetSkyboxLod() { return m_SkyboxLod; }
+		void DuplicateEntity(Entity entity);
 
-        Entity CreateEntity(const std::string &name = "");
-        Entity CreateEntityWithID(UUID uuid, const std::string &name = "", bool runtimeMap = false);
-        void DestroyEntity(Entity entity);
+		template<typename T>
+		auto GetAllEntitiesWith()
+		{
+			return m_Registry.view<T>();
+		}
 
-        void DuplicateEntity(Entity entity);
+		Entity FindEntityByTag(const std::string& tag);
+		Entity FindEntityByUUID(UUID id);
 
-        template <typename T>
-        auto GetAllEntitiesWith() {
-            return m_Registry.view<T>();
-        }
+		glm::mat4 GetTransformRelativeToParent(Entity entity);
 
-        Entity FindEntityByTag(const std::string &tag);
-        Entity FindEntityByUUID(UUID id);
+		const EntityMap& GetEntityMap() const { return m_EntityIDMap; }
+		void CopyTo(Ref<Scene>& target);
 
-        glm::mat4 GetTransformRelativeToParent(Entity entity);
+		UUID GetUUID() const { return m_SceneID; }
 
-        const EntityMap &GetEntityMap() const { return m_EntityIDMap; }
-        void CopyTo(Ref<Scene> &target);
+		static Ref<Scene> GetScene(UUID uuid);
 
-        UUID GetUUID() const { return m_SceneID; }
+		float GetPhysics2DGravity() const;
+		void SetPhysics2DGravity(float gravity);
 
-        static Ref<Scene> GetScene(UUID uuid);
+		// Editor-specific
+		void SetSelectedEntity(entt::entity entity) { m_SelectedEntity = entity; }
+	private:
+		UUID m_SceneID;
+		entt::entity m_SceneEntity;
+		entt::registry m_Registry;
 
-        float GetPhysics2DGravity() const;
-        void SetPhysics2DGravity(float gravity);
+		std::string m_DebugName;
+		uint32_t m_ViewportWidth = 0, m_ViewportHeight = 0;
 
-        // Editor-specific
-        void SetSelectedEntity(entt::entity entity) { m_SelectedEntity = entity; }
+		EntityMap m_EntityIDMap;
 
-    private:
-        UUID m_SceneID;
-        entt::entity m_SceneEntity;
-        entt::registry m_Registry;
+		Light m_Light;
+		float m_LightMultiplier = 0.3f;
 
-        std::string m_DebugName;
-        uint32_t m_ViewportWidth = 0, m_ViewportHeight = 0;
+		LightEnvironment m_LightEnvironment;
 
-        EntityMap m_EntityIDMap;
+		Ref<Environment> m_Environment;
+		float m_EnvironmentIntensity = 1.0f;
+		Ref<TextureCube> m_SkyboxTexture;
+		Ref<Material> m_SkyboxMaterial;
 
-        Light m_Light;
-        float m_LightMultiplier = 0.3f;
+		entt::entity m_SelectedEntity;
 
-        LightEnvironment m_LightEnvironment;
+		Entity* m_Physics2DBodyEntityBuffer = nullptr;
 
-        Ref<Environment> m_Environment;
-        float m_EnvironmentIntensity = 1.0f;
-        Ref<TextureCube> m_SkyboxTexture;
-        Ref<MaterialInstance> m_SkyboxMaterial;
+		float m_SkyboxLod = 1.0f;
+		bool m_IsPlaying = false;
 
-        entt::entity m_SelectedEntity;
+		friend class Entity;
+		friend class SceneRenderer;
+		friend class SceneSerializer;
+		friend class SceneHierarchyPanel;
 
-        Entity *m_Physics2DBodyEntityBuffer = nullptr;
+		friend void OnScriptComponentConstruct(entt::registry& registry, entt::entity entity);
+		friend void OnScriptComponentDestroy(entt::registry& registry, entt::entity entity);
+	};
 
-        float m_SkyboxLod = 1.0f;
-        bool m_IsPlaying = false;
-
-        friend class Entity;
-        friend class SceneRenderer;
-        friend class SceneSerializer;
-        friend class SceneHierarchyPanel;
-
-        friend void OnScriptComponentConstruct(entt::registry &registry, entt::entity entity);
-        friend void OnScriptComponentDestroy(entt::registry &registry, entt::entity entity);
-    };
-
-} // namespace Monado
+}
