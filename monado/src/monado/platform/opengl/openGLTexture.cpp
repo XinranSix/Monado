@@ -9,6 +9,9 @@
 #include "GLFW/glfw3.h"
 // clang-format on
 
+#ifndef STB_IMAGE_IMPLEMENTATION
+    #define STB_IMAGE_IMPLEMENTATION
+#endif
 #include "stb_image.h"
 
 namespace Monado {

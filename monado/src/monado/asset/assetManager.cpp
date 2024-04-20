@@ -7,6 +7,8 @@
 
 #include <filesystem>
 
+#include <fstream>
+
 namespace Monado {
 
     void AssetManager::Init() {

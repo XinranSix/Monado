@@ -13,11 +13,11 @@
 
 #include <limits>
 
-#include "moando/platform/vulkan/vulkanRenderer.h"
-#include "moando/platform/vulkan/vulkanFramebuffer.h"
+#include "monado/platform/vulkan/vulkanRenderer.h"
+#include "monado/platform/vulkan/vulkanFramebuffer.h"
 
-#include "moando/platform/openGL/openGLFramebuffer.h"
-#include "moando/platform/openGL/openGLShader.h"
+#include "monado/platform/openGL/openGLFramebuffer.h"
+#include "monado/platform/openGL/openGLShader.h"
 
 // clang-format off
 #include "glad/glad.h"
@@ -205,7 +205,7 @@ namespace Monado {
                 { ShaderDataType::Float3, "a_Tangent" },  { ShaderDataType::Float3, "a_Binormal" },
                 { ShaderDataType::Float2, "a_TexCoord" },
             };
-            pipelineSpecification.Shader = Renderer::GetShaderLibrary()->Get("HazelPBR_Static");
+            pipelineSpecification.Shader = Renderer::GetShaderLibrary()->Get("MonadoPBR_Static");
 
             RenderPassSpecification renderPassSpec;
             renderPassSpec.TargetFramebuffer = framebuffer;
@@ -814,7 +814,7 @@ namespace Monado {
                 auto image = fb->GetDepthImage();
 
                 float size =
-                    ImGui::GetContentRegionAvailWidth(); // (float)fb->GetWidth() * 0.5f, (float)fb->GetHeight() * 0.5f
+                    ImGui::GetContentRegionAvail().x; // (float)fb->GetWidth() * 0.5f, (float)fb->GetHeight() * 0.5f
                 UI::BeginPropertyGrid();
                 UI::PropertySlider("Cascade Index", cascadeIndex, 0, 3);
                 UI::EndPropertyGrid();

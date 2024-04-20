@@ -2,6 +2,8 @@
 
 #include "monado/platform/opengl/openGLFramebuffer.h"
 
+#include "monado/renderer/rendererAPI.h"
+
 namespace Monado {
 
     Ref<Framebuffer> Framebuffer::Create(const FramebufferSpecification &spec) {

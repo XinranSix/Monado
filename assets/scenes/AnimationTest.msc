@@ -64,7 +64,7 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [2.06998873, 2.06998801, 2.06998873]
     MeshComponent:
-      AssetPath: assets\meshes\stormtrooper\silly_dancing.fbx
+      AssetPath: assets\meshes\stormtrooper\source\silly_dancing.fbx
   - Entity: 11848937967922634750
     TagComponent:
       Tag: Pilot

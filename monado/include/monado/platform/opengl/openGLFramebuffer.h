@@ -20,7 +20,7 @@ namespace Monado {
         virtual void BindTexture(uint32_t attachmentIndex = 0, uint32_t slot = 0) const override;
 
         virtual Ref<Image2D> GetImage(uint32_t attachmentIndex = 0) const override {
-            HZ_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size());
+            MND_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size());
             return m_ColorAttachments[attachmentIndex];
         }
         virtual Ref<Image2D> GetDepthImage() const override { return m_DepthAttachment; }

@@ -84,8 +84,9 @@ namespace Monado {
 
         Renderer::GetShaderLibrary()->Load("assets/shaders/Grid.glsl");
         Renderer::GetShaderLibrary()->Load("assets/shaders/SceneComposite.glsl");
-        Renderer::GetShaderLibrary()->Load("assets/shaders/HazelPBR_Static.glsl");
-        // Renderer::GetShaderLibrary()->Load("assets/shaders/HazelPBR_Anim.glsl");
+        Renderer::GetShaderLibrary()->Load("assets/shaders/MonadoPBR_Static.glsl");
+        // FIXME: This shader is not used
+        // Renderer::GetShaderLibrary()->Load("assets/shaders/MonadoBR_Anim.glsl");
         // Renderer::GetShaderLibrary()->Load("assets/shaders/Outline.glsl");
         Renderer::GetShaderLibrary()->Load("assets/shaders/Skybox.glsl");
         Renderer::GetShaderLibrary()->Load("assets/shaders/Texture.glsl");

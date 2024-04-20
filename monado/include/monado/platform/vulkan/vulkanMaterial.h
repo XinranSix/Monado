@@ -46,7 +46,7 @@ namespace Monado {
         template <typename T>
         void Set(const std::string &name, const T &value) {
             auto decl = FindUniformDeclaration(name);
-            HZ_CORE_ASSERT(decl, "Could not find uniform!");
+            MND_CORE_ASSERT(decl, "Could not find uniform!");
             if (!decl)
                 return;
 
@@ -57,7 +57,7 @@ namespace Monado {
         template <typename T>
         T &Get(const std::string &name) {
             auto decl = FindUniformDeclaration(name);
-            HZ_CORE_ASSERT(decl, "Could not find uniform with name 'x'");
+            MND_CORE_ASSERT(decl, "Could not find uniform with name 'x'");
             auto &buffer = m_UniformStorageBuffer;
             return buffer.Read<T>(decl->GetOffset());
         }
@@ -65,9 +65,9 @@ namespace Monado {
         template <typename T>
         Ref<T> GetResource(const std::string &name) {
             auto decl = FindResourceDeclaration(name);
-            HZ_CORE_ASSERT(decl, "Could not find uniform with name 'x'");
+            MND_CORE_ASSERT(decl, "Could not find uniform with name 'x'");
             uint32_t slot = decl->GetRegister();
-            HZ_CORE_ASSERT(slot < m_Textures.size(), "Texture slot is invalid!");
+            MND_CORE_ASSERT(slot < m_Textures.size(), "Texture slot is invalid!");
             return Ref<T>(m_Textures[slot]);
         }
 

@@ -7,6 +7,8 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <fstream>
+
 namespace Monado {
 
     void AssetSerializer::CopyMetadata(const Ref<Asset> &from, Ref<Asset> &to) const {

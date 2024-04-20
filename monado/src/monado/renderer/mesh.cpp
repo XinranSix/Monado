@@ -90,8 +90,8 @@ namespace Monado {
         m_Scene = scene;
 
         m_IsAnimated = scene->mAnimations != nullptr;
-        m_MeshShader = m_IsAnimated ? Renderer::GetShaderLibrary()->Get("HazelPBR_Anim")
-                                    : Renderer::GetShaderLibrary()->Get("HazelPBR_Static");
+        m_MeshShader = m_IsAnimated ? Renderer::GetShaderLibrary()->Get("MonadoPBR_Anim")
+                                    : Renderer::GetShaderLibrary()->Get("MonadoPBR_Static");
         m_InverseTransform = glm::inverse(Mat4FromAssimpMat4(scene->mRootNode->mTransformation));
 
         uint32_t vertexCount = 0;
@@ -249,7 +249,7 @@ namespace Monado {
                 bool hasAlbedoMap = aiMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiTexPath) == AI_SUCCESS;
                 bool fallback = !hasAlbedoMap;
                 if (hasAlbedoMap) {
-                    // TODO: Temp - this should be handled by Hazel's filesystem
+                    // TODO: Temp - this should be handled by Monado's filesystem
                     std::filesystem::path path = filename;
                     auto parentPath = path.parent_path();
                     parentPath /= std::string(aiTexPath.data);
@@ -275,7 +275,7 @@ namespace Monado {
                 bool hasNormalMap = aiMaterial->GetTexture(aiTextureType_NORMALS, 0, &aiTexPath) == AI_SUCCESS;
                 fallback = !hasNormalMap;
                 if (hasNormalMap) {
-                    // TODO: Temp - this should be handled by Hazel's filesystem
+                    // TODO: Temp - this should be handled by Monado's filesystem
                     std::filesystem::path path = filename;
                     auto parentPath = path.parent_path();
                     parentPath /= std::string(aiTexPath.data);
@@ -301,7 +301,7 @@ namespace Monado {
                 bool hasRoughnessMap = aiMaterial->GetTexture(aiTextureType_SHININESS, 0, &aiTexPath) == AI_SUCCESS;
                 fallback = !hasRoughnessMap;
                 if (hasRoughnessMap) {
-                    // TODO: Temp - this should be handled by Hazel's filesystem
+                    // TODO: Temp - this should be handled by Monado's filesystem
                     std::filesystem::path path = filename;
                     auto parentPath = path.parent_path();
                     parentPath /= std::string(aiTexPath.data);
@@ -327,7 +327,7 @@ namespace Monado {
 				// Metalness map (or is it??)
 				if (aiMaterial->Get("$raw.ReflectionFactor|file", aiPTI_String, 0, aiTexPath) == AI_SUCCESS)
 				{
-					// TODO: Temp - this should be handled by Hazel's filesystem
+					// TODO: Temp - this should be handled by Monado's filesystem
 					std::filesystem::path path = filename;
 					auto parentPath = path.parent_path();
 					parentPath /= std::string(aiTexPath.data);
@@ -387,7 +387,7 @@ namespace Monado {
 
                         std::string key = prop->mKey.data;
                         if (key == "$raw.ReflectionFactor|file") {
-                            // TODO: Temp - this should be handled by Hazel's filesystem
+                            // TODO: Temp - this should be handled by Monado's filesystem
                             std::filesystem::path path = filename;
                             auto parentPath = path.parent_path();
                             parentPath /= str;
@@ -415,7 +415,7 @@ namespace Monado {
             }
             MND_MESH_LOG("------------------------");
         } else {
-            auto mi = Material::Create(m_MeshShader, "Hazel-Default");
+            auto mi = Material::Create(m_MeshShader, "Monado-Default");
             mi->Set("u_MaterialUniforms.AlbedoTexToggle", 0.0f);
             mi->Set("u_MaterialUniforms.NormalTexToggle", 0.0f);
             mi->Set("u_MaterialUniforms.MetalnessTexToggle", 0.0f);

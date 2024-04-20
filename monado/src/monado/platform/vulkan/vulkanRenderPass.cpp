@@ -1,15 +1,9 @@
-#include "hzpch.h"
-#include "VulkanRenderPass.h"
+#include "monado/platform/vulkan/vulkanRenderPass.h"
 
-namespace Hazel {
+namespace Monado {
 
-	VulkanRenderPass::VulkanRenderPass(const RenderPassSpecification& spec)
-		: m_Specification(spec)
-	{
-	}
+    VulkanRenderPass::VulkanRenderPass(const RenderPassSpecification &spec) : m_Specification(spec) {}
 
-	VulkanRenderPass::~VulkanRenderPass()
-	{
-	}
+    VulkanRenderPass::~VulkanRenderPass() {}
 
-}
+} // namespace Monado

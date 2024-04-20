@@ -5,11 +5,11 @@
 // #include "rendererAPI.h"
 #include "monado/core/base.h"
 #include "renderPass.h"
-// #include "monado/renderer/mesh.h"
-// #include "mesh.h"
+#include "mesh.h"
 #include "monado/core/application.h"
 #include "rendererCapabilities.h"
 #include "texture.h"
+#include "sceneEnvironment.h"
 // #include "monado/scene/scene.h"
 
 namespace Monado {

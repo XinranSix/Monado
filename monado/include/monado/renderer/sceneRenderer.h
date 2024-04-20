@@ -13,7 +13,7 @@ namespace Monado {
     };
 
     struct SceneRendererCamera {
-        Hazel::Camera Camera;
+        Monado::Camera Camera;
         glm::mat4 ViewMatrix;
         float Near, Far;
         float FOV;

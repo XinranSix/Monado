@@ -160,7 +160,7 @@ namespace Monado {
         sceneDesc.gravity = ToPhysXVector(settings.Gravity);
         sceneDesc.broadPhaseType = MonadoToPhysXBroadphaseType(settings.BroadphaseAlgorithm);
         sceneDesc.cpuDispatcher = s_CPUDispatcher;
-        sceneDesc.filterShader = MonadoFilterShader;
+        sceneDesc.filterShader = MonadolFilterShader;
         sceneDesc.simulationEventCallback = &s_ContactListener;
         sceneDesc.frictionType = MonadoToPhysXFrictionType(settings.FrictionModel);
 

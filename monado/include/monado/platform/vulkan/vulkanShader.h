@@ -82,7 +82,7 @@ namespace Monado {
         std::vector<VkDescriptorSetLayout> GetAllDescriptorSetLayouts();
 
         UniformBuffer &GetUniformBuffer(uint32_t binding = 0, uint32_t set = 0) {
-            HZ_CORE_ASSERT(m_ShaderDescriptorSets.at(set).UniformBuffers.size() > binding);
+            MND_CORE_ASSERT(m_ShaderDescriptorSets.at(set).UniformBuffers.size() > binding);
             return *m_ShaderDescriptorSets.at(set).UniformBuffers[binding];
         }
         uint32_t GetUniformBufferCount(uint32_t set = 0) {

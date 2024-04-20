@@ -415,7 +415,7 @@ namespace Monado::UI {
                 char *assetName = ((Ref<Asset> &)object)->FileName.data();
                 ImGui::InputText("##assetRef", assetName, 256, ImGuiInputTextFlags_ReadOnly);
             } else {
-                ImGui::InputText("##assetRef", "Missing", 256, ImGuiInputTextFlags_ReadOnly);
+                ImGui::InputText("##assetRef", (char *)"Missing", 256, ImGuiInputTextFlags_ReadOnly);
             }
         } else {
             ImGui::InputText("##assetRef", (char *)"Null", 256, ImGuiInputTextFlags_ReadOnly);

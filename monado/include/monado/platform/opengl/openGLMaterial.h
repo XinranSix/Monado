@@ -1,8 +1,8 @@
 #pragma once
 
-#include "monado/renderer/material.h"
-
 #include <map>
+
+#include "monado/renderer/material.h"
 
 namespace Monado {
 

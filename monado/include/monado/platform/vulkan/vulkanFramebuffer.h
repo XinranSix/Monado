@@ -28,7 +28,7 @@ namespace Monado {
         virtual RendererID GetDepthAttachmentRendererID() const { return 0; }
 
         virtual Ref<Image2D> GetImage(uint32_t attachmentIndex = 0) const override {
-            HZ_CORE_ASSERT(attachmentIndex < m_Attachments.size());
+            MND_CORE_ASSERT(attachmentIndex < m_Attachments.size());
             return m_Attachments[attachmentIndex];
         }
         virtual Ref<Image2D> GetDepthImage() const override { return m_DepthAttachment; }

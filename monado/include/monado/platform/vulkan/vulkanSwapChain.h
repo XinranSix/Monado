@@ -39,11 +39,11 @@ namespace Monado {
 
         uint32_t GetCurrentBufferIndex() const { return m_CurrentBufferIndex; }
         VkFramebuffer GetFramebuffer(uint32_t index) {
-            HZ_CORE_ASSERT(index < m_ImageCount);
+            MND_CORE_ASSERT(index < m_ImageCount);
             return m_Framebuffers[index];
         }
         VkCommandBuffer GetDrawCommandBuffer(uint32_t index) {
-            HZ_CORE_ASSERT(index < m_ImageCount);
+            MND_CORE_ASSERT(index < m_ImageCount);
             return m_DrawCommandBuffers[index];
         }
 

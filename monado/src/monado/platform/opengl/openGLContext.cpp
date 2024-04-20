@@ -29,7 +29,7 @@ namespace Monado {
         glGetIntegerv(GL_MINOR_VERSION, &versionMinor);
 
         MND_CORE_ASSERT(versionMajor > 4 || (versionMajor == 4 && versionMinor >= 5),
-                        "Hazel requires at least OpenGL version 4.5!");
+                        "Monado requires at least OpenGL version 4.5!");
 #endif
     }
 

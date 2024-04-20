@@ -2,10 +2,10 @@
 
 #include "monado/renderer/pipeline.h"
 
-#include "Vulkan.h"
-#include "VulkanShader.h"
+#include "vulkan.h"
+#include "vulkanShader.h"
 
-namespace Moando {
+namespace Monado {
 
     class VulkanPipeline : public Pipeline {
     public:
@@ -31,4 +31,4 @@ namespace Moando {
         VulkanShader::ShaderMaterialDescriptorSet m_DescriptorSet;
     };
 
-} // namespace Moando
+} // namespace Monado

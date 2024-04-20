@@ -28,18 +28,26 @@
 
 #include "EditorLayer.h"
 
+#include "monado/renderer/rendererAPI.h"
+#include "monado/platform/opengl/openGLFramebuffer.h"
+
+#include "imgui_internal.h"
+#include "monado/imgui/ui.h"
+
 namespace Monado {
 
-    static void ImGuiShowHelpMarker(const char *desc) {
-        ImGui::TextDisabled("(?)");
-        if (ImGui::IsItemHovered()) {
-            ImGui::BeginTooltip();
-            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-            ImGui::TextUnformatted(desc);
-            ImGui::PopTextWrapPos();
-            ImGui::EndTooltip();
-        }
-    }
+    /*static void ImGuiShowHelpMarker(const char* desc)
+          {
+                  ImGui::TextDisabled("(?)");
+                  if (ImGui::IsItemHovered())
+                  {
+                          ImGui::BeginTooltip();
+                          ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+                          ImGui::TextUnformatted(desc);
+                          ImGui::PopTextWrapPos();
+                          ImGui::EndTooltip();
+                  }
+          }*/
 
     EditorLayer::EditorLayer()
         : m_SceneType(SceneType::Model),
@@ -53,6 +61,8 @@ namespace Monado {
         // Editor
         m_CheckerboardTex = Texture2D::Create("assets/editor/Checkerboard.tga");
         m_PlayButtonTex = Texture2D::Create("assets/editor/PlayButton.png");
+        m_PauseButtonTex = Texture2D::Create("assets/editor/PauseButton.png");
+        m_StopButtonTex = Texture2D::Create("assets/editor/StopButton.png");
 
         m_SceneHierarchyPanel = CreateScope<SceneHierarchyPanel>(m_EditorScene);
         m_SceneHierarchyPanel->SetSelectionChangedCallback(
@@ -60,16 +70,20 @@ namespace Monado {
         m_SceneHierarchyPanel->SetEntityDeletedCallback(
             std::bind(&EditorLayer::OnEntityDeleted, this, std::placeholders::_1));
 
-        m_AssetManagerPanel = CreateScope<AssetManagerPanel>();
+        m_ContentBrowserPanel = CreateScope<ContentBrowserPanel>();
         m_ObjectsPanel = CreateScope<ObjectsPanel>();
 
-        // OpenScene("assets/scenes/FPSDemo.msc");
         NewScene();
+        // OpenScene("assets/scenes/ShadowTest.msc");
 
+        AssetEditorPanel::RegisterDefaultEditors();
         FileSystem::StartWatching();
     }
 
-    void EditorLayer::OnDetach() { FileSystem::StopWatching(); }
+    void EditorLayer::OnDetach() {
+        FileSystem::StopWatching();
+        AssetEditorPanel::UnregisterAllEditors();
+    }
 
     void EditorLayer::OnScenePlay() {
         m_SelectionContext.clear();
@@ -77,7 +91,7 @@ namespace Monado {
         m_SceneState = SceneState::Play;
 
         if (m_ReloadScriptOnPlay)
-            ScriptEngine::ReloadAssembly("./assets/script/ExampleApp.dll");
+            ScriptEngine::ReloadAssembly("assets/scripts/ExampleApp.dll");
 
         m_RuntimeScene = Ref<Scene>::Create();
         m_EditorScene->CopyTo(m_RuntimeScene);
@@ -101,8 +115,9 @@ namespace Monado {
     }
 
     void EditorLayer::UpdateWindowTitle(const std::string &sceneName) {
-        std::string title = sceneName + " - Monadonut - " + Application::GetPlatformName() + " (" +
-                            Application::GetConfigurationName() + ")";
+        std::string rendererAPI = RendererAPI::Current() == RendererAPIType::Vulkan ? "Vulkan" : "OpenGL";
+        std::string title = sceneName + " - Alvis - " + Application::GetPlatformName() + " (" +
+                            Application::GetConfigurationName() + ") Renderer: " + rendererAPI;
         Application::Get().GetWindow().SetTitle(title);
     }
 
@@ -118,7 +133,7 @@ namespace Monado {
     void EditorLayer::OnUpdate(Timestep ts) {
         auto [x, y] = GetMouseViewportSpace();
 
-        SceneRenderer::SetFocusPoint({ x * 0.5f + 0.5f, y * 0.5f + 0.5f });
+        // SceneRenderer::SetFocusPoint({ x * 0.5f + 0.5f, y * 0.5f + 0.5f });
 
         switch (m_SceneState) {
         case SceneState::Edit: {
@@ -156,7 +171,7 @@ namespace Monado {
             if (m_SelectionContext.size()) {
                 auto &selection = m_SelectionContext[0];
 
-                if (selection.Entity.HasComponent<BoxCollider2DComponent>()) {
+                if (selection.Entity.HasComponent<BoxCollider2DComponent>() && false) {
                     const auto &size = selection.Entity.GetComponent<BoxCollider2DComponent>().Size;
                     const TransformComponent &transform = selection.Entity.GetComponent<TransformComponent>();
 
@@ -203,121 +218,21 @@ namespace Monado {
         }
     }
 
-    bool EditorLayer::Property(const std::string &name, bool &value) {
-        ImGui::Text(name.c_str());
-        ImGui::NextColumn();
-        ImGui::PushItemWidth(-1);
-
-        std::string id = "##" + name;
-        bool result = ImGui::Checkbox(id.c_str(), &value);
-
-        ImGui::PopItemWidth();
-        ImGui::NextColumn();
-
-        return result;
-    }
-
-    bool EditorLayer::Property(const std::string &name, float &value, float min, float max, PropertyFlag flags) {
-        ImGui::Text(name.c_str());
-        ImGui::NextColumn();
-        ImGui::PushItemWidth(-1);
-
-        std::string id = "##" + name;
-        bool changed = false;
-        if (flags == PropertyFlag::SliderProperty)
-            changed = ImGui::SliderFloat(id.c_str(), &value, min, max);
-        else
-            changed = ImGui::DragFloat(id.c_str(), &value, 1.0f, min, max);
-
-        ImGui::PopItemWidth();
-        ImGui::NextColumn();
-
-        return changed;
-    }
-
-    bool EditorLayer::Property(const std::string &name, glm::vec2 &value, EditorLayer::PropertyFlag flags) {
-        return Property(name, value, -1.0f, 1.0f, flags);
-    }
-
-    bool EditorLayer::Property(const std::string &name, glm::vec2 &value, float min, float max, PropertyFlag flags) {
-        ImGui::Text(name.c_str());
-        ImGui::NextColumn();
-        ImGui::PushItemWidth(-1);
-
-        std::string id = "##" + name;
-        bool changed = false;
-        if (flags == PropertyFlag::SliderProperty)
-            changed = ImGui::SliderFloat2(id.c_str(), glm::value_ptr(value), min, max);
-        else
-            changed = ImGui::DragFloat2(id.c_str(), glm::value_ptr(value), 1.0f, min, max);
-
-        ImGui::PopItemWidth();
-        ImGui::NextColumn();
-
-        return changed;
-    }
-
-    bool EditorLayer::Property(const std::string &name, glm::vec3 &value, EditorLayer::PropertyFlag flags) {
-        return Property(name, value, -1.0f, 1.0f, flags);
-    }
-
-    bool EditorLayer::Property(const std::string &name, glm::vec3 &value, float min, float max,
-                               EditorLayer::PropertyFlag flags) {
-        ImGui::Text(name.c_str());
-        ImGui::NextColumn();
-        ImGui::PushItemWidth(-1);
-
-        std::string id = "##" + name;
-        bool changed = false;
-        if ((int)flags & (int)PropertyFlag::ColorProperty)
-            changed = ImGui::ColorEdit3(id.c_str(), glm::value_ptr(value), ImGuiColorEditFlags_NoInputs);
-        else if (flags == PropertyFlag::SliderProperty)
-            changed = ImGui::SliderFloat3(id.c_str(), glm::value_ptr(value), min, max);
-        else
-            changed = ImGui::DragFloat3(id.c_str(), glm::value_ptr(value), 1.0f, min, max);
-
-        ImGui::PopItemWidth();
-        ImGui::NextColumn();
-
-        return changed;
-    }
-
-    bool EditorLayer::Property(const std::string &name, glm::vec4 &value, EditorLayer::PropertyFlag flags) {
-        return Property(name, value, -1.0f, 1.0f, flags);
-    }
-
-    bool EditorLayer::Property(const std::string &name, glm::vec4 &value, float min, float max,
-                               EditorLayer::PropertyFlag flags) {
-        ImGui::Text(name.c_str());
-        ImGui::NextColumn();
-        ImGui::PushItemWidth(-1);
-
-        std::string id = "##" + name;
-        bool changed = false;
-        if ((int)flags & (int)PropertyFlag::ColorProperty)
-            changed = ImGui::ColorEdit4(id.c_str(), glm::value_ptr(value), ImGuiColorEditFlags_NoInputs);
-        else if (flags == PropertyFlag::SliderProperty)
-            changed = ImGui::SliderFloat4(id.c_str(), glm::value_ptr(value), min, max);
-        else
-            changed = ImGui::DragFloat4(id.c_str(), glm::value_ptr(value), 1.0f, min, max);
-
-        ImGui::PopItemWidth();
-        ImGui::NextColumn();
-
-        return changed;
-    }
-
     void EditorLayer::ShowBoundingBoxes(bool show, bool onTop) {
         SceneRenderer::GetOptions().ShowBoundingBoxes = show && !onTop;
         m_DrawOnTopBoundingBoxes = show && onTop;
     }
 
     void EditorLayer::SelectEntity(Entity entity) {
+        if (!entity) {
+            return;
+        }
+
         SelectedSubmesh selection;
         if (entity.HasComponent<MeshComponent>()) {
             auto &meshComp = entity.GetComponent<MeshComponent>();
 
-            if (meshComp.Mesh) {
+            if (meshComp.Mesh && meshComp.Mesh->Type == AssetType::Mesh) {
                 selection.Mesh = &meshComp.Mesh->GetSubmeshes()[0];
             }
         }
@@ -338,6 +253,7 @@ namespace Monado {
         m_SceneFilePath = std::string();
 
         m_EditorCamera = EditorCamera(glm::perspectiveFov(glm::radians(45.0f), 1280.0f, 720.0f, 0.1f, 1000.0f));
+        m_CurrentScene = m_EditorScene;
     }
 
     void EditorLayer::OpenScene() {
@@ -434,123 +350,92 @@ namespace Monado {
         style.WindowMinSize.x = minWinSizeX;
 
         // Editor Panel ------------------------------------------------------------------------------
-        ImGui::Begin("Model");
         ImGui::Begin("Environment");
+        {
+            // ImGui::SliderFloat("Skybox LOD", &m_EditorScene->GetSkyboxLod(), 0.0f, 11.0f);
+            UI::PropertySlider("Skybox LOD", m_EditorScene->GetSkyboxLod(), 0.0f, 11.0f);
 
-        ImGui::SliderFloat("Skybox LOD", &m_EditorScene->GetSkyboxLod(), 0.0f, 11.0f);
+            UI::BeginPropertyGrid();
+            ImGui::AlignTextToFramePadding();
 
-        ImGui::Columns(2);
-        ImGui::AlignTextToFramePadding();
+            auto &light = m_EditorScene->GetLight();
+            UI::PropertySlider("Light Direction", light.Direction, -1.0f, 1.0f);
+            UI::PropertyColor("Light Radiance", light.Radiance);
+            UI::PropertySlider("Light Multiplier", light.Multiplier, 0.0f, 5.0f);
 
-        auto &light = m_EditorScene->GetLight();
-        Property("Light Direction", light.Direction, PropertyFlag::SliderProperty);
-        Property("Light Radiance", light.Radiance, PropertyFlag::ColorProperty);
-        Property("Light Multiplier", light.Multiplier, 0.0f, 5.0f, PropertyFlag::SliderProperty);
+            UI::PropertySlider("Exposure", m_EditorCamera.GetExposure(), 0.0f, 5.0f);
 
-        Property("Exposure", m_EditorCamera.GetExposure(), 0.0f, 5.0f, PropertyFlag::SliderProperty);
+            UI::Property("Radiance Prefiltering", m_RadiancePrefilter);
+            UI::PropertySlider("Env Map Rotation", m_EnvMapRotation, -360.0f, 360.0f);
 
-        Property("Radiance Prefiltering", m_RadiancePrefilter);
-        Property("Env Map Rotation", m_EnvMapRotation, -360.0f, 360.0f, PropertyFlag::SliderProperty);
-
-        if (m_SceneState == SceneState::Edit) {
-            float physics2DGravity = m_EditorScene->GetPhysics2DGravity();
-            if (Property("Gravity", physics2DGravity, -10000.0f, 10000.0f, PropertyFlag::DragProperty)) {
-                m_EditorScene->SetPhysics2DGravity(physics2DGravity);
+            if (m_SceneState == SceneState::Edit) {
+                float physics2DGravity = m_EditorScene->GetPhysics2DGravity();
+                if (UI::Property("Gravity", physics2DGravity, -10000.0f, 10000.0f)) {
+                    m_EditorScene->SetPhysics2DGravity(physics2DGravity);
+                }
+            } else if (m_SceneState == SceneState::Play) {
+                float physics2DGravity = m_RuntimeScene->GetPhysics2DGravity();
+                if (UI::Property("Gravity", physics2DGravity, -10000.0f, 10000.0f)) {
+                    m_RuntimeScene->SetPhysics2DGravity(physics2DGravity);
+                }
             }
-        } else if (m_SceneState == SceneState::Play) {
-            float physics2DGravity = m_RuntimeScene->GetPhysics2DGravity();
-            if (Property("Gravity", physics2DGravity, -10000.0f, 10000.0f, PropertyFlag::DragProperty)) {
-                m_RuntimeScene->SetPhysics2DGravity(physics2DGravity);
+
+            if (UI::Property("Show Bounding Boxes", m_UIShowBoundingBoxes))
+                ShowBoundingBoxes(m_UIShowBoundingBoxes, m_UIShowBoundingBoxesOnTop);
+            if (m_UIShowBoundingBoxes && UI::Property("On Top", m_UIShowBoundingBoxesOnTop))
+                ShowBoundingBoxes(m_UIShowBoundingBoxes, m_UIShowBoundingBoxesOnTop);
+
+            const char *label = m_SelectionMode == SelectionMode::Entity ? "Entity" : "Mesh";
+            if (ImGui::Button(label)) {
+                m_SelectionMode =
+                    m_SelectionMode == SelectionMode::Entity ? SelectionMode::SubMesh : SelectionMode::Entity;
             }
+
+            UI::EndPropertyGrid();
         }
+        ImGui::End();
 
-        if (Property("Show Bounding Boxes", m_UIShowBoundingBoxes))
-            ShowBoundingBoxes(m_UIShowBoundingBoxes, m_UIShowBoundingBoxesOnTop);
-        if (m_UIShowBoundingBoxes && Property("On Top", m_UIShowBoundingBoxesOnTop))
-            ShowBoundingBoxes(m_UIShowBoundingBoxes, m_UIShowBoundingBoxesOnTop);
-
-        m_AssetManagerPanel->OnImGuiRender();
+        m_ContentBrowserPanel->OnImGuiRender();
         m_ObjectsPanel->OnImGuiRender();
         AssetEditorPanel::OnImGuiRender();
 
-        const char *label = m_SelectionMode == SelectionMode::Entity ? "Entity" : "Mesh";
-        if (ImGui::Button(label)) {
-            m_SelectionMode = m_SelectionMode == SelectionMode::Entity ? SelectionMode::SubMesh : SelectionMode::Entity;
-        }
-
-        ImGui::Columns(1);
-
-        ImGui::End();
-
-        ImGui::Separator();
-        {
-            ImGui::Text("Mesh");
-            /*auto meshComponent = m_MeshEntity.GetComponent<MeshComponent>();
-            std::string fullpath = meshComponent.Mesh ? meshComponent.Mesh->GetFilePath() : "None";
-            size_t found = fullpath.find_last_of("/\\");
-            std::string path = found != std::string::npos ? fullpath.substr(found + 1) : fullpath;
-            ImGui::Text(path.c_str()); ImGui::SameLine();
-            if (ImGui::Button("...##Mesh"))
-            {
-                    std::string filename = Application::Get().OpenFile("");
-                    if (filename != "")
-                    {
-                            auto newMesh = Ref<Mesh>::Create(filename);
-                            // m_MeshMaterial.reset(new MaterialInstance(newMesh->GetMaterial()));
-                            // m_MeshEntity->SetMaterial(m_MeshMaterial);
-                            meshComponent.Mesh = newMesh;
-                    }
-            }*/
-        }
-        ImGui::Separator();
-
-        if (ImGui::TreeNode("Shaders")) {
-            auto &shaders = Shader::s_AllShaders;
-            for (auto &shader : shaders) {
-                if (ImGui::TreeNode(shader->GetName().c_str())) {
-                    std::string buttonName = "Reload##" + shader->GetName();
-                    if (ImGui::Button(buttonName.c_str()))
-                        shader->Reload();
-                    ImGui::TreePop();
-                }
-            }
-            ImGui::TreePop();
-        }
-
-        ImGui::End();
-
         // ImGui::ShowDemoWindow();
 
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12, 0));
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(12, 4));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.8f, 0.8f, 0.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
-        ImGui::Begin("Toolbar");
-        if (m_SceneState == SceneState::Edit) {
-            if (ImGui::ImageButton((ImTextureID)(m_PlayButtonTex->GetRendererID()), ImVec2(32, 32), ImVec2(0, 0),
-                                   ImVec2(1, 1), -1, ImVec4(0, 0, 0, 0), ImVec4(0.9f, 0.9f, 0.9f, 1.0f))) {
-                OnScenePlay();
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.305f, 0.31f, 0.5f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.1505f, 0.151f, 0.5f));
+
+        ImGui::Begin("##tool_bar", NULL,
+                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+        {
+            float size = ImGui::GetWindowHeight() - 4.0F;
+            ImGui::SameLine((ImGui::GetWindowContentRegionMax().x / 2.0f) -
+                            (1.5f * (ImGui::GetFontSize() + ImGui::GetStyle().ItemSpacing.x)) - (size / 2.0f));
+            Ref<Texture2D> buttonTex = m_SceneState == SceneState::Play ? m_StopButtonTex : m_PlayButtonTex;
+            if (UI::ImageButton(buttonTex, ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), 0)) {
+                if (m_SceneState == SceneState::Edit)
+                    OnScenePlay();
+                else
+                    OnSceneStop();
             }
-        } else if (m_SceneState == SceneState::Play) {
-            if (ImGui::ImageButton((ImTextureID)(m_PlayButtonTex->GetRendererID()), ImVec2(32, 32), ImVec2(0, 0),
-                                   ImVec2(1, 1), -1, ImVec4(1.0f, 1.0f, 1.0f, 0.2f))) {
-                OnSceneStop();
+
+            ImGui::SameLine();
+
+            if (UI::ImageButton(m_PauseButtonTex, ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), 0)) {
+                if (m_SceneState == SceneState::Play) {
+                    // OnScenePause();
+                    m_SceneState = SceneState::Pause;
+                } else if (m_SceneState == SceneState::Pause) {
+                    // OnSceneResume();
+                    m_SceneState = SceneState::Play;
+                }
             }
         }
-        ImGui::SameLine();
-        if (ImGui::ImageButton((ImTextureID)(m_PlayButtonTex->GetRendererID()), ImVec2(32, 32), ImVec2(0, 0),
-                               ImVec2(1, 1), -1, ImVec4(0, 0, 0, 0), ImVec4(1.0f, 1.0f, 1.0f, 0.6f))) {
-            MND_CORE_INFO("PLAY!");
-        }
+        ImGui::PopStyleColor(3);
+        ImGui::PopStyleVar(2);
         ImGui::End();
-        ImGui::PopStyleColor();
-        ImGui::PopStyleColor();
-        ImGui::PopStyleColor();
-        ImGui::PopStyleVar();
-        ImGui::PopStyleVar();
-        ImGui::PopStyleVar();
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::Begin("Viewport");
@@ -567,7 +452,9 @@ namespace Monado {
         m_EditorCamera.SetProjectionMatrix(
             glm::perspectiveFov(glm::radians(45.0f), viewportSize.x, viewportSize.y, 0.1f, 1000.0f));
         m_EditorCamera.SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
-        ImGui::Image((void *)SceneRenderer::GetFinalColorBufferRendererID(), viewportSize, { 0, 1 }, { 1, 0 });
+
+        // Render viewport image
+        UI::Image(SceneRenderer::GetFinalPassImage(), viewportSize, { 0, 1 }, { 1, 0 });
 
         static int counter = 0;
         auto windowSize = ImGui::GetWindowSize();
@@ -675,6 +562,14 @@ namespace Monado {
                     SaveSceneAs();
 
                 ImGui::Separator();
+                std::string otherRenderer = RendererAPI::Current() == RendererAPIType::Vulkan ? "OpenGL" : "Vulkan";
+                std::string label = std::string("Restart with ") + otherRenderer;
+                if (ImGui::MenuItem(label.c_str())) {
+                    RendererAPI::SetAPI(RendererAPI::Current() == RendererAPIType::Vulkan ? RendererAPIType::OpenGL
+                                                                                          : RendererAPIType::Vulkan);
+                    Application::Get().Close();
+                }
+                ImGui::Separator();
                 if (ImGui::MenuItem("Exit"))
                     p_open = false;
                 ImGui::EndMenu();
@@ -682,7 +577,7 @@ namespace Monado {
 
             if (ImGui::BeginMenu("Script")) {
                 if (ImGui::MenuItem("Reload C# Assembly"))
-                    ScriptEngine::ReloadAssembly("./assets/script/ExampleApp.dll");
+                    ScriptEngine::ReloadAssembly("assets/scripts/ExampleApp.dll");
 
                 ImGui::MenuItem("Reload assembly on play", nullptr, &m_ReloadScriptOnPlay);
                 ImGui::EndMenu();
@@ -700,13 +595,12 @@ namespace Monado {
         m_SceneHierarchyPanel->OnImGuiRender();
 
         ImGui::Begin("Materials");
-
         if (m_SelectionContext.size()) {
             Entity selectedEntity = m_SelectionContext.front().Entity;
             if (selectedEntity.HasComponent<MeshComponent>()) {
                 Ref<Mesh> mesh = selectedEntity.GetComponent<MeshComponent>().Mesh;
-                if (mesh) {
-                    auto materials = mesh->GetMaterials();
+                if (mesh && mesh->Type == AssetType::Mesh) {
+                    auto &materials = mesh->GetMaterials();
                     static uint32_t selectedMaterialIndex = 0;
                     for (uint32_t i = 0; i < materials.size(); i++) {
                         auto &materialInstance = materials[i];
@@ -734,26 +628,52 @@ namespace Monado {
                             if (ImGui::CollapsingHeader("Albedo", nullptr, ImGuiTreeNodeFlags_DefaultOpen)) {
                                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
 
-                                auto &albedoColor = materialInstance->Get<glm::vec3>("u_AlbedoColor");
-                                bool useAlbedoMap = materialInstance->Get<float>("u_AlbedoTexToggle");
-                                Ref<Texture2D> albedoMap =
-                                    materialInstance->TryGetResource<Texture2D>("u_AlbedoTexture");
-                                ImGui::Image(albedoMap ? (void *)albedoMap->GetRendererID()
-                                                       : (void *)m_CheckerboardTex->GetRendererID(),
-                                             ImVec2(64, 64));
+                                auto &albedoColor = materialInstance->GetVector3("u_MaterialUniforms.AlbedoColor");
+                                bool useAlbedoMap =
+                                    true; // materialInstance->GetFloat("u_MaterialUniforms.AlbedoTexToggle");
+                                Ref<Texture2D> albedoMap = materialInstance->TryGetTexture2D("u_AlbedoTexture");
+                                bool hasAlbedoMap =
+                                    !albedoMap.EqualsObject(Renderer::GetWhiteTexture()) && albedoMap->GetImage();
+                                Ref<Texture2D> albedoUITexture = hasAlbedoMap ? albedoMap : m_CheckerboardTex;
+                                UI::Image(albedoUITexture, ImVec2(64, 64));
+
+                                if (ImGui::BeginDragDropTarget()) {
+                                    auto data = ImGui::AcceptDragDropPayload("asset_payload");
+                                    if (data) {
+                                        int count = data->DataSize / sizeof(AssetHandle);
+
+                                        for (int i = 0; i < count; i++) {
+                                            if (count > 1)
+                                                break;
+
+                                            AssetHandle assetHandle = *(((AssetHandle *)data->Data) + i);
+                                            Ref<Asset> asset = AssetManager::GetAsset<Asset>(assetHandle);
+                                            if (asset->Type != AssetType::Texture)
+                                                break;
+
+                                            albedoMap = asset.As<Texture2D>();
+                                            materialInstance->Set("u_AlbedoTexture", albedoMap);
+                                            // NOTE: Uncomment when u_MaterialUniforms.AlbedoTexToggle is a thing
+                                            // materialInstance->Set("u_MaterialUniforms.AlbedoTexToggle", true);
+                                        }
+                                    }
+
+                                    ImGui::EndDragDropTarget();
+                                }
+
                                 ImGui::PopStyleVar();
                                 if (ImGui::IsItemHovered()) {
-                                    if (albedoMap) {
+                                    if (hasAlbedoMap) {
                                         ImGui::BeginTooltip();
                                         ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
                                         ImGui::TextUnformatted(albedoMap->GetPath().c_str());
                                         ImGui::PopTextWrapPos();
-                                        ImGui::Image((void *)albedoMap->GetRendererID(), ImVec2(384, 384));
+                                        UI::Image(albedoUITexture, ImVec2(384, 384));
                                         ImGui::EndTooltip();
                                     }
                                     if (ImGui::IsItemClicked()) {
                                         std::string filename = Application::Get().OpenFile("");
-                                        if (filename != "") {
+                                        if (!filename.empty()) {
                                             albedoMap = Texture2D::Create(filename, true /*m_AlbedoInput.SRGB*/);
                                             materialInstance->Set("u_AlbedoTexture", albedoMap);
                                         }
@@ -761,8 +681,7 @@ namespace Monado {
                                 }
                                 ImGui::SameLine();
                                 ImGui::BeginGroup();
-                                if (ImGui::Checkbox("Use##AlbedoMap", &useAlbedoMap))
-                                    materialInstance->Set<float>("u_AlbedoTexToggle", useAlbedoMap ? 1.0f : 0.0f);
+                                ImGui::Checkbox("Use##AlbedoMap", &useAlbedoMap);
 
                                 /*if (ImGui::Checkbox("sRGB##AlbedoMap", &m_AlbedoInput.SRGB))
                                 {
@@ -780,12 +699,34 @@ namespace Monado {
                             // Normals
                             if (ImGui::CollapsingHeader("Normals", nullptr, ImGuiTreeNodeFlags_DefaultOpen)) {
                                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
-                                bool useNormalMap = materialInstance->Get<float>("u_NormalTexToggle");
-                                Ref<Texture2D> normalMap =
-                                    materialInstance->TryGetResource<Texture2D>("u_NormalTexture");
-                                ImGui::Image(normalMap ? (void *)normalMap->GetRendererID()
-                                                       : (void *)m_CheckerboardTex->GetRendererID(),
-                                             ImVec2(64, 64));
+                                bool useNormalMap = materialInstance->GetFloat("u_MaterialUniforms.UseNormalMap");
+                                Ref<Texture2D> normalMap = materialInstance->TryGetTexture2D("u_NormalTexture");
+                                UI::Image((normalMap && normalMap->GetImage()) ? normalMap : m_CheckerboardTex,
+                                          ImVec2(64, 64));
+
+                                if (ImGui::BeginDragDropTarget()) {
+                                    auto data = ImGui::AcceptDragDropPayload("asset_payload");
+                                    if (data) {
+                                        int count = data->DataSize / sizeof(AssetHandle);
+
+                                        for (int i = 0; i < count; i++) {
+                                            if (count > 1)
+                                                break;
+
+                                            AssetHandle assetHandle = *(((AssetHandle *)data->Data) + i);
+                                            Ref<Asset> asset = AssetManager::GetAsset<Asset>(assetHandle);
+                                            if (asset->Type != AssetType::Texture)
+                                                break;
+
+                                            normalMap = asset.As<Texture2D>();
+                                            materialInstance->Set("u_NormalTexture", normalMap);
+                                            materialInstance->Set("u_MaterialUniforms.UseNormalMap", true);
+                                        }
+                                    }
+
+                                    ImGui::EndDragDropTarget();
+                                }
+
                                 ImGui::PopStyleVar();
                                 if (ImGui::IsItemHovered()) {
                                     if (normalMap) {
@@ -793,7 +734,7 @@ namespace Monado {
                                         ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
                                         ImGui::TextUnformatted(normalMap->GetPath().c_str());
                                         ImGui::PopTextWrapPos();
-                                        ImGui::Image((void *)normalMap->GetRendererID(), ImVec2(384, 384));
+                                        UI::Image(normalMap, ImVec2(384, 384));
                                         ImGui::EndTooltip();
                                     }
                                     if (ImGui::IsItemClicked()) {
@@ -806,20 +747,44 @@ namespace Monado {
                                 }
                                 ImGui::SameLine();
                                 if (ImGui::Checkbox("Use##NormalMap", &useNormalMap))
-                                    materialInstance->Set<float>("u_NormalTexToggle", useNormalMap ? 1.0f : 0.0f);
+                                    materialInstance->Set("u_MaterialUniforms.UseNormalMap", useNormalMap);
                             }
                         }
                         {
                             // Metalness
                             if (ImGui::CollapsingHeader("Metalness", nullptr, ImGuiTreeNodeFlags_DefaultOpen)) {
                                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
-                                float &metalnessValue = materialInstance->Get<float>("u_Metalness");
-                                bool useMetalnessMap = materialInstance->Get<float>("u_MetalnessTexToggle");
-                                Ref<Texture2D> metalnessMap =
-                                    materialInstance->TryGetResource<Texture2D>("u_MetalnessTexture");
-                                ImGui::Image(metalnessMap ? (void *)metalnessMap->GetRendererID()
-                                                          : (void *)m_CheckerboardTex->GetRendererID(),
-                                             ImVec2(64, 64));
+                                float &metalnessValue = materialInstance->GetFloat("u_MaterialUniforms.Metalness");
+                                bool useMetalnessMap =
+                                    true; // materialInstance->GetFloat("u_MaterialUniforms.MetalnessTexToggle");
+                                Ref<Texture2D> metalnessMap = materialInstance->TryGetTexture2D("u_MetalnessTexture");
+                                UI::Image((metalnessMap && metalnessMap->GetImage()) ? metalnessMap : m_CheckerboardTex,
+                                          ImVec2(64, 64));
+
+                                if (ImGui::BeginDragDropTarget()) {
+                                    auto data = ImGui::AcceptDragDropPayload("asset_payload");
+                                    if (data) {
+                                        int count = data->DataSize / sizeof(AssetHandle);
+
+                                        for (int i = 0; i < count; i++) {
+                                            if (count > 1)
+                                                break;
+
+                                            AssetHandle assetHandle = *(((AssetHandle *)data->Data) + i);
+                                            Ref<Asset> asset = AssetManager::GetAsset<Asset>(assetHandle);
+                                            if (asset->Type != AssetType::Texture)
+                                                break;
+
+                                            metalnessMap = asset.As<Texture2D>();
+                                            materialInstance->Set("u_MetalnessTexture", metalnessMap);
+                                            // NOTE: Uncomment when u_MaterialUniforms.MetalnessTexToggle is a thing
+                                            // materialInstance->Set("u_MaterialUniforms.MetalnessTexToggle", true);
+                                        }
+                                    }
+
+                                    ImGui::EndDragDropTarget();
+                                }
+
                                 ImGui::PopStyleVar();
                                 if (ImGui::IsItemHovered()) {
                                     if (metalnessMap) {
@@ -827,7 +792,7 @@ namespace Monado {
                                         ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
                                         ImGui::TextUnformatted(metalnessMap->GetPath().c_str());
                                         ImGui::PopTextWrapPos();
-                                        ImGui::Image((void *)metalnessMap->GetRendererID(), ImVec2(384, 384));
+                                        UI::Image(metalnessMap, ImVec2(384, 384));
                                         ImGui::EndTooltip();
                                     }
                                     if (ImGui::IsItemClicked()) {
@@ -839,8 +804,7 @@ namespace Monado {
                                     }
                                 }
                                 ImGui::SameLine();
-                                if (ImGui::Checkbox("Use##MetalnessMap", &useMetalnessMap))
-                                    materialInstance->Set<float>("u_MetalnessTexToggle", useMetalnessMap ? 1.0f : 0.0f);
+                                ImGui::Checkbox("Use##MetalnessMap", &useMetalnessMap);
                                 ImGui::SameLine();
                                 ImGui::SliderFloat("Value##MetalnessInput", &metalnessValue, 0.0f, 1.0f);
                             }
@@ -849,13 +813,37 @@ namespace Monado {
                             // Roughness
                             if (ImGui::CollapsingHeader("Roughness", nullptr, ImGuiTreeNodeFlags_DefaultOpen)) {
                                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
-                                float &roughnessValue = materialInstance->Get<float>("u_Roughness");
-                                bool useRoughnessMap = materialInstance->Get<float>("u_RoughnessTexToggle");
-                                Ref<Texture2D> roughnessMap =
-                                    materialInstance->TryGetResource<Texture2D>("u_RoughnessTexture");
-                                ImGui::Image(roughnessMap ? (void *)roughnessMap->GetRendererID()
-                                                          : (void *)m_CheckerboardTex->GetRendererID(),
-                                             ImVec2(64, 64));
+                                float &roughnessValue = materialInstance->GetFloat("u_MaterialUniforms.Roughness");
+                                bool useRoughnessMap =
+                                    true; // materialInstance->GetFloat("u_MaterialUniforms.RoughnessTexToggle");
+                                Ref<Texture2D> roughnessMap = materialInstance->TryGetTexture2D("u_RoughnessTexture");
+                                UI::Image((roughnessMap && roughnessMap->GetImage()) ? roughnessMap : m_CheckerboardTex,
+                                          ImVec2(64, 64));
+
+                                if (ImGui::BeginDragDropTarget()) {
+                                    auto data = ImGui::AcceptDragDropPayload("asset_payload");
+                                    if (data) {
+                                        int count = data->DataSize / sizeof(AssetHandle);
+
+                                        for (int i = 0; i < count; i++) {
+                                            if (count > 1)
+                                                break;
+
+                                            AssetHandle assetHandle = *(((AssetHandle *)data->Data) + i);
+                                            Ref<Asset> asset = AssetManager::GetAsset<Asset>(assetHandle);
+                                            if (asset->Type != AssetType::Texture)
+                                                break;
+
+                                            roughnessMap = asset.As<Texture2D>();
+                                            materialInstance->Set("u_RoughnessTexture", roughnessMap);
+                                            // NOTE: Uncomment when u_MaterialUniforms.RoughnessTexToggle is a thing
+                                            // materialInstance->Set("u_MaterialUniforms.RoughnessTexToggle", true);
+                                        }
+                                    }
+
+                                    ImGui::EndDragDropTarget();
+                                }
+
                                 ImGui::PopStyleVar();
                                 if (ImGui::IsItemHovered()) {
                                     if (roughnessMap) {
@@ -863,7 +851,7 @@ namespace Monado {
                                         ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
                                         ImGui::TextUnformatted(roughnessMap->GetPath().c_str());
                                         ImGui::PopTextWrapPos();
-                                        ImGui::Image((void *)roughnessMap->GetRendererID(), ImVec2(384, 384));
+                                        UI::Image(roughnessMap, ImVec2(384, 384));
                                         ImGui::EndTooltip();
                                     }
                                     if (ImGui::IsItemClicked()) {
@@ -875,8 +863,7 @@ namespace Monado {
                                     }
                                 }
                                 ImGui::SameLine();
-                                if (ImGui::Checkbox("Use##RoughnessMap", &useRoughnessMap))
-                                    materialInstance->Set<float>("u_RoughnessTexToggle", useRoughnessMap ? 1.0f : 0.0f);
+                                ImGui::Checkbox("Use##RoughnessMap", &useRoughnessMap);
                                 ImGui::SameLine();
                                 ImGui::SliderFloat("Value##RoughnessInput", &roughnessValue, 0.0f, 1.0f);
                             }
@@ -885,7 +872,6 @@ namespace Monado {
                 }
             }
         }
-
         ImGui::End();
 
         ScriptEngine::OnImGuiRender();
@@ -929,6 +915,13 @@ namespace Monado {
                 }
             }
             switch (e.GetKeyCode()) {
+            case KeyCode::Escape:
+                if (m_SelectionContext.size()) {
+                    m_SelectionContext.clear();
+                    m_EditorScene->SetSelectedEntity({});
+                    m_SceneHierarchyPanel->SetSelected({});
+                }
+                break;
             case KeyCode::Delete: // TODO: this should be in the scene hierarchy panel
                 if (m_SelectionContext.size()) {
                     Entity selectedEntity = m_SelectionContext[0].Entity;
@@ -1051,7 +1044,7 @@ namespace Monado {
     }
 
     void EditorLayer::OnEntityDeleted(Entity e) {
-        if (m_SelectionContext[0].Entity == e) {
+        if (m_SelectionContext.size() > 0 && m_SelectionContext[0].Entity == e) {
             m_SelectionContext.clear();
             m_EditorScene->SetSelectedEntity({});
         }

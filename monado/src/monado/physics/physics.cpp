@@ -30,7 +30,8 @@ namespace Monado {
         s_Scene = PXPhysicsWrappers::CreateScene();
 
         if (s_Settings.BroadphaseAlgorithm != BroadphaseType::AutomaticBoxPrune) {
-            physx::PxBounds3 *regionBounds;
+            physx::PxBounds3 *regionBounds =
+                new physx::PxBounds3[(size_t)s_Settings.WorldBoundsSubdivisions * s_Settings.WorldBoundsSubdivisions];
             physx::PxBounds3 globalBounds(ToPhysXVector(s_Settings.WorldBoundsMin),
                                           ToPhysXVector(s_Settings.WorldBoundsMax));
             uint32_t regionCount = physx::PxBroadPhaseExt::createRegionsFromWorldBounds(

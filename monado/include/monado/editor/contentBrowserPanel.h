@@ -1,10 +1,10 @@
 #pragma once
 
+#include <map>
+
 #include "monado/asset/assetManager.h"
 #include "monado/renderer/texture.h"
 #include "monado/imgui/ui.h"
-
-#include <map>
 
 #define MAX_INPUT_BUFFER_LENGTH 128
 

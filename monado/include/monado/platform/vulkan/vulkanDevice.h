@@ -6,7 +6,7 @@
 
 #include <unordered_set>
 
-namespace Moando {
+namespace Monado {
 
     class VulkanPhysicalDevice : public RefCounted {
     public:
@@ -83,4 +83,4 @@ namespace Moando {
         bool m_EnableDebugMarkers = false;
     };
 
-} // namespace Moando
+} // namespace Monado

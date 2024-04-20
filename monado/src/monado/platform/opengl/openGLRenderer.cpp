@@ -167,7 +167,7 @@ namespace Monado {
     void OpenGLRenderer::EndRenderPass() { s_Data->ActiveRenderPass = nullptr; }
 
     void OpenGLRenderer::SubmitFullscreenQuad(Ref<Pipeline> pipeline, Ref<Material> material) {
-        auto &shader = material->GetShader();
+        auto shader = material->GetShader();
 
         bool depthTest = true;
         Ref<OpenGLMaterial> glMaterial = material.As<OpenGLMaterial>();
@@ -187,7 +187,7 @@ namespace Monado {
             environment = Renderer::GetEmptyEnvironment();
 
         Renderer::Submit([environment, shadow]() mutable {
-            auto shader = Renderer::GetShaderLibrary()->Get("HazelPBR_Static");
+            auto shader = Renderer::GetShaderLibrary()->Get("MonadoPBR_Static");
             Ref<OpenGLShader> pbrShader = shader.As<OpenGLShader>();
 
             if (auto resource = pbrShader->GetShaderResource("u_EnvRadianceTex")) {

@@ -36,7 +36,7 @@ namespace Monado {
 
     ShaderLibrary::~ShaderLibrary() {}
 
-    void ShaderLibrary::Add(const Hazel::Ref<Shader> &shader) {
+    void ShaderLibrary::Add(const Monado::Ref<Shader> &shader) {
         auto &name = shader->GetName();
         MND_CORE_ASSERT(m_Shaders.find(name) == m_Shaders.end());
         m_Shaders[name] = shader;

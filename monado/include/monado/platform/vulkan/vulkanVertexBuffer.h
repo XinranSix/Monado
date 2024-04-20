@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Hazel/Renderer/VertexBuffer.h"
+#include "monado/renderer/vertexBuffer.h"
 
-#include "Hazel/Core/Buffer.h"
+#include "monado/core/buffer.h"
 
-#include "VulkanAllocator.h"
+#include "vulkanAllocator.h"
 
 namespace Monado {
 

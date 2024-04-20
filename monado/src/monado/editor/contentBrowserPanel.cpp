@@ -17,7 +17,7 @@ namespace Monado {
         m_AssetIconMap["wav"] = AssetManager::GetAsset<Texture2D>("assets/editor/wav.png");
         m_AssetIconMap["cs"] = AssetManager::GetAsset<Texture2D>("assets/editor/csc.png");
         m_AssetIconMap["png"] = AssetManager::GetAsset<Texture2D>("assets/editor/png.png");
-        m_AssetIconMap["hsc"] = AssetManager::GetAsset<Texture2D>("assets/editor/hazel.png");
+        m_AssetIconMap["msc"] = AssetManager::GetAsset<Texture2D>("assets/editor/monado.png");
 
         m_BackbtnTex = AssetManager::GetAsset<Texture2D>("assets/editor/btn_back.png");
         m_FwrdbtnTex = AssetManager::GetAsset<Texture2D>("assets/editor/btn_fwrd.png");
@@ -86,14 +86,14 @@ namespace Monado {
 
                     m_IsAnyItemHovered = false;
 
-                    if (ImGui::BeginPopupContextWindow(0, 1, false)) {
+                    if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight)) {
                         if (ImGui::BeginMenu("Create")) {
                             if (ImGui::MenuItem("Folder")) {
                                 bool created = FileSystem::CreateFolder(m_CurrentDirectory->FilePath + "/New Folder");
 
                                 if (created) {
                                     UpdateCurrentDirectory(m_CurrentDirHandle);
-                                    auto &createdDirectory =
+                                    auto createdDirectory =
                                         AssetManager::GetAsset<Directory>(AssetManager::GetAssetHandleFromFilePath(
                                             m_CurrentDirectory->FilePath + "/New Folder"));
                                     m_SelectedAssets.Select(createdDirectory->Handle);
@@ -117,7 +117,7 @@ namespace Monado {
                             }
 
                             if (ImGui::MenuItem("Physics Material")) {
-                                AssetManager::CreateNewAsset<PhysicsMaterial>("New Physics Material.hpm",
+                                AssetManager::CreateNewAsset<PhysicsMaterial>("New Physics Material.mpm",
                                                                               AssetType::PhysicsMat, m_CurrentDirHandle,
                                                                               0.6f, 0.6f, 0.0f);
                                 UpdateCurrentDirectory(m_CurrentDirHandle);
@@ -256,7 +256,7 @@ namespace Monado {
             else
                 ImGui::Text("Are you sure you want to delete %s?", filename.c_str());
 
-            float columnWidth = ImGui::GetContentRegionAvailWidth() / 4;
+            float columnWidth = ImGui::GetContentRegionAvail().x / 4;
 
             ImGui::Columns(4, 0, false);
             ImGui::SetColumnWidth(0, columnWidth);
@@ -267,6 +267,7 @@ namespace Monado {
             if (ImGui::Button("Yes", ImVec2(columnWidth, 0))) {
                 // Cache this so that we can delete the meta file if the asset was deleted successfully
                 std::string filepath = asset->FilePath;
+#undef DeleteFile
                 deleted = FileSystem::DeleteFile(filepath);
                 if (deleted) {
                     FileSystem::DeleteFile(filepath + ".meta");
@@ -311,6 +312,7 @@ namespace Monado {
                         AssetHandle handle = *(((AssetHandle *)payload->Data) + i);
                         Ref<Asset> droppedAsset = AssetManager::GetAsset<Asset>(handle, false);
 
+#undef MoveFile
                         bool result = FileSystem::MoveFile(droppedAsset->FilePath, asset->FilePath);
                         if (result)
                             droppedAsset->ParentDirectory = asset->Handle;
@@ -376,7 +378,7 @@ namespace Monado {
 
             AssetHandle currentHandle = m_CurrentDirHandle;
             while (currentHandle != 0) {
-                Ref<Directory> &dirInfo = AssetManager::GetAsset<Directory>(currentHandle);
+                Ref<Directory> dirInfo = AssetManager::GetAsset<Directory>(currentHandle);
                 m_BreadCrumbData.push_back(dirInfo);
                 currentHandle = dirInfo->ParentDirectory;
             }

@@ -506,7 +506,7 @@ namespace Monado {
 
         // ID
         ImGui::SameLine();
-        ImGui::TextDisabled("%llx", id);
+        ImGui::TextDisabled("%llx", (int64_t)id);
         float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
         ImVec2 textSize = ImGui::CalcTextSize("Add Component");
         ImGui::SameLine(contentRegionAvailable.x - (textSize.x + GImGui->Style.FramePadding.y));

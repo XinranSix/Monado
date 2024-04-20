@@ -2,7 +2,7 @@
 #include "monado/renderer/renderer.h"
 #include "monado/renderer/rendererAPI.h"
 #include "monado/platform/opengl/openGLIndexBuffer.h"
-#include "monado/platform/vulkan/vulkanFramebuffer.h"
+#include "monado/platform/vulkan/vulkanIndexBuffer.h"
 
 namespace Monado {
 

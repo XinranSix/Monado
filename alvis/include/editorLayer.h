@@ -12,7 +12,7 @@
 #include "monado/renderer/mesh.h"
 #include "monado/editor/sceneHierarchyPanel.h"
 #include "monado/core/math/ray.h"
-#include "monado/editor/assetManagerPanel.h"
+#include "monado/editor/contentBrowserPanel.h"
 #include "monado/editor/objectsPanel.h"
 
 #include "glm/glm.hpp"
@@ -40,20 +40,6 @@ namespace Monado {
         virtual void OnEvent(Event &e) override;
         bool OnKeyPressedEvent(KeyPressedEvent &e);
         bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
-
-        // ImGui UI helpers
-        bool Property(const std::string &name, bool &value);
-        bool Property(const std::string &name, float &value, float min = -1.0f, float max = 1.0f,
-                      PropertyFlag flags = PropertyFlag::None);
-        bool Property(const std::string &name, glm::vec2 &value, PropertyFlag flags);
-        bool Property(const std::string &name, glm::vec2 &value, float min = -1.0f, float max = 1.0f,
-                      PropertyFlag flags = PropertyFlag::None);
-        bool Property(const std::string &name, glm::vec3 &value, PropertyFlag flags);
-        bool Property(const std::string &name, glm::vec3 &value, float min = -1.0f, float max = 1.0f,
-                      PropertyFlag flags = PropertyFlag::None);
-        bool Property(const std::string &name, glm::vec4 &value, PropertyFlag flags);
-        bool Property(const std::string &name, glm::vec4 &value, float min = -1.0f, float max = 1.0f,
-                      PropertyFlag flags = PropertyFlag::None);
 
         void ShowBoundingBoxes(bool show, bool onTop = false);
         void SelectEntity(Entity entity);
@@ -87,7 +73,7 @@ namespace Monado {
 
     private:
         Scope<SceneHierarchyPanel> m_SceneHierarchyPanel;
-        Scope<AssetManagerPanel> m_AssetManagerPanel;
+        Scope<ContentBrowserPanel> m_ContentBrowserPanel;
         Scope<ObjectsPanel> m_ObjectsPanel;
 
         Ref<Scene> m_RuntimeScene, m_EditorScene, m_CurrentScene;
@@ -98,10 +84,6 @@ namespace Monado {
 
         Ref<Shader> m_BrushShader;
         Ref<Material> m_SphereBaseMaterial;
-
-        Ref<Material> m_MeshMaterial;
-        std::vector<Ref<MaterialInstance>> m_MetalSphereMaterialInstances;
-        std::vector<Ref<MaterialInstance>> m_DielectricSphereMaterialInstances;
 
         struct AlbedoInput {
             glm::vec3 Color = {
@@ -143,7 +125,7 @@ namespace Monado {
 
         // Editor resources
         Ref<Texture2D> m_CheckerboardTex;
-        Ref<Texture2D> m_PlayButtonTex;
+        Ref<Texture2D> m_PlayButtonTex, m_StopButtonTex, m_PauseButtonTex;
 
         glm::vec2 m_ViewportBounds[2];
         int m_GizmoType = -1; // -1 = no gizmo

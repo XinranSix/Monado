@@ -121,8 +121,5 @@ Entities:
       Position: [0, 1.0587908, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    CameraComponent:
-      Camera: some camera data...
-      Primary: true
 PhysicsLayers:
   []
