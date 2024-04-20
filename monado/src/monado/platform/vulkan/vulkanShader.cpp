@@ -78,7 +78,7 @@ namespace Monado {
 
     static std::string ReadShaderFromFile(const std::string &filepath) {
         std::string result;
-        std::ifstream in(filepath, std::ios::in | std::ios::binary);
+        std::ifstream in(filepath, std::ios::in );
         if (in) {
             in.seekg(0, std::ios::end);
             result.resize(in.tellg());

@@ -87,5 +87,5 @@ namespace Monado {
 
         static FramebufferPool *s_Instance;
     };
-    
+
 } // namespace Monado

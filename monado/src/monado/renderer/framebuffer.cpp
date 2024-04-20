@@ -1,6 +1,7 @@
 #include "monado/renderer/framebuffer.h"
 
 #include "monado/platform/opengl/openGLFramebuffer.h"
+#include "monado/platform/vulkan/vulkanFramebuffer.h"
 
 #include "monado/renderer/rendererAPI.h"
 
@@ -11,7 +12,8 @@ namespace Monado {
 
         switch (RendererAPI::Current()) {
         case RendererAPIType::None: return nullptr;
-        case RendererAPIType::OpenGL: result = Ref<OpenGLFramebuffer>::Create(spec);
+        case RendererAPIType::OpenGL: result = Ref<OpenGLFramebuffer>::Create(spec); break;
+        case RendererAPIType::Vulkan: result = Ref<VulkanFramebuffer>::Create(spec); break;
         }
         FramebufferPool::GetGlobal()->Add(result);
         return result;
