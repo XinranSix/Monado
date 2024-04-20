@@ -229,7 +229,7 @@ namespace Monado {
             cleanup = true;
         }
 
-        s_CoreAssembly = LoadAssembly("MonadoScriptCore.dll");
+        s_CoreAssembly = LoadAssembly("./assets/script/MonadoScriptCore.dll");
         s_CoreAssemblyImage = GetAssemblyImage(s_CoreAssembly);
 
         auto appAssembly = LoadAssembly(path);

@@ -464,13 +464,22 @@ namespace Monado {
 
         out << YAML::Key << "Entities";
         out << YAML::Value << YAML::BeginSeq;
-        m_Scene->m_Registry.each([&](auto entityID) {
+        // m_Scene->m_Registry.each([&](auto entityID) {
+        //     Entity entity = { entityID, m_Scene.Raw() };
+        //     if (!entity || !entity.HasComponent<IDComponent>())
+        //         return;
+
+        //     SerializeEntity(out, entity);
+        // });
+
+        m_Scene->m_Registry.view<entt::entity>().each([&](auto entityID) {
             Entity entity = { entityID, m_Scene.Raw() };
             if (!entity || !entity.HasComponent<IDComponent>())
                 return;
 
             SerializeEntity(out, entity);
         });
+
         out << YAML::EndSeq;
 
         out << YAML::Key << "PhysicsLayers";

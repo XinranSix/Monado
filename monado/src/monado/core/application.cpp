@@ -36,7 +36,7 @@ namespace Monado {
         m_ImGuiLayer = new ImGuiLayer("ImGui");
         PushOverlay(m_ImGuiLayer);
 
-        ScriptEngine::Init("ExampleApp.dll");
+        ScriptEngine::Init("./assets/script/ExampleApp.dll");
         Physics::Init();
 
         Renderer::Init();
