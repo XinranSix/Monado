@@ -77,6 +77,13 @@ namespace Monado {
             glEnable(GL_DEBUG_OUTPUT);
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
+            auto &caps = s_Data->RenderCaps;
+            caps.Vendor = (const char *)glGetString(GL_VENDOR);
+            caps.Device = (const char *)glGetString(GL_RENDERER);
+            caps.Version = (const char *)glGetString(GL_VERSION);
+            MND_CORE_TRACE("OpenGLRendererData::Init");
+            Utils::DumpGPUInfo();
+
             unsigned int vao;
             glGenVertexArrays(1, &vao);
             glBindVertexArray(vao);
@@ -91,11 +98,6 @@ namespace Monado {
 
             glEnable(GL_MULTISAMPLE);
             glEnable(GL_STENCIL_TEST);
-
-            auto &caps = s_Data->RenderCaps;
-            caps.Vendor = (const char *)glGetString(GL_VENDOR);
-            caps.Renderer = (const char *)glGetString(GL_RENDERER);
-            caps.Version = (const char *)glGetString(GL_VERSION);
 
             glGetIntegerv(GL_MAX_SAMPLES, &caps.MaxSamples);
             glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &caps.MaxAnisotropy);

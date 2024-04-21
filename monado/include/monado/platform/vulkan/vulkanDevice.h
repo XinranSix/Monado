@@ -2,7 +2,7 @@
 
 #include "monado/core/ref.h"
 
-#include "Vulkan.h"
+#include "vulkan.h"
 
 #include <unordered_set>
 
@@ -25,6 +25,8 @@ namespace Monado {
 
         VkPhysicalDevice GetVulkanPhysicalDevice() const { return m_PhysicalDevice; }
         const QueueFamilyIndices &GetQueueFamilyIndices() const { return m_QueueFamilyIndices; }
+
+        const VkPhysicalDeviceProperties &GetProperties() const { return m_Properties; }
 
         VkFormat GetDepthFormat() const { return m_DepthFormat; }
 

@@ -15,6 +15,7 @@
 
 #include "monado/platform/vulkan/vulkanRenderer.h"
 #include "monado/platform/vulkan/vulkanFramebuffer.h"
+#include "monado/platform/vulkan/vulkanShader.h"
 
 #include "monado/platform/openGL/openGLFramebuffer.h"
 #include "monado/platform/openGL/openGLShader.h"

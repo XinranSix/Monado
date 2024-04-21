@@ -13,12 +13,12 @@ namespace Monado {
     static PhysicsErrorCallback s_ErrorCallback;
     static PhysicsAssertHandler s_AssertHandler;
     static physx::PxDefaultAllocator s_Allocator;
-    static physx::PxFoundation *s_Foundation;
-    static physx::PxPvd *s_PVD;
-    static physx::PxPhysics *s_Physics;
-    static physx::PxCooking *s_CookingFactory;
+    static physx::PxFoundation *s_Foundation = nullptr;
+    static physx::PxPvd *s_PVD = nullptr;
+    static physx::PxPhysics *s_Physics = nullptr;
+    static physx::PxCooking *s_CookingFactory = nullptr;
     static physx::PxOverlapHit s_OverlapBuffer[OVERLAP_MAX_COLLIDERS];
-    static physx::PxDefaultCpuDispatcher *s_CPUDispatcher;
+    static physx::PxDefaultCpuDispatcher *s_CPUDispatcher = nullptr;
 
     static ContactListener3D s_ContactListener;
 

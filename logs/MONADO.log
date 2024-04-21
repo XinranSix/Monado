@@ -1,392 +1,393 @@
-[2024-04-21 00:00:39.598] [MONADO] [trace] Monado Engine v0.1a
-[2024-04-21 00:00:39.600] [MONADO] [trace] Initializing...
-[2024-04-21 00:00:39.600] [MONADO] [info] Creating window Alvis (1600, 900)
-[2024-04-21 00:00:39.862] [MONADO] [info] VulkanContext::Create
-[2024-04-21 00:00:39.929] [MONADO] [trace] Vulkan Instance Layers:
-[2024-04-21 00:00:39.929] [MONADO] [trace]   VK_LAYER_NV_optimus
-[2024-04-21 00:00:39.929] [MONADO] [trace]   VK_LAYER_TENCENT_wegame_cross_overlay
-[2024-04-21 00:00:39.929] [MONADO] [trace]   VK_LAYER_EOS_Overlay
-[2024-04-21 00:00:39.929] [MONADO] [trace]   VK_LAYER_VALVE_steam_overlay
-[2024-04-21 00:00:39.929] [MONADO] [trace]   VK_LAYER_VALVE_steam_fossilize
-[2024-04-21 00:00:39.929] [MONADO] [trace]   VK_LAYER_LUNARG_api_dump
-[2024-04-21 00:00:39.929] [MONADO] [trace]   VK_LAYER_LUNARG_gfxreconstruct
-[2024-04-21 00:00:39.929] [MONADO] [trace]   VK_LAYER_KHRONOS_synchronization2
-[2024-04-21 00:00:39.929] [MONADO] [trace]   VK_LAYER_KHRONOS_validation
-[2024-04-21 00:00:39.985] [MONADO] [trace] Selected physical device has 162 extensions
-[2024-04-21 00:00:39.985] [MONADO] [trace]   VK_KHR_16bit_storage
-[2024-04-21 00:00:39.985] [MONADO] [trace]   VK_KHR_8bit_storage
-[2024-04-21 00:00:39.985] [MONADO] [trace]   VK_KHR_acceleration_structure
-[2024-04-21 00:00:39.985] [MONADO] [trace]   VK_KHR_bind_memory2
-[2024-04-21 00:00:39.985] [MONADO] [trace]   VK_KHR_buffer_device_address
-[2024-04-21 00:00:39.985] [MONADO] [trace]   VK_KHR_copy_commands2
-[2024-04-21 00:00:39.985] [MONADO] [trace]   VK_KHR_create_renderpass2
-[2024-04-21 00:00:39.985] [MONADO] [trace]   VK_KHR_dedicated_allocation
-[2024-04-21 00:00:39.985] [MONADO] [trace]   VK_KHR_deferred_host_operations
-[2024-04-21 00:00:39.985] [MONADO] [trace]   VK_KHR_depth_stencil_resolve
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_descriptor_update_template
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_device_group
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_draw_indirect_count
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_driver_properties
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_dynamic_rendering
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_external_fence
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_external_fence_win32
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_external_memory
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_external_memory_win32
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_external_semaphore
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_external_semaphore_win32
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_format_feature_flags2
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_fragment_shading_rate
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_get_memory_requirements2
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_global_priority
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_image_format_list
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_imageless_framebuffer
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_maintenance1
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_maintenance2
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_maintenance3
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_maintenance4
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_multiview
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_pipeline_executable_properties
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_pipeline_library
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_present_id
-[2024-04-21 00:00:39.986] [MONADO] [trace]   VK_KHR_present_wait
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_push_descriptor
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_ray_query
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_ray_tracing_pipeline
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_relaxed_block_layout
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_sampler_mirror_clamp_to_edge
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_sampler_ycbcr_conversion
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_separate_depth_stencil_layouts
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_shader_atomic_int64
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_shader_clock
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_shader_draw_parameters
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_shader_float16_int8
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_shader_float_controls
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_shader_integer_dot_product
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_shader_non_semantic_info
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_shader_subgroup_extended_types
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_shader_subgroup_uniform_control_flow
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_shader_terminate_invocation
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_spirv_1_4
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_storage_buffer_storage_class
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_swapchain
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_swapchain_mutable_format
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_synchronization2
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_timeline_semaphore
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_uniform_buffer_standard_layout
-[2024-04-21 00:00:39.987] [MONADO] [trace]   VK_KHR_variable_pointers
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_KHR_vulkan_memory_model
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_KHR_win32_keyed_mutex
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_KHR_workgroup_memory_explicit_layout
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_KHR_zero_initialize_workgroup_memory
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_4444_formats
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_blend_operation_advanced
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_border_color_swizzle
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_buffer_device_address
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_calibrated_timestamps
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_color_write_enable
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_conditional_rendering
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_conservative_rasterization
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_custom_border_color
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_depth_clip_control
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_depth_clip_enable
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_depth_range_unrestricted
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_descriptor_indexing
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_discard_rectangles
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_extended_dynamic_state
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_extended_dynamic_state2
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_external_memory_host
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_fragment_shader_interlock
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_full_screen_exclusive
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_global_priority
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_global_priority_query
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_hdr_metadata
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_host_query_reset
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_image_robustness
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_image_view_min_lod
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_index_type_uint8
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_inline_uniform_block
-[2024-04-21 00:00:39.988] [MONADO] [trace]   VK_EXT_line_rasterization
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_load_store_op_none
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_memory_budget
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_memory_priority
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_multi_draw
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_pageable_device_local_memory
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_pci_bus_info
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_pipeline_creation_cache_control
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_pipeline_creation_feedback
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_post_depth_coverage
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_primitive_topology_list_restart
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_private_data
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_provoking_vertex
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_queue_family_foreign
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_robustness2
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_sample_locations
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_sampler_filter_minmax
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_scalar_block_layout
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_separate_stencil_usage
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_shader_atomic_float
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_shader_demote_to_helper_invocation
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_shader_image_atomic_int64
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_shader_subgroup_ballot
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_shader_subgroup_vote
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_shader_viewport_index_layer
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_subgroup_size_control
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_texel_buffer_alignment
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_tooling_info
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_transform_feedback
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_vertex_attribute_divisor
-[2024-04-21 00:00:39.989] [MONADO] [trace]   VK_EXT_vertex_input_dynamic_state
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_EXT_ycbcr_2plane_444_formats
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_EXT_ycbcr_image_arrays
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_acquire_winrt_display
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_clip_space_w_scaling
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_compute_shader_derivatives
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_cooperative_matrix
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_corner_sampled_image
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_coverage_reduction_mode
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_cuda_kernel_launch
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_dedicated_allocation
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_dedicated_allocation_image_aliasing
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_device_diagnostic_checkpoints
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_device_diagnostics_config
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_device_generated_commands
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_external_memory
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_external_memory_win32
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_fill_rectangle
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_fragment_coverage_to_color
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_fragment_shader_barycentric
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_fragment_shading_rate_enums
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_framebuffer_mixed_samples
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_geometry_shader_passthrough
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_inherited_viewport_scissor
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_mesh_shader
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_ray_tracing
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_ray_tracing_motion_blur
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_representative_fragment_test
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_sample_mask_override_coverage
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_scissor_exclusive
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_shader_image_footprint
-[2024-04-21 00:00:39.990] [MONADO] [trace]   VK_NV_shader_sm_builtins
-[2024-04-21 00:00:39.991] [MONADO] [trace]   VK_NV_shader_subgroup_partitioned
-[2024-04-21 00:00:39.991] [MONADO] [trace]   VK_NV_shading_rate_image
-[2024-04-21 00:00:39.991] [MONADO] [trace]   VK_NV_viewport_array2
-[2024-04-21 00:00:39.991] [MONADO] [trace]   VK_NV_viewport_swizzle
-[2024-04-21 00:00:39.991] [MONADO] [trace]   VK_NV_win32_keyed_mutex
-[2024-04-21 00:00:39.991] [MONADO] [trace]   VK_NVX_binary_import
-[2024-04-21 00:00:39.991] [MONADO] [trace]   VK_NVX_image_view_handle
-[2024-04-21 00:00:39.991] [MONADO] [trace]   VK_NVX_multiview_per_view_attributes
-[2024-04-21 00:00:40.310] [MONADO] [trace] VulkanAllocator (SwapChain): allocating 13107200 bytes
-[2024-04-21 00:00:40.313] [MONADO] [warning] VulkanContext::OnResize
-[2024-04-21 00:00:40.327] [MONADO] [trace] VulkanAllocator (SwapChain): allocating 28835840 bytes
-[2024-04-21 00:00:40.330] [MONADO] [trace] VulkanAllocator (SwapChain): allocating 28835840 bytes
-[2024-04-21 00:00:40.335] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.335] [MONADO] [trace]  Vulkan Shader Reflection
-[2024-04-21 00:00:40.335] [MONADO] [trace]  assets/shaders/EnvironmentMipFilter.glsl
-[2024-04-21 00:00:40.335] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.336] [MONADO] [trace] Uniform Buffers:
-[2024-04-21 00:00:40.336] [MONADO] [trace] Push Constant Buffers:
-[2024-04-21 00:00:40.336] [MONADO] [trace]   Name: u_Uniforms
-[2024-04-21 00:00:40.336] [MONADO] [trace]   Member Count: 1
-[2024-04-21 00:00:40.336] [MONADO] [trace]   Size: 4
-[2024-04-21 00:00:40.336] [MONADO] [trace] Sampled Images:
-[2024-04-21 00:00:40.336] [MONADO] [trace]   inputTexture (0, 1)
-[2024-04-21 00:00:40.336] [MONADO] [trace] Storage Images:
-[2024-04-21 00:00:40.336] [MONADO] [trace]   outputTexture (0, 0)
-[2024-04-21 00:00:40.337] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.337] [MONADO] [info] Creating descriptor set 0 with 0 ubos, 1 samplers and 1 storage images
-[2024-04-21 00:00:40.339] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.339] [MONADO] [trace]  Vulkan Shader Reflection
-[2024-04-21 00:00:40.339] [MONADO] [trace]  assets/shaders/EquirectangularToCubeMap.glsl
-[2024-04-21 00:00:40.339] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.339] [MONADO] [trace] Uniform Buffers:
-[2024-04-21 00:00:40.339] [MONADO] [trace] Push Constant Buffers:
-[2024-04-21 00:00:40.339] [MONADO] [trace] Sampled Images:
-[2024-04-21 00:00:40.339] [MONADO] [trace]   u_EquirectangularTex (0, 1)
-[2024-04-21 00:00:40.339] [MONADO] [trace] Storage Images:
-[2024-04-21 00:00:40.339] [MONADO] [trace]   o_CubeMap (0, 0)
-[2024-04-21 00:00:40.339] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.340] [MONADO] [info] Creating descriptor set 0 with 0 ubos, 1 samplers and 1 storage images
-[2024-04-21 00:00:40.341] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.342] [MONADO] [trace]  Vulkan Shader Reflection
-[2024-04-21 00:00:40.342] [MONADO] [trace]  assets/shaders/EnvironmentIrradiance.glsl
-[2024-04-21 00:00:40.342] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.342] [MONADO] [trace] Uniform Buffers:
-[2024-04-21 00:00:40.342] [MONADO] [trace] Push Constant Buffers:
-[2024-04-21 00:00:40.342] [MONADO] [trace] Sampled Images:
-[2024-04-21 00:00:40.342] [MONADO] [trace]   u_RadianceMap (0, 1)
-[2024-04-21 00:00:40.342] [MONADO] [trace] Storage Images:
-[2024-04-21 00:00:40.342] [MONADO] [trace]   o_IrradianceMap (0, 0)
-[2024-04-21 00:00:40.342] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.342] [MONADO] [info] Creating descriptor set 0 with 0 ubos, 1 samplers and 1 storage images
-[2024-04-21 00:00:40.344] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.344] [MONADO] [trace]  Vulkan Shader Reflection
-[2024-04-21 00:00:40.344] [MONADO] [trace]  assets/shaders/Grid.glsl
-[2024-04-21 00:00:40.344] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.344] [MONADO] [trace] Uniform Buffers:
-[2024-04-21 00:00:40.344] [MONADO] [trace] VulkanAllocator (UniformBuffer): allocating 256 bytes
-[2024-04-21 00:00:40.345] [MONADO] [trace]   Camera (0, 0)
-[2024-04-21 00:00:40.345] [MONADO] [trace]   Member Count: 2
-[2024-04-21 00:00:40.345] [MONADO] [trace]   Size: 128
-[2024-04-21 00:00:40.345] [MONADO] [trace] -------------------
-[2024-04-21 00:00:40.345] [MONADO] [trace] Push Constant Buffers:
-[2024-04-21 00:00:40.345] [MONADO] [trace] Sampled Images:
-[2024-04-21 00:00:40.345] [MONADO] [trace] Storage Images:
-[2024-04-21 00:00:40.345] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.345] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.345] [MONADO] [trace]  Vulkan Shader Reflection
-[2024-04-21 00:00:40.345] [MONADO] [trace]  assets/shaders/Grid.glsl
-[2024-04-21 00:00:40.345] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.345] [MONADO] [trace] Uniform Buffers:
-[2024-04-21 00:00:40.346] [MONADO] [trace] Push Constant Buffers:
-[2024-04-21 00:00:40.346] [MONADO] [trace]   Name: u_Settings
-[2024-04-21 00:00:40.346] [MONADO] [trace]   Member Count: 2
-[2024-04-21 00:00:40.346] [MONADO] [trace]   Size: 72
-[2024-04-21 00:00:40.346] [MONADO] [trace] Sampled Images:
-[2024-04-21 00:00:40.346] [MONADO] [trace] Storage Images:
-[2024-04-21 00:00:40.346] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.346] [MONADO] [info] Creating descriptor set 0 with 1 ubos, 0 samplers and 0 storage images
-[2024-04-21 00:00:40.348] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.348] [MONADO] [trace]  Vulkan Shader Reflection
-[2024-04-21 00:00:40.348] [MONADO] [trace]  assets/shaders/SceneComposite.glsl
-[2024-04-21 00:00:40.348] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.348] [MONADO] [trace] Uniform Buffers:
-[2024-04-21 00:00:40.348] [MONADO] [trace] Push Constant Buffers:
-[2024-04-21 00:00:40.348] [MONADO] [trace] Sampled Images:
-[2024-04-21 00:00:40.348] [MONADO] [trace] Storage Images:
-[2024-04-21 00:00:40.348] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.348] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.348] [MONADO] [trace]  Vulkan Shader Reflection
-[2024-04-21 00:00:40.348] [MONADO] [trace]  assets/shaders/SceneComposite.glsl
-[2024-04-21 00:00:40.348] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.349] [MONADO] [trace] Uniform Buffers:
-[2024-04-21 00:00:40.349] [MONADO] [trace] Push Constant Buffers:
-[2024-04-21 00:00:40.349] [MONADO] [trace]   Name: u_Uniforms
-[2024-04-21 00:00:40.349] [MONADO] [trace]   Member Count: 1
-[2024-04-21 00:00:40.349] [MONADO] [trace]   Size: 4
-[2024-04-21 00:00:40.349] [MONADO] [trace] Sampled Images:
-[2024-04-21 00:00:40.349] [MONADO] [trace]   u_Texture (0, 0)
-[2024-04-21 00:00:40.349] [MONADO] [trace] Storage Images:
-[2024-04-21 00:00:40.349] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.349] [MONADO] [info] Creating descriptor set 0 with 0 ubos, 1 samplers and 0 storage images
-[2024-04-21 00:00:40.354] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.354] [MONADO] [trace]  Vulkan Shader Reflection
-[2024-04-21 00:00:40.354] [MONADO] [trace]  assets/shaders/MonadoPBR_Static.glsl
-[2024-04-21 00:00:40.354] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.355] [MONADO] [trace] Uniform Buffers:
-[2024-04-21 00:00:40.355] [MONADO] [trace] VulkanAllocator (UniformBuffer): allocating 256 bytes
-[2024-04-21 00:00:40.355] [MONADO] [trace]   ShadowData (0, 1)
-[2024-04-21 00:00:40.355] [MONADO] [trace]   Member Count: 1
-[2024-04-21 00:00:40.355] [MONADO] [trace]   Size: 64
-[2024-04-21 00:00:40.355] [MONADO] [trace] -------------------
-[2024-04-21 00:00:40.355] [MONADO] [trace]   Camera (0, 0)
-[2024-04-21 00:00:40.355] [MONADO] [trace]   Member Count: 2
-[2024-04-21 00:00:40.355] [MONADO] [trace]   Size: 128
-[2024-04-21 00:00:40.355] [MONADO] [trace] -------------------
-[2024-04-21 00:00:40.355] [MONADO] [trace] Push Constant Buffers:
-[2024-04-21 00:00:40.355] [MONADO] [trace] Sampled Images:
-[2024-04-21 00:00:40.355] [MONADO] [trace] Storage Images:
-[2024-04-21 00:00:40.355] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.356] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.356] [MONADO] [trace]  Vulkan Shader Reflection
-[2024-04-21 00:00:40.356] [MONADO] [trace]  assets/shaders/MonadoPBR_Static.glsl
-[2024-04-21 00:00:40.356] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.356] [MONADO] [trace] Uniform Buffers:
-[2024-04-21 00:00:40.357] [MONADO] [trace] VulkanAllocator (UniformBuffer): allocating 256 bytes
-[2024-04-21 00:00:40.357] [MONADO] [trace]   SceneData (0, 2)
-[2024-04-21 00:00:40.357] [MONADO] [trace]   Member Count: 3
-[2024-04-21 00:00:40.357] [MONADO] [trace]   Size: 48
-[2024-04-21 00:00:40.357] [MONADO] [trace] -------------------
-[2024-04-21 00:00:40.357] [MONADO] [trace] VulkanAllocator (UniformBuffer): allocating 256 bytes
-[2024-04-21 00:00:40.357] [MONADO] [trace]   RendererData (0, 3)
-[2024-04-21 00:00:40.357] [MONADO] [trace]   Member Count: 7
-[2024-04-21 00:00:40.357] [MONADO] [trace]   Size: 28
-[2024-04-21 00:00:40.357] [MONADO] [trace] -------------------
-[2024-04-21 00:00:40.357] [MONADO] [trace] Push Constant Buffers:
-[2024-04-21 00:00:40.357] [MONADO] [trace]   Name: u_MaterialUniforms
-[2024-04-21 00:00:40.357] [MONADO] [trace]   Member Count: 5
-[2024-04-21 00:00:40.357] [MONADO] [trace]   Size: 92
-[2024-04-21 00:00:40.357] [MONADO] [trace] Sampled Images:
-[2024-04-21 00:00:40.357] [MONADO] [trace]   u_EnvIrradianceTex (1, 9)
-[2024-04-21 00:00:40.357] [MONADO] [trace]   u_EnvRadianceTex (1, 8)
-[2024-04-21 00:00:40.357] [MONADO] [trace]   u_BRDFLUTTexture (1, 10)
-[2024-04-21 00:00:40.357] [MONADO] [trace]   u_AlbedoTexture (0, 4)
-[2024-04-21 00:00:40.357] [MONADO] [trace]   u_MetalnessTexture (0, 6)
-[2024-04-21 00:00:40.357] [MONADO] [trace]   u_RoughnessTexture (0, 7)
-[2024-04-21 00:00:40.357] [MONADO] [trace]   u_NormalTexture (0, 5)
-[2024-04-21 00:00:40.358] [MONADO] [trace]   u_ShadowMapTexture (1, 11)
-[2024-04-21 00:00:40.358] [MONADO] [trace] Storage Images:
-[2024-04-21 00:00:40.358] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.358] [MONADO] [info] Creating descriptor set 0 with 4 ubos, 4 samplers and 0 storage images
-[2024-04-21 00:00:40.358] [MONADO] [info] Creating descriptor set 1 with 0 ubos, 4 samplers and 0 storage images
-[2024-04-21 00:00:40.359] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.359] [MONADO] [trace]  Vulkan Shader Reflection
-[2024-04-21 00:00:40.359] [MONADO] [trace]  assets/shaders/Skybox.glsl
-[2024-04-21 00:00:40.359] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.360] [MONADO] [trace] Uniform Buffers:
-[2024-04-21 00:00:40.360] [MONADO] [trace]   Camera (0, 0)
-[2024-04-21 00:00:40.360] [MONADO] [trace]   Member Count: 2
-[2024-04-21 00:00:40.360] [MONADO] [trace]   Size: 128
-[2024-04-21 00:00:40.360] [MONADO] [trace] -------------------
-[2024-04-21 00:00:40.360] [MONADO] [trace] Push Constant Buffers:
-[2024-04-21 00:00:40.360] [MONADO] [trace] Sampled Images:
-[2024-04-21 00:00:40.360] [MONADO] [trace] Storage Images:
-[2024-04-21 00:00:40.360] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.360] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.360] [MONADO] [trace]  Vulkan Shader Reflection
-[2024-04-21 00:00:40.360] [MONADO] [trace]  assets/shaders/Skybox.glsl
-[2024-04-21 00:00:40.360] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.360] [MONADO] [trace] Uniform Buffers:
-[2024-04-21 00:00:40.360] [MONADO] [trace] Push Constant Buffers:
-[2024-04-21 00:00:40.360] [MONADO] [trace]   Name: u_Uniforms
-[2024-04-21 00:00:40.360] [MONADO] [trace]   Member Count: 1
-[2024-04-21 00:00:40.360] [MONADO] [trace]   Size: 4
-[2024-04-21 00:00:40.360] [MONADO] [trace] Sampled Images:
-[2024-04-21 00:00:40.360] [MONADO] [trace]   u_Texture (0, 1)
-[2024-04-21 00:00:40.360] [MONADO] [trace] Storage Images:
-[2024-04-21 00:00:40.360] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.360] [MONADO] [info] Creating descriptor set 0 with 1 ubos, 1 samplers and 0 storage images
-[2024-04-21 00:00:40.362] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.362] [MONADO] [trace]  Vulkan Shader Reflection
-[2024-04-21 00:00:40.362] [MONADO] [trace]  assets/shaders/ShadowMap.glsl
-[2024-04-21 00:00:40.362] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.362] [MONADO] [trace] Uniform Buffers:
-[2024-04-21 00:00:40.362] [MONADO] [trace]   ShadowData (0, 1)
-[2024-04-21 00:00:40.362] [MONADO] [trace]   Member Count: 1
-[2024-04-21 00:00:40.362] [MONADO] [trace]   Size: 64
-[2024-04-21 00:00:40.362] [MONADO] [trace] -------------------
-[2024-04-21 00:00:40.362] [MONADO] [trace] Push Constant Buffers:
-[2024-04-21 00:00:40.362] [MONADO] [trace] Sampled Images:
-[2024-04-21 00:00:40.362] [MONADO] [trace] Storage Images:
-[2024-04-21 00:00:40.362] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.362] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.362] [MONADO] [trace]  Vulkan Shader Reflection
-[2024-04-21 00:00:40.362] [MONADO] [trace]  assets/shaders/ShadowMap.glsl
-[2024-04-21 00:00:40.362] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.362] [MONADO] [trace] Uniform Buffers:
-[2024-04-21 00:00:40.362] [MONADO] [trace] Push Constant Buffers:
-[2024-04-21 00:00:40.362] [MONADO] [trace] Sampled Images:
-[2024-04-21 00:00:40.362] [MONADO] [trace] Storage Images:
-[2024-04-21 00:00:40.362] [MONADO] [trace] ===========================
-[2024-04-21 00:00:40.362] [MONADO] [info] Creating descriptor set 0 with 1 ubos, 0 samplers and 0 storage images
-[2024-04-21 00:00:40.365] [MONADO] [trace] VulkanAllocator (Texture2D): allocating 256 bytes
-[2024-04-21 00:00:40.365] [MONADO] [trace] VulkanAllocator (Texture2D): allocating 512 bytes
-[2024-04-21 00:00:40.368] [MONADO] [warning] VulkanImage2D::UpdateDescriptor to ImageView = 0xee24d0000000059
-[2024-04-21 00:00:40.368] [MONADO] [trace] VulkanAllocator (TextureCube): allocating 3072 bytes
-[2024-04-21 00:00:40.368] [MONADO] [trace] VulkanAllocator (TextureCube): allocating 256 bytes
-[2024-04-21 00:00:40.369] [MONADO] [trace] VulkanAllocator (VertexBuffer): allocating 256 bytes
-[2024-04-21 00:00:40.369] [MONADO] [trace] VulkanAllocator (IndexBuffer): allocating 256 bytes
-[2024-04-21 00:00:40.369] [MONADO] [trace] VulkanAllocator (Texture2D): allocating 262144 bytes
-[2024-04-21 00:00:40.369] [MONADO] [trace] VulkanAllocator (Texture2D): allocating 351232 bytes
-[2024-04-21 00:00:40.370] [MONADO] [warning] VulkanImage2D::UpdateDescriptor to ImageView = 0x8f1c31000000006d
-[2024-04-21 00:00:40.370] [MONADO] [trace] VulkanAllocator (Texture2D): allocating 262144 bytes
-[2024-04-21 00:00:40.370] [MONADO] [trace] VulkanAllocator (Texture2D): allocating 351232 bytes
-[2024-04-21 00:00:40.371] [MONADO] [warning] VulkanImage2D::UpdateDescriptor to ImageView = 0xa182620000000079
-[2024-04-21 00:00:40.371] [MONADO] [trace] VulkanAllocator (Framebuffer): allocating 67108864 bytes
-[2024-04-21 00:00:40.371] [MONADO] [warning] VulkanImage2D::UpdateDescriptor to ImageView = 0xb4ae2e000000007d
-[2024-04-21 00:00:40.372] [MONADO] [trace] VulkanAllocator (Framebuffer): allocating 67108864 bytes
-[2024-04-21 00:00:40.372] [MONADO] [warning] VulkanImage2D::UpdateDescriptor to ImageView = 0xa171580000000083
-[2024-04-21 00:00:40.372] [MONADO] [trace] VulkanAllocator (Framebuffer): allocating 67108864 bytes
-[2024-04-21 00:00:40.373] [MONADO] [warning] VulkanImage2D::UpdateDescriptor to ImageView = 0x93d4f20000000089
-[2024-04-21 00:00:40.373] [MONADO] [trace] VulkanAllocator (Framebuffer): allocating 67108864 bytes
-[2024-04-21 00:00:40.374] [MONADO] [warning] VulkanImage2D::UpdateDescriptor to ImageView = 0x993a4d000000008f
-[2024-0
+[2024-04-21 14:25:39.606] [MONADO] [trace] Monado Engine v0.1a
+[2024-04-21 14:25:39.607] [MONADO] [trace] Initializing...
+[2024-04-21 14:25:39.607] [MONADO] [info] Creating window Alvis (1600, 900)
+[2024-04-21 14:25:39.914] [MONADO] [info] VulkanContext::Create
+[2024-04-21 14:25:39.996] [MONADO] [trace] Vulkan Instance Layers:
+[2024-04-21 14:25:39.996] [MONADO] [trace]   VK_LAYER_NV_optimus
+[2024-04-21 14:25:39.996] [MONADO] [trace]   VK_LAYER_TENCENT_wegame_cross_overlay
+[2024-04-21 14:25:39.997] [MONADO] [trace]   VK_LAYER_EOS_Overlay
+[2024-04-21 14:25:39.997] [MONADO] [trace]   VK_LAYER_VALVE_steam_overlay
+[2024-04-21 14:25:39.997] [MONADO] [trace]   VK_LAYER_VALVE_steam_fossilize
+[2024-04-21 14:25:39.997] [MONADO] [trace]   VK_LAYER_LUNARG_api_dump
+[2024-04-21 14:25:39.997] [MONADO] [trace]   VK_LAYER_LUNARG_gfxreconstruct
+[2024-04-21 14:25:39.997] [MONADO] [trace]   VK_LAYER_KHRONOS_synchronization2
+[2024-04-21 14:25:39.997] [MONADO] [trace]   VK_LAYER_KHRONOS_validation
+[2024-04-21 14:25:40.056] [MONADO] [trace] Selected physical device has 162 extensions
+[2024-04-21 14:25:40.056] [MONADO] [trace]   VK_KHR_16bit_storage
+[2024-04-21 14:25:40.056] [MONADO] [trace]   VK_KHR_8bit_storage
+[2024-04-21 14:25:40.056] [MONADO] [trace]   VK_KHR_acceleration_structure
+[2024-04-21 14:25:40.056] [MONADO] [trace]   VK_KHR_bind_memory2
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_buffer_device_address
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_copy_commands2
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_create_renderpass2
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_dedicated_allocation
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_deferred_host_operations
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_depth_stencil_resolve
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_descriptor_update_template
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_device_group
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_draw_indirect_count
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_driver_properties
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_dynamic_rendering
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_external_fence
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_external_fence_win32
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_external_memory
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_external_memory_win32
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_external_semaphore
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_external_semaphore_win32
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_format_feature_flags2
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_fragment_shading_rate
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_get_memory_requirements2
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_global_priority
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_image_format_list
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_imageless_framebuffer
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_maintenance1
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_maintenance2
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_maintenance3
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_maintenance4
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_multiview
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_pipeline_executable_properties
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_pipeline_library
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_present_id
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_present_wait
+[2024-04-21 14:25:40.057] [MONADO] [trace]   VK_KHR_push_descriptor
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_ray_query
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_ray_tracing_pipeline
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_relaxed_block_layout
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_sampler_mirror_clamp_to_edge
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_sampler_ycbcr_conversion
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_separate_depth_stencil_layouts
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_shader_atomic_int64
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_shader_clock
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_shader_draw_parameters
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_shader_float16_int8
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_shader_float_controls
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_shader_integer_dot_product
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_shader_non_semantic_info
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_shader_subgroup_extended_types
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_shader_subgroup_uniform_control_flow
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_shader_terminate_invocation
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_spirv_1_4
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_storage_buffer_storage_class
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_swapchain
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_swapchain_mutable_format
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_synchronization2
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_timeline_semaphore
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_uniform_buffer_standard_layout
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_variable_pointers
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_vulkan_memory_model
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_win32_keyed_mutex
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_workgroup_memory_explicit_layout
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_KHR_zero_initialize_workgroup_memory
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_EXT_4444_formats
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_EXT_blend_operation_advanced
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_EXT_border_color_swizzle
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_EXT_buffer_device_address
+[2024-04-21 14:25:40.058] [MONADO] [trace]   VK_EXT_calibrated_timestamps
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_color_write_enable
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_conditional_rendering
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_conservative_rasterization
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_custom_border_color
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_depth_clip_control
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_depth_clip_enable
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_depth_range_unrestricted
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_descriptor_indexing
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_discard_rectangles
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_extended_dynamic_state
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_extended_dynamic_state2
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_external_memory_host
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_fragment_shader_interlock
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_full_screen_exclusive
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_global_priority
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_global_priority_query
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_hdr_metadata
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_host_query_reset
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_image_robustness
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_image_view_min_lod
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_index_type_uint8
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_inline_uniform_block
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_line_rasterization
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_load_store_op_none
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_memory_budget
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_memory_priority
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_multi_draw
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_pageable_device_local_memory
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_pci_bus_info
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_pipeline_creation_cache_control
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_pipeline_creation_feedback
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_post_depth_coverage
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_primitive_topology_list_restart
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_private_data
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_provoking_vertex
+[2024-04-21 14:25:40.059] [MONADO] [trace]   VK_EXT_queue_family_foreign
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_robustness2
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_sample_locations
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_sampler_filter_minmax
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_scalar_block_layout
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_separate_stencil_usage
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_shader_atomic_float
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_shader_demote_to_helper_invocation
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_shader_image_atomic_int64
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_shader_subgroup_ballot
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_shader_subgroup_vote
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_shader_viewport_index_layer
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_subgroup_size_control
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_texel_buffer_alignment
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_tooling_info
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_transform_feedback
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_vertex_attribute_divisor
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_vertex_input_dynamic_state
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_ycbcr_2plane_444_formats
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_EXT_ycbcr_image_arrays
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_acquire_winrt_display
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_clip_space_w_scaling
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_compute_shader_derivatives
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_cooperative_matrix
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_corner_sampled_image
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_coverage_reduction_mode
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_cuda_kernel_launch
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_dedicated_allocation
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_dedicated_allocation_image_aliasing
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_device_diagnostic_checkpoints
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_device_diagnostics_config
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_device_generated_commands
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_external_memory
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_external_memory_win32
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_fill_rectangle
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_fragment_coverage_to_color
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_fragment_shader_barycentric
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_fragment_shading_rate_enums
+[2024-04-21 14:25:40.060] [MONADO] [trace]   VK_NV_framebuffer_mixed_samples
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NV_geometry_shader_passthrough
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NV_inherited_viewport_scissor
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NV_mesh_shader
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NV_ray_tracing
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NV_ray_tracing_motion_blur
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NV_representative_fragment_test
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NV_sample_mask_override_coverage
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NV_scissor_exclusive
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NV_shader_image_footprint
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NV_shader_sm_builtins
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NV_shader_subgroup_partitioned
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NV_shading_rate_image
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NV_viewport_array2
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NV_viewport_swizzle
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NV_win32_keyed_mutex
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NVX_binary_import
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NVX_image_view_handle
+[2024-04-21 14:25:40.061] [MONADO] [trace]   VK_NVX_multiview_per_view_attributes
+[2024-04-21 14:25:40.428] [MONADO] [trace] VulkanAllocator (SwapChain): allocating 13107200 bytes
+[2024-04-21 14:25:40.434] [MONADO] [warning] VulkanContext::OnResize
+[2024-04-21 14:25:40.452] [MONADO] [trace] VulkanAllocator (SwapChain): allocating 28835840 bytes
+[2024-04-21 14:25:40.456] [MONADO] [trace] VulkanAllocator (SwapChain): allocating 28835840 bytes
+[2024-04-21 14:25:40.463] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.463] [MONADO] [trace]  Vulkan Shader Reflection
+[2024-04-21 14:25:40.463] [MONADO] [trace]  assets/shaders/EnvironmentMipFilter.glsl
+[2024-04-21 14:25:40.463] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.464] [MONADO] [trace] Uniform Buffers:
+[2024-04-21 14:25:40.464] [MONADO] [trace] Push Constant Buffers:
+[2024-04-21 14:25:40.464] [MONADO] [trace]   Name: u_Uniforms
+[2024-04-21 14:25:40.464] [MONADO] [trace]   Member Count: 1
+[2024-04-21 14:25:40.464] [MONADO] [trace]   Size: 4
+[2024-04-21 14:25:40.464] [MONADO] [trace] Sampled Images:
+[2024-04-21 14:25:40.464] [MONADO] [trace]   inputTexture (0, 1)
+[2024-04-21 14:25:40.464] [MONADO] [trace] Storage Images:
+[2024-04-21 14:25:40.464] [MONADO] [trace]   outputTexture (0, 0)
+[2024-04-21 14:25:40.465] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.465] [MONADO] [info] Creating descriptor set 0 with 0 ubos, 1 samplers and 1 storage images
+[2024-04-21 14:25:40.466] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.467] [MONADO] [trace]  Vulkan Shader Reflection
+[2024-04-21 14:25:40.467] [MONADO] [trace]  assets/shaders/EquirectangularToCubeMap.glsl
+[2024-04-21 14:25:40.467] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.467] [MONADO] [trace] Uniform Buffers:
+[2024-04-21 14:25:40.467] [MONADO] [trace] Push Constant Buffers:
+[2024-04-21 14:25:40.467] [MONADO] [trace] Sampled Images:
+[2024-04-21 14:25:40.467] [MONADO] [trace]   u_EquirectangularTex (0, 1)
+[2024-04-21 14:25:40.467] [MONADO] [trace] Storage Images:
+[2024-04-21 14:25:40.467] [MONADO] [trace]   o_CubeMap (0, 0)
+[2024-04-21 14:25:40.467] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.467] [MONADO] [info] Creating descriptor set 0 with 0 ubos, 1 samplers and 1 storage images
+[2024-04-21 14:25:40.469] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.469] [MONADO] [trace]  Vulkan Shader Reflection
+[2024-04-21 14:25:40.469] [MONADO] [trace]  assets/shaders/EnvironmentIrradiance.glsl
+[2024-04-21 14:25:40.469] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.470] [MONADO] [trace] Uniform Buffers:
+[2024-04-21 14:25:40.470] [MONADO] [trace] Push Constant Buffers:
+[2024-04-21 14:25:40.470] [MONADO] [trace] Sampled Images:
+[2024-04-21 14:25:40.470] [MONADO] [trace]   u_RadianceMap (0, 1)
+[2024-04-21 14:25:40.470] [MONADO] [trace] Storage Images:
+[2024-04-21 14:25:40.470] [MONADO] [trace]   o_IrradianceMap (0, 0)
+[2024-04-21 14:25:40.470] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.470] [MONADO] [info] Creating descriptor set 0 with 0 ubos, 1 samplers and 1 storage images
+[2024-04-21 14:25:40.471] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.472] [MONADO] [trace]  Vulkan Shader Reflection
+[2024-04-21 14:25:40.472] [MONADO] [trace]  assets/shaders/Grid.glsl
+[2024-04-21 14:25:40.472] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.472] [MONADO] [trace] Uniform Buffers:
+[2024-04-21 14:25:40.472] [MONADO] [trace] VulkanAllocator (UniformBuffer): allocating 256 bytes
+[2024-04-21 14:25:40.473] [MONADO] [trace]   Camera (0, 0)
+[2024-04-21 14:25:40.473] [MONADO] [trace]   Member Count: 2
+[2024-04-21 14:25:40.473] [MONADO] [trace]   Size: 128
+[2024-04-21 14:25:40.473] [MONADO] [trace] -------------------
+[2024-04-21 14:25:40.473] [MONADO] [trace] Push Constant Buffers:
+[2024-04-21 14:25:40.473] [MONADO] [trace] Sampled Images:
+[2024-04-21 14:25:40.473] [MONADO] [trace] Storage Images:
+[2024-04-21 14:25:40.473] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.473] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.473] [MONADO] [trace]  Vulkan Shader Reflection
+[2024-04-21 14:25:40.473] [MONADO] [trace]  assets/shaders/Grid.glsl
+[2024-04-21 14:25:40.473] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.473] [MONADO] [trace] Uniform Buffers:
+[2024-04-21 14:25:40.473] [MONADO] [trace] Push Constant Buffers:
+[2024-04-21 14:25:40.473] [MONADO] [trace]   Name: u_Settings
+[2024-04-21 14:25:40.473] [MONADO] [trace]   Member Count: 2
+[2024-04-21 14:25:40.473] [MONADO] [trace]   Size: 72
+[2024-04-21 14:25:40.474] [MONADO] [trace] Sampled Images:
+[2024-04-21 14:25:40.474] [MONADO] [trace] Storage Images:
+[2024-04-21 14:25:40.474] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.474] [MONADO] [info] Creating descriptor set 0 with 1 ubos, 0 samplers and 0 storage images
+[2024-04-21 14:25:40.476] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.476] [MONADO] [trace]  Vulkan Shader Reflection
+[2024-04-21 14:25:40.476] [MONADO] [trace]  assets/shaders/SceneComposite.glsl
+[2024-04-21 14:25:40.476] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.476] [MONADO] [trace] Uniform Buffers:
+[2024-04-21 14:25:40.476] [MONADO] [trace] Push Constant Buffers:
+[2024-04-21 14:25:40.476] [MONADO] [trace] Sampled Images:
+[2024-04-21 14:25:40.476] [MONADO] [trace] Storage Images:
+[2024-04-21 14:25:40.476] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.476] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.476] [MONADO] [trace]  Vulkan Shader Reflection
+[2024-04-21 14:25:40.476] [MONADO] [trace]  assets/shaders/SceneComposite.glsl
+[2024-04-21 14:25:40.476] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.477] [MONADO] [trace] Uniform Buffers:
+[2024-04-21 14:25:40.477] [MONADO] [trace] Push Constant Buffers:
+[2024-04-21 14:25:40.477] [MONADO] [trace]   Name: u_Uniforms
+[2024-04-21 14:25:40.477] [MONADO] [trace]   Member Count: 1
+[2024-04-21 14:25:40.477] [MONADO] [trace]   Size: 4
+[2024-04-21 14:25:40.477] [MONADO] [trace] Sampled Images:
+[2024-04-21 14:25:40.477] [MONADO] [trace]   u_Texture (0, 0)
+[2024-04-21 14:25:40.477] [MONADO] [trace] Storage Images:
+[2024-04-21 14:25:40.477] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.477] [MONADO] [info] Creating descriptor set 0 with 0 ubos, 1 samplers and 0 storage images
+[2024-04-21 14:25:40.481] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.481] [MONADO] [trace]  Vulkan Shader Reflection
+[2024-04-21 14:25:40.481] [MONADO] [trace]  assets/shaders/MonadoPBR_Static.glsl
+[2024-04-21 14:25:40.481] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.482] [MONADO] [trace] Uniform Buffers:
+[2024-04-21 14:25:40.482] [MONADO] [trace] VulkanAllocator (UniformBuffer): allocating 256 bytes
+[2024-04-21 14:25:40.482] [MONADO] [trace]   ShadowData (0, 1)
+[2024-04-21 14:25:40.482] [MONADO] [trace]   Member Count: 1
+[2024-04-21 14:25:40.482] [MONADO] [trace]   Size: 64
+[2024-04-21 14:25:40.482] [MONADO] [trace] -------------------
+[2024-04-21 14:25:40.482] [MONADO] [trace]   Camera (0, 0)
+[2024-04-21 14:25:40.482] [MONADO] [trace]   Member Count: 2
+[2024-04-21 14:25:40.482] [MONADO] [trace]   Size: 128
+[2024-04-21 14:25:40.482] [MONADO] [trace] -------------------
+[2024-04-21 14:25:40.482] [MONADO] [trace] Push Constant Buffers:
+[2024-04-21 14:25:40.482] [MONADO] [trace] Sampled Images:
+[2024-04-21 14:25:40.482] [MONADO] [trace] Storage Images:
+[2024-04-21 14:25:40.482] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.483] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.483] [MONADO] [trace]  Vulkan Shader Reflection
+[2024-04-21 14:25:40.483] [MONADO] [trace]  assets/shaders/MonadoPBR_Static.glsl
+[2024-04-21 14:25:40.483] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.484] [MONADO] [trace] Uniform Buffers:
+[2024-04-21 14:25:40.484] [MONADO] [trace] VulkanAllocator (UniformBuffer): allocating 256 bytes
+[2024-04-21 14:25:40.484] [MONADO] [trace]   SceneData (0, 2)
+[2024-04-21 14:25:40.484] [MONADO] [trace]   Member Count: 3
+[2024-04-21 14:25:40.484] [MONADO] [trace]   Size: 48
+[2024-04-21 14:25:40.484] [MONADO] [trace] -------------------
+[2024-04-21 14:25:40.484] [MONADO] [trace] VulkanAllocator (UniformBuffer): allocating 256 bytes
+[2024-04-21 14:25:40.484] [MONADO] [trace]   RendererData (0, 3)
+[2024-04-21 14:25:40.484] [MONADO] [trace]   Member Count: 7
+[2024-04-21 14:25:40.484] [MONADO] [trace]   Size: 28
+[2024-04-21 14:25:40.484] [MONADO] [trace] -------------------
+[2024-04-21 14:25:40.484] [MONADO] [trace] Push Constant Buffers:
+[2024-04-21 14:25:40.484] [MONADO] [trace]   Name: u_MaterialUniforms
+[2024-04-21 14:25:40.484] [MONADO] [trace]   Member Count: 5
+[2024-04-21 14:25:40.484] [MONADO] [trace]   Size: 92
+[2024-04-21 14:25:40.484] [MONADO] [trace] Sampled Images:
+[2024-04-21 14:25:40.484] [MONADO] [trace]   u_EnvIrradianceTex (1, 9)
+[2024-04-21 14:25:40.485] [MONADO] [trace]   u_EnvRadianceTex (1, 8)
+[2024-04-21 14:25:40.485] [MONADO] [trace]   u_BRDFLUTTexture (1, 10)
+[2024-04-21 14:25:40.485] [MONADO] [trace]   u_AlbedoTexture (0, 4)
+[2024-04-21 14:25:40.485] [MONADO] [trace]   u_MetalnessTexture (0, 6)
+[2024-04-21 14:25:40.485] [MONADO] [trace]   u_RoughnessTexture (0, 7)
+[2024-04-21 14:25:40.485] [MONADO] [trace]   u_NormalTexture (0, 5)
+[2024-04-21 14:25:40.485] [MONADO] [trace]   u_ShadowMapTexture (1, 11)
+[2024-04-21 14:25:40.485] [MONADO] [trace] Storage Images:
+[2024-04-21 14:25:40.485] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.485] [MONADO] [info] Creating descriptor set 0 with 4 ubos, 4 samplers and 0 storage images
+[2024-04-21 14:25:40.485] [MONADO] [info] Creating descriptor set 1 with 0 ubos, 4 samplers and 0 storage images
+[2024-04-21 14:25:40.487] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.488] [MONADO] [trace]  Vulkan Shader Reflection
+[2024-04-21 14:25:40.488] [MONADO] [trace]  assets/shaders/Skybox.glsl
+[2024-04-21 14:25:40.488] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.488] [MONADO] [trace] Uniform Buffers:
+[2024-04-21 14:25:40.488] [MONADO] [trace]   Camera (0, 0)
+[2024-04-21 14:25:40.488] [MONADO] [trace]   Member Count: 2
+[2024-04-21 14:25:40.488] [MONADO] [trace]   Size: 128
+[2024-04-21 14:25:40.488] [MONADO] [trace] -------------------
+[2024-04-21 14:25:40.488] [MONADO] [trace] Push Constant Buffers:
+[2024-04-21 14:25:40.488] [MONADO] [trace] Sampled Images:
+[2024-04-21 14:25:40.488] [MONADO] [trace] Storage Images:
+[2024-04-21 14:25:40.488] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.488] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.488] [MONADO] [trace]  Vulkan Shader Reflection
+[2024-04-21 14:25:40.488] [MONADO] [trace]  assets/shaders/Skybox.glsl
+[2024-04-21 14:25:40.488] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.488] [MONADO] [trace] Uniform Buffers:
+[2024-04-21 14:25:40.488] [MONADO] [trace] Push Constant Buffers:
+[2024-04-21 14:25:40.488] [MONADO] [trace]   Name: u_Uniforms
+[2024-04-21 14:25:40.489] [MONADO] [trace]   Member Count: 1
+[2024-04-21 14:25:40.489] [MONADO] [trace]   Size: 4
+[2024-04-21 14:25:40.489] [MONADO] [trace] Sampled Images:
+[2024-04-21 14:25:40.489] [MONADO] [trace]   u_Texture (0, 1)
+[2024-04-21 14:25:40.489] [MONADO] [trace] Storage Images:
+[2024-04-21 14:25:40.489] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.489] [MONADO] [info] Creating descriptor set 0 with 1 ubos, 1 samplers and 0 storage images
+[2024-04-21 14:25:40.491] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.491] [MONADO] [trace]  Vulkan Shader Reflection
+[2024-04-21 14:25:40.491] [MONADO] [trace]  assets/shaders/ShadowMap.glsl
+[2024-04-21 14:25:40.491] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.491] [MONADO] [trace] Uniform Buffers:
+[2024-04-21 14:25:40.491] [MONADO] [trace]   ShadowData (0, 1)
+[2024-04-21 14:25:40.491] [MONADO] [trace]   Member Count: 1
+[2024-04-21 14:25:40.491] [MONADO] [trace]   Size: 64
+[2024-04-21 14:25:40.491] [MONADO] [trace] -------------------
+[2024-04-21 14:25:40.491] [MONADO] [trace] Push Constant Buffers:
+[2024-04-21 14:25:40.491] [MONADO] [trace] Sampled Images:
+[2024-04-21 14:25:40.491] [MONADO] [trace] Storage Images:
+[2024-04-21 14:25:40.491] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.491] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.491] [MONADO] [trace]  Vulkan Shader Reflection
+[2024-04-21 14:25:40.491] [MONADO] [trace]  assets/shaders/ShadowMap.glsl
+[2024-04-21 14:25:40.491] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.492] [MONADO] [trace] Uniform Buffers:
+[2024-04-21 14:25:40.492] [MONADO] [trace] Push Constant Buffers:
+[2024-04-21 14:25:40.492] [MONADO] [trace] Sampled Images:
+[2024-04-21 14:25:40.492] [MONADO] [trace] Storage Images:
+[2024-04-21 14:25:40.492] [MONADO] [trace] ===========================
+[2024-04-21 14:25:40.492] [MONADO] [info] Creating descriptor set 0 with 1 ubos, 0 samplers and 0 storage images
+[2024-04-21 14:25:40.492] [MONADO] [trace] GPU Info:
+[2024-04-21 14:25:40.492] [MONADO] [trace]   Vendor: NVIDIA
+[2024-04-21 14:25:40.492] [MONADO] [trace]   Device: NVIDIA GeForce RTX 3060 Laptop GPU
+[2024-04-21 14:25:40.492] [MONADO] [trace]   Version: 2148073472
+[2024-04-21 14:25:40.496] [MONADO] [trace] VulkanAllocator (Texture2D): allocating 256 bytes
+[2024-04-21 14:25:40.496] [MONADO] [trace] VulkanAllocator (Texture2D): allocating 512 bytes
+[2024-04-21 14:25:40.500] [MONADO] [warning] VulkanImage2D::UpdateDescriptor to ImageView = 0xee24d0000000059
+[2024-04-21 14:25:40.500] [MONADO] [trace] VulkanAllocator (TextureCube): allocating 3072 bytes
+[2024-04-21 14:25:40.500] [MONADO] [trace] VulkanAllocator (TextureCube): allocating 256 bytes
+[2024-04-21 14:25:40.500] [MONADO] [trace] VulkanAllocator (VertexBuffer): allocating 256 bytes
+[2024-04-21 14:25:40.500] [MONADO] [trace] VulkanAllocator (IndexBuffer): allocating 256 bytes
+[2024-04-21 14:25:40.501] [MONADO] [trace] VulkanAllocator (Texture2D): allocating 262144 bytes
+[2024-04-21 14:25:40.501] [MONADO] [trace] VulkanAllocator (Texture2D): allocating 351232 bytes
+[2024-04-21 14:25:40.502] [MONADO] [warning] VulkanImage2D::UpdateDescriptor to ImageView = 0x8f1c31000000006d
+[2024-04-21 14:25:40.502] [MONADO] [trace] VulkanAllocator (Texture2D): allocating 262144 bytes
+[2024-04-21 14:25:40.502] [MONADO] [trace] VulkanAllocator (Texture2D): allocating 351232 bytes
+[2024-04-21 14:25:40.503] [MONADO] [warning] VulkanImage2D::UpdateDescriptor to ImageView = 0xa182620000000079
+[2024-04-21 14:25:40.503] [MONADO] [trace] VulkanAllocator (Framebuffer): allocating 67108864 bytes
+[2024-04-21 14:25:40.504] [MONADO] [warning] VulkanImage2D::UpdateDescriptor to ImageView = 0xb4ae2e000000007d
+[2024-04-21 14:25:40.505] [MONADO] [trace] VulkanAllocator (Framebuffer): allocating 67108864 bytes
+[2024-04-21 14:25:40.506] [MONADO] [warning] VulkanImage2D::UpdateDescriptor to ImageView = 0xa171580000000083
+[2024-04-21 14:25:40.507] [MONADO] [trace] VulkanAllocator (Framebuffer): allocating 67108864 bytes
+[2024-04-21 14:25:40.508] [MONADO] [warning] VulkanImage2D::Up

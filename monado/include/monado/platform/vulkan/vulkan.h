@@ -1,6 +1,7 @@
 #pragma once
 
 #include "monado/core/log.h"
+#include "monado/renderer/renderer.h"
 
 #include <vulkan/vulkan.h>
 
@@ -54,16 +55,21 @@ namespace Monado::Utils {
 
     void RetrieveDiagnosticCheckpoints();
 
+    inline void VulkanCheckResult(VkResult result) {
+        if (result != VK_SUCCESS) {
+            MND_CORE_ERROR("VkResult is '{0}' in {1}:{2}", ::Monado::Utils::VKResultToString(result), __FILE__,
+                           __LINE__);
+            if (result == VK_ERROR_DEVICE_LOST) {
+                ::Monado::Utils::RetrieveDiagnosticCheckpoints();
+                ::Monado::Utils::DumpGPUInfo();
+            }
+            MND_CORE_ASSERT((result == VK_SUCCESS));
+        }
+    }
 } // namespace Monado::Utils
 
 #define VK_CHECK_RESULT(f)                                                                                             \
     {                                                                                                                  \
         VkResult res = (f);                                                                                            \
-        if (res != VK_SUCCESS) {                                                                                       \
-            MND_CORE_ERROR("VkResult is '{0}' in {1}:{2}", ::Monado::Utils::VKResultToString(res), __FILE__,           \
-                           __LINE__);                                                                                  \
-            if (res == VK_ERROR_DEVICE_LOST)                                                                           \
-                ::Monado::Utils::RetrieveDiagnosticCheckpoints();                                                      \
-            MND_CORE_ASSERT(res == VK_SUCCESS);                                                                        \
-        }                                                                                                              \
+        ::Monado::Utils::VulkanCheckResult(res);                                                                       \
     }

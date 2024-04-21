@@ -36,7 +36,7 @@ namespace Monado {
             std::unique_ptr<Window>(Window::Create(WindowProps(props.Name, props.WindowWidth, props.WindowHeight)));
         m_Window->SetEventCallback(BIND_EVENT_FN(OnEvent));
         m_Window->Maximize();
-        m_Window->SetVSync(false);
+        m_Window->SetVSync(true);
 
         // Init renderer and execute command queue to compile all shaders
         Renderer::Init();
@@ -82,7 +82,7 @@ namespace Monado {
         ImGui::Begin("Renderer");
         auto &caps = Renderer::GetCapabilities();
         ImGui::Text("Vendor: %s", caps.Vendor.c_str());
-        ImGui::Text("Renderer: %s", caps.Renderer.c_str());
+        ImGui::Text("Renderer: %s", caps.Device.c_str());
         ImGui::Text("Version: %s", caps.Version.c_str());
         ImGui::Text("Frame Time: %.2fms\n", m_TimeStep.GetMilliseconds());
         ImGui::End();

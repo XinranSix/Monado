@@ -586,7 +586,7 @@ namespace Monado {
                     ImGui::CloseCurrentPopup();
                 }
             }
-            if (!m_SelectionContext.HasComponent<SphereColliderComponent>()) {
+            if (!m_SelectionContext.HasComponent<CapsuleColliderComponent>()) {
                 if (ImGui::Button("Capsule Collider")) {
                     m_SelectionContext.AddComponent<CapsuleColliderComponent>();
                     ImGui::CloseCurrentPopup();

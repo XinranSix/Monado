@@ -114,7 +114,7 @@ namespace Monado {
         Ref<Environment> m_Environment;
         float m_EnvironmentIntensity = 1.0f;
         Ref<TextureCube> m_SkyboxTexture;
-        Ref<Material> m_SkyboxMaterial;
+        Ref<Monado::Material> m_SkyboxMaterial;
 
         entt::entity m_SelectedEntity;
 

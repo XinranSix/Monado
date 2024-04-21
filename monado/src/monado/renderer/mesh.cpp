@@ -13,6 +13,7 @@
 
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/gtc/quaternion.hpp"
+#include "monado/renderer/material.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/quaternion.hpp"
@@ -220,7 +221,7 @@ namespace Monado {
                 auto aiMaterial = scene->mMaterials[i];
                 auto aiMaterialName = aiMaterial->GetName();
 
-                auto mi = Material::Create(m_MeshShader, aiMaterialName.data);
+                auto mi = Monado::Material::Create(m_MeshShader, aiMaterialName.data);
                 m_Materials[i] = mi;
 
                 MND_MESH_LOG("  {0} (Index = {1})", aiMaterialName.data, i);
@@ -255,7 +256,7 @@ namespace Monado {
                     parentPath /= std::string(aiTexPath.data);
                     std::string texturePath = parentPath.string();
                     MND_MESH_LOG("    Albedo map path = {0}", texturePath);
-                    auto texture = Texture2D::Create(texturePath, true);
+                    auto texture = Monado::Texture2D::Create(texturePath, true);
                     if (texture->Loaded()) {
                         m_Textures[i] = texture;
                         mi->Set("u_AlbedoTexture", texture);
@@ -267,7 +268,7 @@ namespace Monado {
 
                 if (fallback) {
                     MND_MESH_LOG("    No albedo map");
-                    mi->Set("u_AlbedoTexture", whiteTexture);
+                    mi->Set("u_AlbedoTexture", (const Ref<Image2D>)whiteTexture);
                 }
 
                 // Normal maps
@@ -281,7 +282,7 @@ namespace Monado {
                     parentPath /= std::string(aiTexPath.data);
                     std::string texturePath = parentPath.string();
                     MND_MESH_LOG("    Normal map path = {0}", texturePath);
-                    auto texture = Texture2D::Create(texturePath);
+                    auto texture = Monado::Texture2D::Create(texturePath);
                     if (texture->Loaded()) {
                         m_Textures.push_back(texture);
                         mi->Set("u_NormalTexture", texture);
@@ -294,7 +295,7 @@ namespace Monado {
 
                 if (fallback) {
                     MND_MESH_LOG("    No normal map");
-                    mi->Set("u_NormalTexture", whiteTexture);
+                    mi->Set("u_NormalTexture", (const Ref<Image2D>)whiteTexture);
                 }
 
                 // Roughness map
@@ -307,7 +308,7 @@ namespace Monado {
                     parentPath /= std::string(aiTexPath.data);
                     std::string texturePath = parentPath.string();
                     MND_MESH_LOG("    Roughness map path = {0}", texturePath);
-                    auto texture = Texture2D::Create(texturePath);
+                    auto texture = Monado::Texture2D::Create(texturePath);
                     if (texture->Loaded()) {
                         m_Textures.push_back(texture);
                         mi->Set("u_RoughnessTexture", texture);
@@ -319,7 +320,7 @@ namespace Monado {
 
                 if (fallback) {
                     MND_MESH_LOG("    No roughness map");
-                    mi->Set("u_RoughnessTexture", whiteTexture);
+                    mi->Set("u_RoughnessTexture", (const Ref<Image2D>)whiteTexture);
                     mi->Set("u_MaterialUniforms.Roughness", roughness);
                 }
 
@@ -393,7 +394,7 @@ namespace Monado {
                             parentPath /= str;
                             std::string texturePath = parentPath.string();
                             MND_MESH_LOG("    Metalness map path = {0}", texturePath);
-                            auto texture = Texture2D::Create(texturePath);
+                            auto texture = Monado::Texture2D::Create(texturePath);
                             if (texture->Loaded()) {
                                 metalnessTextureFound = true;
                                 m_Textures.push_back(texture);
@@ -409,13 +410,13 @@ namespace Monado {
                 fallback = !metalnessTextureFound;
                 if (fallback) {
                     MND_MESH_LOG("    No metalness map");
-                    mi->Set("u_MetalnessTexture", whiteTexture);
+                    mi->Set("u_MetalnessTexture", (const Ref<Image2D>)whiteTexture);
                     mi->Set("u_MaterialUniforms.Metalness", metalness);
                 }
             }
             MND_MESH_LOG("------------------------");
         } else {
-            auto mi = Material::Create(m_MeshShader, "Monado-Default");
+            auto mi = Monado::Material::Create(m_MeshShader, "Monado-Default");
             mi->Set("u_MaterialUniforms.AlbedoTexToggle", 0.0f);
             mi->Set("u_MaterialUniforms.NormalTexToggle", 0.0f);
             mi->Set("u_MaterialUniforms.MetalnessTexToggle", 0.0f);

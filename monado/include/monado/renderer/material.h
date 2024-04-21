@@ -5,14 +5,14 @@
 #include "monado/renderer/shader.h"
 #include "monado/renderer/texture.h"
 #include "material.h"
-#include "monado/platform/vulkan/vulkanShader.h"
+// #include "monado/platform/vulkan/vulkanShader.h"
 
 #include "vulkan/vulkan_core.h"
 
 #include <unordered_set>
 
 namespace Monado {
-    
+
     enum class MaterialFlag { None = BIT(0), DepthTest = BIT(1), Blend = BIT(2), TwoSided = BIT(3) };
 
     class Material : public RefCounted {

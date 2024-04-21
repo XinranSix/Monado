@@ -1,7 +1,7 @@
 #include "monado/renderer/renderer.h"
-#include "monado/renderer/shader.h"
 #include "monado/renderer/sceneRenderer.h"
 #include "monado/renderer/rendererAPI.h"
+#include "monado/renderer/shader.h"
 #include "monado/renderer/renderer2D.h"
 
 #include "monado/platform/opengl/openGLRenderer.h"
@@ -51,6 +51,8 @@ namespace Monado {
     }
 
     struct RendererData {
+        RendererConfig Config;
+
         Ref<ShaderLibrary> m_ShaderLibrary;
 
         Ref<Texture2D> WhiteTexture;
@@ -89,7 +91,7 @@ namespace Monado {
         // Renderer::GetShaderLibrary()->Load("assets/shaders/MonadoBR_Anim.glsl");
         // Renderer::GetShaderLibrary()->Load("assets/shaders/Outline.glsl");
         Renderer::GetShaderLibrary()->Load("assets/shaders/Skybox.glsl");
-      //  Renderer::GetShaderLibrary()->Load("assets/shaders/Texture.glsl");
+        //  Renderer::GetShaderLibrary()->Load("assets/shaders/Texture.glsl");
         Renderer::GetShaderLibrary()->Load("assets/shaders/ShadowMap.glsl");
 
         // Compile shaders
@@ -249,5 +251,7 @@ namespace Monado {
     Ref<Environment> Renderer::GetEmptyEnvironment() { return s_Data->EmptyEnvironment; }
 
     RenderCommandQueue &Renderer::GetRenderCommandQueue() { return *s_CommandQueue; }
+
+    RendererConfig &Renderer::GetConfig() { return s_Data->Config; }
 
 } // namespace Monado

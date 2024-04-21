@@ -2,18 +2,25 @@
 
 #include "rendererContext.h"
 #include "renderCommandQueue.h"
-// #include "rendererAPI.h"
+#include "rendererAPI.h"
+#include "monado/renderer/shader.h"
 #include "monado/core/base.h"
 #include "renderPass.h"
+#include "pipeline.h"
 #include "mesh.h"
 #include "monado/core/application.h"
 #include "rendererCapabilities.h"
 #include "texture.h"
 #include "sceneEnvironment.h"
-// #include "monado/scene/scene.h"
+#include "monado/scene/scene.h"
 
 namespace Monado {
     class ShaderLibrary;
+
+    struct RendererConfig {
+        // "Experimental" features
+        bool ComputeEnvironmentMaps = false;
+    };
 
     class Renderer {
     public:
@@ -60,27 +67,45 @@ namespace Monado {
         static void SetSceneEnvironment(Ref<Environment> environment, Ref<Image2D> shadow);
         static std::pair<Ref<TextureCube>, Ref<TextureCube>> CreateEnvironmentMap(const std::string &filepath);
 
-        static void RenderMesh(Ref<Pipeline> pipeline, Ref<Mesh> mesh, const glm::mat4 &transform);
-        static void RenderMeshWithoutMaterial(Ref<Pipeline> pipeline, Ref<Mesh> mesh, const glm::mat4 &transform);
-        static void RenderQuad(Ref<Pipeline> pipeline, Ref<Material> material, const glm::mat4 &transform);
-        static void SubmitFullscreenQuad(Ref<Pipeline> pipeline, Ref<Material> material);
+        // class Pipeline;
+        // class Mesh;
+        // class Material;
+        // class AABB;
+        static void RenderMesh(Ref<Monado::Pipeline> pipeline, Ref<Monado::Mesh> mesh, const glm::mat4 &transform);
+        static void RenderMeshWithoutMaterial(Ref<Pipeline> pipeline, Ref<Monado::Mesh> mesh, const glm::mat4 &transform);
+        static void RenderQuad(Ref<Monado::Pipeline> pipeline, Ref<Monado::Material> material, const glm::mat4 &transform);
+        static void SubmitFullscreenQuad(Ref<Pipeline> pipeline, Ref<Monado::Material> material);
 
-        static void SubmitQuad(Ref<Material> material, const glm::mat4 &transform = glm::mat4(1.0f));
-        static void SubmitMesh(Ref<Mesh> mesh, const glm::mat4 &transform, Ref<Material> overrideMaterial = nullptr);
+        static void SubmitQuad(Ref<Monado::Material> material, const glm::mat4 &transform = glm::mat4(1.0f));
+        static void SubmitMesh(Ref<Monado::Mesh> mesh, const glm::mat4 &transform, Ref<Monado::Material> overrideMaterial = nullptr);
 
         static void DrawAABB(const AABB &aabb, const glm::mat4 &transform, const glm::vec4 &color = glm::vec4(1.0f));
-        static void DrawAABB(Ref<Mesh> mesh, const glm::mat4 &transform, const glm::vec4 &color = glm::vec4(1.0f));
+        static void DrawAABB(Ref<Monado::Mesh> mesh, const glm::mat4 &transform, const glm::vec4 &color = glm::vec4(1.0f));
 
         static Ref<Texture2D> GetWhiteTexture();
         static Ref<TextureCube> GetBlackCubeTexture();
         static Ref<Environment> GetEmptyEnvironment();
 
-        static void RegisterShaderDependency(Ref<Shader> shader, Ref<Pipeline> pipeline);
-        static void RegisterShaderDependency(Ref<Shader> shader, Ref<Material> material);
+        static void RegisterShaderDependency(Ref<Monado::Shader> shader, Ref<Monado::Pipeline> pipeline);
+        static void RegisterShaderDependency(Ref<Monado::Shader> shader, Ref<Monado::Material> material);
         static void OnShaderReloaded(size_t hash);
+
+        static RendererConfig &GetConfig();
 
     private:
         static RenderCommandQueue &GetRenderCommandQueue();
     };
+
+    namespace Utils {
+
+        inline void DumpGPUInfo() {
+            auto &caps = Renderer::GetCapabilities();
+            MND_CORE_TRACE("GPU Info:");
+            MND_CORE_TRACE("  Vendor: {0}", caps.Vendor);
+            MND_CORE_TRACE("  Device: {0}", caps.Device);
+            MND_CORE_TRACE("  Version: {0}", caps.Version);
+        }
+
+    } // namespace Utils
 
 } // namespace Monado

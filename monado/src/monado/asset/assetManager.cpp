@@ -272,7 +272,7 @@ namespace Monado {
 
             if (asset->Type != type) {
                 MND_CORE_WARN("AssetType for '{0}' was different than the metadata. Did the file type change?",
-                              asset->FilePath);
+                             asset->FilePath);
                 asset->Type = AssetType::None;
             }
         } else {
